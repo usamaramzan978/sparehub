@@ -36,13 +36,19 @@ final class CustomerVehicleController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
+        return view('tenants.customer-vehicles.index', [
+            'items' => $vehicles,
+        ]);
+    }
+
+    public function create(): View
+    {
         $customers = Customer::query()
-            ->where('branch_id', $branchId)
+            ->where('branch_id', $this->currentBranchId())
             ->orderBy('name')
             ->get();
 
-        return view('tenants.customer-vehicles.index', [
-            'items' => $vehicles,
+        return view('tenants.customer-vehicles.create', [
             'customers' => $customers,
         ]);
     }
@@ -63,6 +69,21 @@ final class CustomerVehicleController extends Controller
 
         return view('tenants.customer-vehicles.show', [
             'vehicle' => $customerVehicle,
+        ]);
+    }
+
+    public function edit(CustomerVehicle $customerVehicle): View
+    {
+        $this->ensureVehicleInCurrentBranch($customerVehicle);
+
+        $customers = Customer::query()
+            ->where('branch_id', $this->currentBranchId())
+            ->orderBy('name')
+            ->get();
+
+        return view('tenants.customer-vehicles.edit', [
+            'vehicle' => $customerVehicle,
+            'customers' => $customers,
         ]);
     }
 

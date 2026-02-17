@@ -1,8 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-    @include('tenants.vendors.partials.create', ['statuses' => $statuses])
-
     @php
         $breadcrumbs = [
             ['label' => __('People')],
@@ -12,9 +10,7 @@
 
     <x-breadcrumb title="{{ __('Vendors') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#vendorCreateModal">
-                {{ __('Add Vendor') }}
-            </button>
+            <a href="{{ route('tenant.vendors.create') }}" class="btn btn-primary">{{ __('Add Vendor') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 
@@ -75,12 +71,11 @@
                                             title="{{ __('View') }}">
                                             <i class="ri-eye-line"></i>
                                         </a>
-                                        <button type="button"
+                                        <a href="{{ route('tenant.vendors.edit', $vendor) }}"
                                             class="btn btn-sm btn-icon btn-secondary-light btn-wave waves-effect waves-light"
-                                            data-bs-toggle="modal" data-bs-target="#vendorEditModal-{{ $vendor->id }}"
                                             title="{{ __('Edit') }}">
                                             <i class="ri-edit-line"></i>
-                                        </button>
+                                        </a>
                                         <button type="button"
                                             class="btn btn-sm btn-icon btn-danger-light btn-wave waves-effect waves-light js-delete-modal"
                                             data-action="{{ route('tenant.vendors.destroy', $vendor) }}"
@@ -93,7 +88,6 @@
                                     </div>
                                 </td>
                             </tr>
-                            @include('tenants.vendors.partials.edit', ['vendor' => $vendor, 'statuses' => $statuses])
                         @empty
                             <tr>
                                 <td colspan="6" class="text-center text-muted">{{ __('No vendors found.') }}</td>

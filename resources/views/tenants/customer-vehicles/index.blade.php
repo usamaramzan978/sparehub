@@ -1,8 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-    @include('tenants.customer-vehicles.partials.create', ['customers' => $customers])
-
     @php
         $breadcrumbs = [
             ['label' => __('People')],
@@ -12,10 +10,7 @@
 
     <x-breadcrumb title="{{ __('Customer Vehicles') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                data-bs-target="#customerVehicleCreateModal">
-                {{ __('Add Vehicle') }}
-            </button>
+            <a href="{{ route('tenant.customer-vehicles.create') }}" class="btn btn-primary">{{ __('Add Vehicle') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 
@@ -71,13 +66,11 @@
                                             title="{{ __('View') }}">
                                             <i class="ri-eye-line"></i>
                                         </a>
-                                        <button type="button"
+                                        <a href="{{ route('tenant.customer-vehicles.edit', $vehicle) }}"
                                             class="btn btn-sm btn-icon btn-secondary-light btn-wave waves-effect waves-light"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#customerVehicleEditModal-{{ $vehicle->id }}"
                                             title="{{ __('Edit') }}">
                                             <i class="ri-edit-line"></i>
-                                        </button>
+                                        </a>
                                         <button type="button"
                                             class="btn btn-sm btn-icon btn-danger-light btn-wave waves-effect waves-light js-delete-modal"
                                             data-action="{{ route('tenant.customer-vehicles.destroy', $vehicle) }}"
@@ -91,7 +84,6 @@
                                     </div>
                                 </td>
                             </tr>
-                            @include('tenants.customer-vehicles.partials.edit', ['vehicle' => $vehicle, 'customers' => $customers])
                         @empty
                             <tr>
                                 <td colspan="6" class="text-center text-muted">{{ __('No vehicles found.') }}</td>

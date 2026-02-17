@@ -1,8 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-    @include('tenants.service-catalog.partials.create', ['taxes' => $taxes, 'statuses' => $statuses])
-
     @php
         $breadcrumbs = [
             ['label' => __('Catalog')],
@@ -12,9 +10,7 @@
 
     <x-breadcrumb title="{{ __('Service Catalog') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#serviceCatalogCreateModal">
-                {{ __('Add Service') }}
-            </button>
+            <a href="{{ route('tenant.service-catalog.create') }}" class="btn btn-primary">{{ __('Add Service') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 
@@ -69,12 +65,11 @@
                                             </a>
                                         </span>
                                         <span class="d-inline-block" data-bs-toggle="tooltip" title="{{ __('Edit') }}">
-                                            <button type="button"
+                                            <a href="{{ route('tenant.service-catalog.edit', $serviceCatalog) }}"
                                                 class="btn btn-sm btn-icon btn-secondary-light btn-wave waves-effect waves-light"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#serviceCatalogEditModal-{{ $serviceCatalog->id }}">
+                                                title="{{ __('Edit') }}">
                                                 <i class="ri-edit-line"></i>
-                                            </button>
+                                            </a>
                                         </span>
                                         <span class="d-inline-block" data-bs-toggle="tooltip" title="{{ __('Delete') }}">
                                             <button type="button"
@@ -90,11 +85,6 @@
                                     </div>
                                 </td>
                             </tr>
-                            @include('tenants.service-catalog.partials.edit', [
-                                'serviceCatalog' => $serviceCatalog,
-                                'taxes' => $taxes,
-                                'statuses' => $statuses,
-                            ])
                         @empty
                             <tr>
                                 <td colspan="8" class="text-center text-muted">{{ __('No services found.') }}</td>

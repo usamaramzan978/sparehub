@@ -26,13 +26,19 @@ final class ServiceCatalogController extends Controller
             ->latest()
             ->paginate($perPage);
 
+        return view('tenants.service-catalog.index', [
+            'items' => $services,
+        ]);
+    }
+
+    public function create(): View
+    {
         $taxes = Tax::query()
             ->where('status', RecordStatus::ACTIVE->value)
             ->orderBy('name')
             ->get();
 
-        return view('tenants.service-catalog.index', [
-            'items' => $services,
+        return view('tenants.service-catalog.create', [
             'taxes' => $taxes,
             'statuses' => RecordStatus::cases(),
         ]);
@@ -57,6 +63,22 @@ final class ServiceCatalogController extends Controller
 
         return view('tenants.service-catalog.show', [
             'serviceCatalog' => $serviceCatalog,
+        ]);
+    }
+
+    public function edit(ServiceCatalog $serviceCatalog): View
+    {
+        $this->ensureServiceInCurrentBranch($serviceCatalog);
+
+        $taxes = Tax::query()
+            ->where('status', RecordStatus::ACTIVE->value)
+            ->orderBy('name')
+            ->get();
+
+        return view('tenants.service-catalog.edit', [
+            'serviceCatalog' => $serviceCatalog,
+            'taxes' => $taxes,
+            'statuses' => RecordStatus::cases(),
         ]);
     }
 

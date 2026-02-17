@@ -234,9 +234,9 @@
                             </span> <span class="d-block fs-12 text-muted">{{ $headerRole ?? __('User') }}</span>
                         </div>
                     </li>
-                    <li><a class="dropdown-item d-flex align-items-center" href="#"><i
+                    <li><a class="dropdown-item d-flex align-items-center" href="{{ route('tenant.profile.show') }}"><i
                                 class="ti ti-user text-primary me-2 fs-16"></i>{{ __('Profile') }}</a> </li>
-                    <li><a class="dropdown-item d-flex align-items-center" href="#"><i
+                    <li><a class="dropdown-item d-flex align-items-center" href="{{ route('tenant.settings.edit') }}"><i
                                 class="ti ti-settings text-info me-2 fs-16"></i>{{ __('Settings') }}</a> </li>
                     <li><a class="dropdown-item d-flex align-items-center" href="chat.html"><i
                                 class="ti ti-headset text-warning me-2 fs-16"></i>{{ __('Support') }}</a> </li>

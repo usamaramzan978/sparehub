@@ -644,17 +644,32 @@
 
                 cart.forEach((item, index) => {
                     const row = document.createElement('tr');
+                    const isService = item.type === 'service';
                     row.innerHTML = `
                         <td>
-                            <div class="fw-semibold">${item.name}</div>
-                            <div class="text-muted small">${item.sku ?? ''}</div>
+                            <div class="fw-semibold">${item.name}
+                                <span class="badge ${isService ? 'bg-secondary' : 'bg-primary'}">
+                                    ${isService ? 'Service' : 'Product'}
+                                </span>
+                            </div>
+                            <div class="text-muted small d-flex align-items-center gap-2">
+                                <span>${item.sku ?? ''}</span>
+                            </div>
                         </td>
                         <td>
-                            <span class="badge bg-info">${money(item.stock)}</span>
+                            ${
+                                isService
+                                    ? '<span class="text-muted small">N/A</span>'
+                                    : `<span class="badge bg-info">${money(item.stock)}</span>`
+                            }
                         </td>
                         <td>
-                            <input type="number" step="1" min="1" class="form-control form-control-sm"
-                                value="${item.qty}" data-pos-qty="${index}">
+                            ${
+                                isService
+                                    ? '<span class="text-muted small">N/A</span>'
+                                    : `<input type="number" step="1" min="1" class="form-control form-control-sm"
+                                                value="${item.qty}" data-pos-qty="${index}">`
+                            }
                         </td>
                         <td>
                             <input type="number" step="0.01" min="0" class="form-control form-control-sm"
@@ -676,7 +691,9 @@
             const addItem = (item) => {
                 const existing = cart.find((entry) => entry.id === item.id);
                 if (existing) {
-                    existing.qty += 1;
+                    if (existing.type === 'product') {
+                        existing.qty += 1;
+                    }
                 } else {
                     cart.push({
                         id: item.id,
@@ -720,6 +737,7 @@
                 }
 
                 items.forEach((item, index) => {
+                    const isService = item.type === 'service';
                     const col = document.createElement('div');
                     col.className = 'col-12 col-sm-6 col-lg-3';
                     col.innerHTML = `
@@ -730,7 +748,11 @@
                                         <div class="fw-semibold">${item.name}</div>
                                         <div class="text-muted small">${item.product_name ?? ''}</div>
                                     </div>
-                                    <span class="badge bg-info">${money(Number(item.stock || 0))}</span>
+                                    ${
+                                        isService
+                                            ? '<span class="badge bg-secondary">Service</span>'
+                                            : `<span class="badge bg-info">${money(Number(item.stock || 0))}</span>`
+                                    }
                                 </div>
                                 <div class="mt-2 text-muted small">${item.sku ?? ''}</div>
                                 <div class="mt-auto d-flex align-items-center justify-content-between pt-3">

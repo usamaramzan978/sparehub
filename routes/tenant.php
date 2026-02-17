@@ -12,9 +12,10 @@ use App\Http\Controllers\Tenant\CustomerVehicleController;
 use App\Http\Controllers\Tenant\JobCardController;
 use App\Http\Controllers\Tenant\JobCardPartController;
 use App\Http\Controllers\Tenant\JobCardServiceController;
+use App\Http\Controllers\Tenant\PosController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductPriceController;
-use App\Http\Controllers\Tenant\PosController;
+use App\Http\Controllers\Tenant\ProfileController;
 use App\Http\Controllers\Tenant\PurchaseController;
 use App\Http\Controllers\Tenant\PurchaseItemController;
 use App\Http\Controllers\Tenant\PurchaseReturnController;
@@ -26,11 +27,12 @@ use App\Http\Controllers\Tenant\SaleHoldController;
 use App\Http\Controllers\Tenant\SaleItemController;
 use App\Http\Controllers\Tenant\SalePaymentController;
 use App\Http\Controllers\Tenant\ServiceCatalogController;
+use App\Http\Controllers\Tenant\SettingController;
 use App\Http\Controllers\Tenant\TaxController;
 use App\Http\Controllers\Tenant\UnitController;
 use App\Http\Controllers\Tenant\UserController;
-use App\Http\Controllers\Tenant\VendorPaymentController;
 use App\Http\Controllers\Tenant\VendorController;
+use App\Http\Controllers\Tenant\VendorPaymentController;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Route;
@@ -58,74 +60,90 @@ Route::middleware([
     });
 
     // Authenticated routes
-    Route::middleware(['auth:user', 'tenant.branch'])->group(function (): void {
+    Route::middleware(['auth:user', 'tenant.branch'])->group(function () {
 
-        Route::get('dashboard', fn(): Factory|View => view('tenants.dashboard'))->name('dashboard');
-        Route::get('two-step', (new TenantAuthController())->showTwoStep(...))->name('two-step');
-        Route::post('two-step', (new TenantAuthController())->verifyTwoStep(...))->name('two-step.verify');
-        Route::post('logout', (new TenantAuthController())->logout(...))->name('logout');
-        Route::post('branch/switch', [BranchSwitchController::class, 'store'])->name('branch.switch');
+        Route::view('dashboard', 'tenants.dashboard')->name('dashboard');
 
-        Route::get('pos', [PosController::class, 'index'])->name('pos.index');
-        Route::get('pos/scan', [PosController::class, 'scan'])->name('pos.scan');
-        Route::get('pos/catalog', [PosController::class, 'catalog'])->name('pos.catalog');
-        Route::post('pos', [PosController::class, 'store'])->name('pos.store');
-        Route::get('sales/{sale}/print', [SaleController::class, 'print'])->name('sales.print');
-        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
-        Route::get('reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
-        Route::get('reports/export/summary-pdf', [ReportController::class, 'exportSummaryPdf'])->name('reports.export.summary-pdf');
+        // Auth / Session
+        Route::controller(TenantAuthController::class)->group(function () {
+            Route::get('two-step', 'showTwoStep')->name('two-step');
+            Route::post('two-step', 'verifyTwoStep')->name('two-step.verify');
+            Route::post('logout', 'logout')->name('logout');
+        });
 
+        // Branch Switch
+        Route::post('branch/switch', [BranchSwitchController::class, 'store'])
+            ->name('branch.switch');
+
+        // Profile
+        Route::controller(ProfileController::class)->group(function () {
+            Route::get('profile', 'show')->name('profile.show');
+            Route::get('profile/edit', 'edit')->name('profile.edit');
+            Route::put('profile', 'update')->name('profile.update');
+        });
+
+        // Settings
+        Route::controller(SettingController::class)->group(function () {
+            Route::get('settings', 'edit')->name('settings.edit');
+            Route::put('settings', 'update')->name('settings.update');
+        });
+
+        // POS
+        Route::controller(PosController::class)->prefix('pos')->name('pos.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/scan', 'scan')->name('scan');
+            Route::get('/catalog', 'catalog')->name('catalog');
+            Route::post('/', 'store')->name('store');
+        });
+
+        // Reports
+        Route::controller(ReportController::class)->group(function () {
+            Route::get('reports', 'index')->name('reports.index');
+            Route::get('reports/export/pdf', 'exportPdf')->name('reports.export.pdf');
+            Route::get('reports/export/summary-pdf', 'exportSummaryPdf')->name('reports.export.summary-pdf');
+        });
+
+        // Sales Print
+        Route::get('sales/{sale}/print', [SaleController::class, 'print'])
+            ->name('sales.print');
+
+        // Full Resources
         Route::resources([
-            'branches' => BranchController::class,
-            'users' => UserController::class,
-            'roles' => RoleController::class,
+            'branches'  => BranchController::class,
+            'users'     => UserController::class,
+            'roles'     => RoleController::class,
             'customers' => CustomerController::class,
-            'products' => ProductController::class,
+            'products'  => ProductController::class,
         ]);
 
-        Route::resource('brands', BrandController::class)
-            ->only(['index', 'store', 'update', 'destroy']);
-        Route::patch('brands/{brand}/toggle-status', [BrandController::class, 'toggleStatus'])
-            ->name('brands.toggle-status');
-        Route::resource('categories', CategoryController::class)
-            ->only(['index', 'store', 'update', 'destroy']);
-        Route::patch('categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])
-            ->name('categories.toggle-status');
-        Route::resource('product-prices', ProductPriceController::class)
-            ->only(['index', 'show', 'store', 'update', 'destroy']);
-        Route::resource('service-catalog', ServiceCatalogController::class)
-            ->only(['index', 'show', 'store', 'update', 'destroy']);
-        Route::resource('job-cards', JobCardController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-        Route::resource('job-card-services', JobCardServiceController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-        Route::resource('job-card-parts', JobCardPartController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-        Route::resource('customer-vehicles', CustomerVehicleController::class)
-            ->only(['index', 'show', 'store', 'update', 'destroy']);
-        Route::resource('vendors', VendorController::class)
-            ->only(['index', 'show', 'store', 'update', 'destroy']);
-        Route::resource('taxes', TaxController::class)
-            ->only(['index', 'store', 'update', 'destroy']);
-        Route::resource('units', UnitController::class)
-            ->only(['index', 'store', 'update', 'destroy']);
-        Route::resource('sales', SaleController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-        Route::resource('sale-items', SaleItemController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-        Route::resource('sale-payments', SalePaymentController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-        Route::resource('sale-holds', SaleHoldController::class)
-            ->only(['index', 'show', 'store', 'update', 'destroy']);
-        Route::resource('purchases', PurchaseController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-        Route::resource('purchase-items', PurchaseItemController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-        Route::resource('purchase-returns', PurchaseReturnController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-        Route::resource('purchase-return-items', PurchaseReturnItemController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-        Route::resource('vendor-payments', VendorPaymentController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
+        // Business Resources
+        Route::resources([
+            'product-prices'          => ProductPriceController::class,
+            'service-catalog'         => ServiceCatalogController::class,
+            'job-cards'               => JobCardController::class,
+            'job-card-services'       => JobCardServiceController::class,
+            'job-card-parts'          => JobCardPartController::class,
+            'customer-vehicles'       => CustomerVehicleController::class,
+            'vendors'                 => VendorController::class,
+            'sales'                   => SaleController::class,
+            'sale-items'              => SaleItemController::class,
+            'sale-payments'           => SalePaymentController::class,
+            'sale-holds'              => SaleHoldController::class,
+            'purchases'               => PurchaseController::class,
+            'purchase-items'          => PurchaseItemController::class,
+            'purchase-returns'        => PurchaseReturnController::class,
+            'purchase-return-items'   => PurchaseReturnItemController::class,
+            'vendor-payments'         => VendorPaymentController::class,
+        ]);
+
+        // Limited Resources
+        Route::resource('brands', BrandController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::patch('brands/{brand}/toggle-status', [BrandController::class, 'toggleStatus'])->name('brands.toggle-status');
+
+        Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::patch('categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('categories.toggle-status');
+
+        Route::resource('taxes', TaxController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('units', UnitController::class)->only(['index', 'store', 'update', 'destroy']);
     });
 });

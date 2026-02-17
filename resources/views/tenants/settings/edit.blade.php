@@ -28,7 +28,7 @@
             </div>
         </div>
         <div class="col-lg-9 mb-3">
-            <form method="POST" action="{{ route('settings.update') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('tenant.settings.update') }}" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 

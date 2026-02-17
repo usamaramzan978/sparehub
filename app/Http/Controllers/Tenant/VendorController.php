@@ -37,6 +37,12 @@ final class VendorController extends Controller
 
         return view('tenants.vendors.index', [
             'items' => $vendors,
+        ]);
+    }
+
+    public function create(): View
+    {
+        return view('tenants.vendors.create', [
             'statuses' => RecordStatus::cases(),
         ]);
     }
@@ -60,6 +66,16 @@ final class VendorController extends Controller
 
         return view('tenants.vendors.show', [
             'vendor' => $vendor,
+        ]);
+    }
+
+    public function edit(Vendor $vendor): View
+    {
+        $this->ensureVendorInCurrentBranch($vendor);
+
+        return view('tenants.vendors.edit', [
+            'vendor' => $vendor,
+            'statuses' => RecordStatus::cases(),
         ]);
     }
 
