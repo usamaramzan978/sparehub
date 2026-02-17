@@ -22,7 +22,9 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 final class AuthController extends Controller
@@ -54,65 +56,90 @@ final class AuthController extends Controller
 
     public function login(LoginRequest $request, LoginAction $action): RedirectResponse
     {
+        // 1️⃣ Validate credentials (central DB lookup)
         $data = $action->handle(
             $request->string('email')->toString(),
             $request->string('password')->toString(),
             $request->boolean('remember')
         );
 
-        return to_route('tenant.authenticate', [
-            'tenant' => $data['tenant'],
-            'token' => $data['token'],
-        ]);
+        // 2️⃣ Generate one-time nonce stored in central cache
+        $nonce = (string) Str::uuid();
+        Cache::store('database')->put(
+            "login_nonce:{$nonce}",
+            [
+                'type_id' => $data['type_id'],
+                'type' => $data['type'],
+                'remember' => $data['remember'],
+            ],
+            now()->addSeconds(30)
+        );
+
+        // 3️⃣ Build signed URL pointing to tenant authenticate route
+        $signedUrl = URL::temporarySignedRoute(
+            'tenant.authenticate',
+            now()->addSeconds(30),
+            [
+                'tenant' => $data['tenant'],
+                'nonce' => $nonce,
+            ]
+        );
+
+        // 4️⃣ Redirect into tenant context via signed URL
+        return redirect()->to($signedUrl);
     }
 
     public function authenticateTenant(Request $request): RedirectResponse
     {
-        $loginInfo = json_decode((string) Crypt::decrypt($request->token), true);
-
-        $tenantId = tenant('id');
-
-        if (! isset($loginInfo['type'])) {
-            return redirect('/')->withErrors(['email' => 'Invalid token']);
+        // 1️⃣ Validate signed URL
+        if (! $request->hasValidSignature()) {
+            abort(403, 'Link expired or invalid.');
         }
 
-        if ($loginInfo['type'] === LoginUserType::USER->value) {
-            $request->session()->forget('tenant.current_branch_id');
+        $tenantId = (string) tenant()->getTenantKey();
 
-            $rememberUser = (bool) ($loginInfo['remember'] ?? false);
-            $mappedUserId = $loginInfo['type_id'] ?? null;
-            $email = mb_strtolower((string) ($loginInfo['email'] ?? ''));
+        // 2️⃣ Validate nonce format
+        $nonce = (string) $request->query('nonce');
 
-            $tenantUser = null;
-
-            if (is_scalar($mappedUserId) && (string) $mappedUserId !== '') {
-                $tenantUser = User::query()
-                    ->withoutGlobalScope('session_branch')
-                    ->find((string) $mappedUserId);
-            }
-
-            if ($tenantUser === null && $email !== '') {
-                $tenantUser = User::query()
-                    ->withoutGlobalScope('session_branch')
-                    ->where('email', $email)
-                    ->first();
-            }
-
-            if ($tenantUser === null) {
-                return to_route('tenant.login', ['tenant' => $tenantId])
-                    ->withErrors(['email' => trans('auth.failed')]);
-            }
-
-            Auth::guard('user')->login($tenantUser, $rememberUser);
-            $request->session()->regenerate();
-
-            return to_route('tenant.dashboard', [
-                'tenant' => $tenantId,
-            ]);
+        if (! Str::isUuid($nonce)) {
+            abort(403, 'Invalid request.');
         }
 
-        return to_route('tenant.login', ['tenant' => $tenantId])
-            ->withErrors(['email' => trans('auth.failed')]);
+        // 3️⃣ Consume nonce atomically from central cache
+        $payload = rescue(
+            fn () => \Stancl\Tenancy\Facades\Tenancy::central(
+                fn () => Cache::store('database')->pull("login_nonce:{$nonce}")
+            ),
+            null,
+            false
+        );
+
+        if (! $payload) {
+            return redirect()->route('tenant.login', ['tenant' => $tenantId])
+                ->withErrors(['email' => 'Login link expired. Please try again.']);
+        }
+
+        // 4️⃣ Verify login type
+        if (($payload['type'] ?? null) !== LoginUserType::USER->value) {
+            abort(403, 'Invalid login type.');
+        }
+
+        // 5️⃣ Load user in tenant context
+        $user = User::query()
+            ->withoutGlobalScope('session_branch')
+            ->find($payload['type_id']);
+
+        if (! $user) {
+            return redirect()->route('tenant.login', ['tenant' => $tenantId])
+                ->withErrors(['email' => 'Login failed.']);
+        }
+
+        // 6️⃣ Log user into tenant session
+        Auth::guard('user')->login($user, (bool) $payload['remember']);
+        $request->session()->regenerate();
+
+        // 7️⃣ Redirect to dashboard
+        return redirect()->route('tenant.dashboard', ['tenant' => $tenantId]);
     }
 
     public function logout(LogoutAction $action): RedirectResponse

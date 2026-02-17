@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -25,43 +24,24 @@ final class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $tenantId = $this->resolveTenantId(request());
-
-        if ($tenantId !== null) {
-            URL::defaults(['tenant' => $tenantId]);
-        }
-
-        Authenticate::redirectUsing(function (Request $request): string {
-            $tenantId = $this->resolveTenantId($request);
-
-            if ($tenantId === null) {
-                return route('auth.login');
+        // Runs on every request after middleware (including tenancy) has fired
+        $this->app['events']->listen(
+            \Stancl\Tenancy\Events\TenancyInitialized::class,
+            function (\Stancl\Tenancy\Events\TenancyInitialized $event) {
+                $tenantId = (string) $event->tenancy->tenant->getTenantKey();
+                URL::defaults(['tenant' => $tenantId]);
             }
+        );
 
-            return route('tenant.login', ['tenant' => $tenantId]);
-        });
-
+        // Handles guest middleware redirect (authenticated user hits guest route)
         RedirectIfAuthenticated::redirectUsing(function (Request $request): string {
-            $tenantId = $this->resolveTenantId($request);
+            if (function_exists('tenant') && tenant()) {
+                $tenantId = (string) tenant()->getTenantKey();
 
-            if ($tenantId === null) {
-                return route('auth.login');
+                return route('tenant.dashboard', ['tenant' => $tenantId]);
             }
 
-            return route('tenant.dashboard', ['tenant' => $tenantId]);
+            return route('auth.login');
         });
-    }
-
-    private function resolveTenantId(Request $request): ?string
-    {
-        if ($request->route('tenant') !== null) {
-            return (string) $request->route('tenant');
-        }
-
-        if ($request->segment(1) !== 'firm') {
-            return null;
-        }
-
-        return $request->segment(2);
     }
 }

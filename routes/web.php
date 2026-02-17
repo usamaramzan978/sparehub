@@ -7,13 +7,9 @@ use App\Http\Controllers\Auth\Tenant\AuthController as TenantAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function (): void {
-    Route::get('/', (new TenantAuthController())->showLogin(...))->name('auth.login');
-    Route::post('login', (new TenantAuthController())->login(...))
-        ->middleware(['throttle:6,1'])
+    Route::get('/', [TenantAuthController::class, 'showLogin'])->name('auth.login');
+    Route::post('/', [TenantAuthController::class, 'login'])->middleware(['throttle:60,1'])
         ->name('auth.login.submit');
-
-    Route::get('register', (new TenantAuthController())->showRegister(...))->name('auth.register');
-    Route::post('register', (new TenantAuthController())->register(...))->name('auth.register.submit');
 
     Route::get('forgot-password', (new TenantAuthController())->showForgotPassword(...))->name('auth.forgot-password');
     Route::post('forgot-password', (new TenantAuthController())->forgotPassword(...))->name('auth.forgot-password.submit');

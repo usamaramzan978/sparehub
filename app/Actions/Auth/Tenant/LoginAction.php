@@ -6,7 +6,6 @@ namespace App\Actions\Auth\Tenant;
 
 use App\Enums\LoginUserType;
 use App\Models\LoginMap;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -16,10 +15,9 @@ final class LoginAction
     {
         $email = mb_strtolower(mb_trim($email));
 
-        $login = LoginMap::query()->where('email', $email)
-            ->whereIn('type', [
-                LoginUserType::USER->value,
-            ])
+        $login = LoginMap::query()
+            ->where('email', $email)
+            ->where('type', LoginUserType::USER->value)
             ->first();
 
         if (! $login || ! Hash::check($password, $login->password)) {
@@ -28,23 +26,11 @@ final class LoginAction
             ]);
         }
 
-        // if ($login->status != 1) {
-        //     throw ValidationException::withMessages([
-        //         'email' => ['Login is blocked'],
-        //     ]);
-        // }
-
-        $token = Crypt::encrypt(json_encode([
-            'email' => $email,
-            'password' => $password,
-            'remember' => $remember,
-            'type' => $login->type,
-            'type_id' => $login->type_id,
-        ]));
-
         return [
             'tenant' => $login->tenant_id,
-            'token' => $token,
+            'type' => $login->type,
+            'type_id' => $login->type_id,
+            'remember' => $remember,
         ];
     }
 }

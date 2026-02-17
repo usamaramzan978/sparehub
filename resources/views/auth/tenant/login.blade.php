@@ -111,10 +111,6 @@
                                             <button type="submit" class="btn btn-primary btn-lg">Sign In</button>
                                         </div>
                                     </form>
-                                    <div class="text-center mb-0">
-                                        <p class="text-muted mt-3 mb-0">Don't have an account? <a
-                                                href="{{ route('auth.register') }}" class="text-primary">Sign Up</a></p>
-                                    </div>
                                 </div>
                             </div>
                         </div>

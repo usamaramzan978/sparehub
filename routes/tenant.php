@@ -9,6 +9,7 @@ use App\Http\Controllers\Tenant\BrandController;
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\CustomerController;
 use App\Http\Controllers\Tenant\CustomerVehicleController;
+use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\JobCardController;
 use App\Http\Controllers\Tenant\JobCardPartController;
 use App\Http\Controllers\Tenant\JobCardServiceController;
@@ -33,8 +34,6 @@ use App\Http\Controllers\Tenant\UnitController;
 use App\Http\Controllers\Tenant\UserController;
 use App\Http\Controllers\Tenant\VendorController;
 use App\Http\Controllers\Tenant\VendorPaymentController;
-use Illuminate\Contracts\View\Factory;
-use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -45,24 +44,25 @@ Route::middleware([
     PreventAccessFromCentralDomains::class,
 ])->prefix('firm/{tenant}')->name('tenant.')->group(function (): void {
 
-    // Guest routes (login, authenticate)
+    // One-time token endpoint — outside guest
+    Route::get('authenticate', [TenantAuthController::class, 'authenticateTenant'])
+        ->middleware('throttle:10,1')
+        ->name('authenticate');
+
     Route::middleware('guest:user')->group(function (): void {
-
-        // This fixes Laravel redirect issue
-        Route::get('login', (new TenantAuthController())->showLogin(...))->name('login');
-
-        Route::post('login', (new TenantAuthController())->login(...))
-            ->name('auth.login.submit');
-
-        // Authenticate route for the encrypted token
-        Route::get('authenticate', (new TenantAuthController())->authenticateTenant(...))
-            ->name('authenticate');
+        Route::get('login', [TenantAuthController::class, 'showLogin'])->name('login')->middleware(['throttle:60,1']);
+        Route::post('login', [TenantAuthController::class, 'login'])->middleware('throttle:60,1')->name('auth.login.submit');
+        Route::get('register', [TenantAuthController::class, 'showRegister'])->name('register');
+        Route::post('register', [TenantAuthController::class, 'register'])->name('auth.register.submit');
+        Route::get('forgot-password', [TenantAuthController::class, 'showForgotPassword'])->name('forgot-password');
+        Route::post('forgot-password', [TenantAuthController::class, 'forgotPassword'])->middleware('throttle:6,1')->name('auth.forgot-password.submit');
+        Route::get('reset-password', [TenantAuthController::class, 'showResetPassword'])->name('reset-password');
+        Route::post('reset-password', [TenantAuthController::class, 'resetPassword'])->name('auth.reset-password.submit');
     });
 
     // Authenticated routes
     Route::middleware(['auth:user', 'tenant.branch'])->group(function () {
-
-        Route::view('dashboard', 'tenants.dashboard')->name('dashboard');
+        Route::get('dashboard', DashboardController::class)->name('dashboard');
 
         // Auth / Session
         Route::controller(TenantAuthController::class)->group(function () {
@@ -109,31 +109,31 @@ Route::middleware([
 
         // Full Resources
         Route::resources([
-            'branches'  => BranchController::class,
-            'users'     => UserController::class,
-            'roles'     => RoleController::class,
+            'branches' => BranchController::class,
+            'users' => UserController::class,
+            'roles' => RoleController::class,
             'customers' => CustomerController::class,
-            'products'  => ProductController::class,
+            'products' => ProductController::class,
         ]);
 
         // Business Resources
         Route::resources([
-            'product-prices'          => ProductPriceController::class,
-            'service-catalog'         => ServiceCatalogController::class,
-            'job-cards'               => JobCardController::class,
-            'job-card-services'       => JobCardServiceController::class,
-            'job-card-parts'          => JobCardPartController::class,
-            'customer-vehicles'       => CustomerVehicleController::class,
-            'vendors'                 => VendorController::class,
-            'sales'                   => SaleController::class,
-            'sale-items'              => SaleItemController::class,
-            'sale-payments'           => SalePaymentController::class,
-            'sale-holds'              => SaleHoldController::class,
-            'purchases'               => PurchaseController::class,
-            'purchase-items'          => PurchaseItemController::class,
-            'purchase-returns'        => PurchaseReturnController::class,
-            'purchase-return-items'   => PurchaseReturnItemController::class,
-            'vendor-payments'         => VendorPaymentController::class,
+            'product-prices' => ProductPriceController::class,
+            'service-catalog' => ServiceCatalogController::class,
+            'job-cards' => JobCardController::class,
+            'job-card-services' => JobCardServiceController::class,
+            'job-card-parts' => JobCardPartController::class,
+            'customer-vehicles' => CustomerVehicleController::class,
+            'vendors' => VendorController::class,
+            'sales' => SaleController::class,
+            'sale-items' => SaleItemController::class,
+            'sale-payments' => SalePaymentController::class,
+            'sale-holds' => SaleHoldController::class,
+            'purchases' => PurchaseController::class,
+            'purchase-items' => PurchaseItemController::class,
+            'purchase-returns' => PurchaseReturnController::class,
+            'purchase-return-items' => PurchaseReturnItemController::class,
+            'vendor-payments' => VendorPaymentController::class,
         ]);
 
         // Limited Resources
