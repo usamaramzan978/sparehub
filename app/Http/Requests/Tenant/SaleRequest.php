@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Requests\Tenant;
 
 use App\Enums\InvoiceType;
+use App\Enums\SaleLineType;
 use App\Enums\SaleStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 final class SaleRequest extends FormRequest
 {
@@ -26,11 +28,13 @@ final class SaleRequest extends FormRequest
         $invoiceUnique = Rule::unique('sales', 'invoice_no')->ignore($saleId);
         $customerExists = Rule::exists('customers', 'id');
         $jobCardExists = Rule::exists('job_cards', 'id');
+        $serviceCatalogExists = Rule::exists('service_catalog', 'id');
 
         if (is_string($branchId) && $branchId !== '') {
             $invoiceUnique = $invoiceUnique->where(fn ($query) => $query->where('branch_id', $branchId));
             $customerExists = $customerExists->where(fn ($query) => $query->where('branch_id', $branchId));
             $jobCardExists = $jobCardExists->where(fn ($query) => $query->where('branch_id', $branchId));
+            $serviceCatalogExists = $serviceCatalogExists->where(fn ($query) => $query->where('branch_id', $branchId));
         }
 
         return [
@@ -48,6 +52,46 @@ final class SaleRequest extends FormRequest
             'balance_due' => ['nullable', 'numeric'],
             'notes' => ['nullable', 'string'],
             'posted_at' => ['nullable', 'date'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.line_type' => ['required', Rule::enum(SaleLineType::class)],
+            'items.*.product_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('products', 'id'),
+            ],
+            'items.*.service_catalog_id' => [
+                'nullable',
+                'uuid',
+                $serviceCatalogExists,
+            ],
+            'items.*.description' => ['nullable', 'string', 'max:200'],
+            'items.*.qty' => ['required', 'numeric', 'gt:0'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'items.*.tax_amount' => ['nullable', 'numeric', 'min:0'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $items = $this->input('items', []);
+
+            if (! is_array($items)) {
+                return;
+            }
+
+            foreach ($items as $index => $item) {
+                $lineType = is_array($item) ? ($item['line_type'] ?? null) : null;
+
+                if ($lineType === SaleLineType::PRODUCT->value && empty($item['product_id'])) {
+                    $validator->errors()->add("items.$index.product_id", 'The product field is required for product line type.');
+                }
+
+                if ($lineType === SaleLineType::SERVICE->value && empty($item['service_catalog_id'])) {
+                    $validator->errors()->add("items.$index.service_catalog_id", 'The service field is required for service line type.');
+                }
+            }
+        });
     }
 }

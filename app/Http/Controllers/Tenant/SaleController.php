@@ -10,11 +10,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\SaleRequest;
 use App\Models\Customer;
 use App\Models\JobCard;
+use App\Models\Product;
 use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\ServiceCatalog;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 final class SaleController extends Controller
 {
@@ -51,10 +55,17 @@ final class SaleController extends Controller
     public function store(SaleRequest $request): RedirectResponse
     {
         $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
+        $branchId = $this->currentBranchId();
+        $items = $payload['items'];
+        unset($payload['items']);
+
+        $payload['branch_id'] = $branchId;
         $payload['created_by'] = auth('user')->id();
 
-        Sale::query()->create($payload);
+        DB::transaction(function () use ($payload, $items, $branchId): void {
+            $sale = Sale::query()->create($payload);
+            $this->syncSaleItems($sale, $items, $branchId);
+        });
 
         return to_route('tenant.sales.index')->with('status', 'Created.');
     }
@@ -98,6 +109,7 @@ final class SaleController extends Controller
     public function edit(Sale $sale): View
     {
         $this->ensureSaleInCurrentBranch($sale);
+        $sale->load('items');
 
         return view('tenants.sales.edit', array_merge(
             ['sale' => $sale],
@@ -110,9 +122,16 @@ final class SaleController extends Controller
         $this->ensureSaleInCurrentBranch($sale);
 
         $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
+        $branchId = $this->currentBranchId();
+        $items = $payload['items'];
+        unset($payload['items']);
 
-        $sale->update($payload);
+        $payload['branch_id'] = $branchId;
+
+        DB::transaction(function () use ($sale, $payload, $items, $branchId): void {
+            $sale->update($payload);
+            $this->syncSaleItems($sale, $items, $branchId);
+        });
 
         return to_route('tenant.sales.index')->with('status', 'Updated.');
     }
@@ -140,8 +159,59 @@ final class SaleController extends Controller
         return [
             'customers' => Customer::query()->where('branch_id', $branchId)->orderBy('name')->get(),
             'jobCards' => JobCard::query()->where('branch_id', $branchId)->latest('job_date')->get(),
+            'products' => Product::query()->orderBy('name')->get(),
+            'serviceCatalogs' => ServiceCatalog::query()->where('branch_id', $branchId)->orderBy('name')->get(),
             'statuses' => SaleStatus::cases(),
             'invoiceTypes' => InvoiceType::cases(),
         ];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    private function syncSaleItems(Sale $sale, array $items, string $branchId): void
+    {
+        $sale->items()->delete();
+
+        foreach ($items as $item) {
+            $qty = (float) $item['qty'];
+            $unitPrice = (float) $item['unit_price'];
+            $discountAmount = (float) ($item['discount_amount'] ?? 0);
+            $taxAmount = (float) ($item['tax_amount'] ?? 0);
+            $lineTotal = ($qty * $unitPrice) - $discountAmount + $taxAmount;
+
+            $lineType = (string) $item['line_type'];
+            $productId = $lineType === 'product' ? $item['product_id'] : null;
+            $serviceCatalogId = $lineType === 'service' ? $item['service_catalog_id'] : null;
+
+            SaleItem::query()->create([
+                'sale_id' => $sale->id,
+                'branch_id' => $branchId,
+                'product_id' => $productId,
+                'service_catalog_id' => $serviceCatalogId,
+                'job_card_service_id' => null,
+                'line_type' => $lineType,
+                'description' => $item['description'] ?? null,
+                'qty' => $qty,
+                'unit_price' => $unitPrice,
+                'discount_amount' => $discountAmount,
+                'tax_amount' => $taxAmount,
+                'line_total' => $lineTotal,
+            ]);
+        }
+
+        $createdItems = $sale->items()->get();
+        $subTotal = (float) $createdItems->sum(fn (SaleItem $item): float => (float) $item->qty * (float) $item->unit_price);
+        $discountTotal = (float) $createdItems->sum(fn (SaleItem $item): float => (float) $item->discount_amount);
+        $taxTotal = (float) $createdItems->sum(fn (SaleItem $item): float => (float) $item->tax_amount);
+        $grandTotal = (float) $createdItems->sum(fn (SaleItem $item): float => (float) $item->line_total);
+
+        $sale->update([
+            'sub_total' => $subTotal,
+            'discount_total' => $discountTotal,
+            'tax_total' => $taxTotal,
+            'grand_total' => $grandTotal,
+            'balance_due' => $grandTotal - (float) $sale->paid_total,
+        ]);
     }
 }
