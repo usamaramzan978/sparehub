@@ -1,0 +1,24 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
+    - phar://phpstan.phar/conf/bleedingEdge.neon
+
+parameters:
+
+    paths:
+        - app
+        - bootstrap/app.php
+        - config
+        - database
+        - public
+        - routes
+
+
+    level: 3
+
+    tmpDir: /tmp/phpstan
+
+    parallel:
+        maximumNumberOfProcesses: 0
+        processTimeout: 600.0
+        minimumNumberOfJobsPerProcess: 1

@@ -1,0 +1,89 @@
+// Bootstrap base (functions, variables, maps) from node_modules
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/utilities";
+
+// Theme vendor helpers
+@import "../assets/scss/vendor/rfs";
+
+// Theme mixins (copied in assets)
+@import "../assets/scss/mixins/banner";
+@import "../assets/scss/mixins/breakpoints";
+@import "../assets/scss/mixins/container";
+@import "../assets/scss/mixins/grid";
+@import "../assets/scss/mixins/utilities";
+@import "../assets/scss/mixins/buttons";
+@import "../assets/scss/mixins/transition";
+@import "../assets/scss/mixins/gradients";
+@import "../assets/scss/mixins/backdrop";
+@import "../assets/scss/mixins/color-mode";
+@import "../assets/scss/mixins/border-radius";
+@import "../assets/scss/mixins/text-truncate";
+@import "../assets/scss/mixins/visually-hidden";
+@import "../assets/scss/mixins/clearfix";
+@import "../assets/scss/mixins/caret";
+@import "../assets/scss/mixins/lists";
+@import "../assets/scss/mixins/forms";
+@import "../assets/scss/mixins/pagination";
+@import "../assets/scss/mixins/reset-text";
+@import "../assets/scss/mixins/table-variants";
+@import "../assets/scss/mixins/image";
+
+// Core styles
+@import "../assets/scss/root";
+@import "../assets/scss/reboot";
+@import "../assets/scss/type";
+@import "../assets/scss/images";
+@import "../assets/scss/containers";
+@import "../assets/scss/grid";
+@import "../assets/scss/tables";
+@import "../assets/scss/forms/form-control";
+@import "../assets/scss/forms/form-select";
+@import "../assets/scss/forms/form-check";
+@import "../assets/scss/forms/form-range";
+@import "../assets/scss/forms/floating-labels";
+@import "../assets/scss/forms/input-group";
+@import "../assets/scss/forms/labels";
+@import "../assets/scss/forms/form-text";
+@import "../assets/scss/buttons";
+@import "../assets/scss/button-group";
+@import "../assets/scss/transitions";
+@import "../assets/scss/dropdown";
+@import "../assets/scss/nav";
+@import "../assets/scss/navbar";
+@import "../assets/scss/card";
+@import "../assets/scss/accordion";
+@import "../assets/scss/breadcrumb";
+@import "../assets/scss/pagination";
+@import "../assets/scss/badge";
+@import "../assets/scss/alert";
+@import "../assets/scss/progress";
+@import "../assets/scss/list-group";
+@import "../assets/scss/close";
+@import "../assets/scss/toasts";
+@import "../assets/scss/modal";
+@import "../assets/scss/tooltip";
+@import "../assets/scss/popover";
+@import "../assets/scss/carousel";
+@import "../assets/scss/spinners";
+@import "../assets/scss/offcanvas";
+@import "../assets/scss/placeholders";
+
+// Helpers
+@import "../assets/scss/helpers/colored-links";
+@import "../assets/scss/helpers/color-bg";
+@import "../assets/scss/helpers/focus-ring";
+@import "../assets/scss/helpers/icon-link";
+@import "../assets/scss/helpers/position";
+@import "../assets/scss/helpers/ratio";
+@import "../assets/scss/helpers/stacks";
+@import "../assets/scss/helpers/stretched-link";
+@import "../assets/scss/helpers/text-truncation";
+@import "../assets/scss/helpers/visually-hidden";
+@import "../assets/scss/helpers/vr";
+
+// Utilities API
+@import "../assets/scss/utilities/api";
