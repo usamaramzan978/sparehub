@@ -6,7 +6,7 @@
 
         $breadcrumbs = [
             ['label' => __('Access Control')],
-            ['label' => __('Roles'), 'url' => route('roles.index')],
+            ['label' => __('Roles'), 'url' => route('tenant.roles.index')],
             ['label' => __('Create')],
         ];
 
@@ -20,7 +20,7 @@
 
     <x-breadcrumb title="{{ __('Create Role') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <a href="{{ route('roles.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
+            <a href="{{ route('tenant.roles.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 
@@ -36,7 +36,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('roles.store') }}">
+            <form method="POST" action="{{ route('tenant.roles.store') }}">
                 @csrf
                 <input type="hidden" name="guard_name" value="web">
 

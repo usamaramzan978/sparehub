@@ -4,14 +4,14 @@
     @php
         $breadcrumbs = [
             ['label' => __('Access Control')],
-            ['label' => __('Permissions'), 'url' => route('permissions.index')],
+            ['label' => __('Permissions'), 'url' => route('tenant.permissions.index')],
             ['label' => __('Details')],
         ];
     @endphp
 
     <x-breadcrumb title="{{ __('Permission Details') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <a href="{{ route('permissions.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
+            <a href="{{ route('tenant.permissions.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 

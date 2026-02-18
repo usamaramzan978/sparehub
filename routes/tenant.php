@@ -10,9 +10,13 @@ use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\CustomerController;
 use App\Http\Controllers\Tenant\CustomerVehicleController;
 use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\EmployeeAttendanceController;
+use App\Http\Controllers\Tenant\EmployeeSalaryController;
+use App\Http\Controllers\Tenant\EndOfDayController;
 use App\Http\Controllers\Tenant\JobCardController;
 use App\Http\Controllers\Tenant\JobCardPartController;
 use App\Http\Controllers\Tenant\JobCardServiceController;
+use App\Http\Controllers\Tenant\PermissionController;
 use App\Http\Controllers\Tenant\PosController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductPriceController;
@@ -63,6 +67,12 @@ Route::middleware([
     // Authenticated routes
     Route::middleware(['auth:user', 'tenant.branch'])->group(function () {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
+        Route::get('end-of-day', EndOfDayController::class)->name('end-of-day');
+
+        Route::get('employee-attendances', [EmployeeAttendanceController::class, 'index'])->name('employee-attendances.index');
+        Route::post('employee-attendances', [EmployeeAttendanceController::class, 'store'])->name('employee-attendances.store');
+        Route::get('employee-salaries', [EmployeeSalaryController::class, 'index'])->name('employee-salaries.index');
+        Route::post('employee-salaries', [EmployeeSalaryController::class, 'store'])->name('employee-salaries.store');
 
         // Auth / Session
         Route::controller(TenantAuthController::class)->group(function () {
@@ -115,6 +125,8 @@ Route::middleware([
             'customers' => CustomerController::class,
             'products' => ProductController::class,
         ]);
+
+        Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
 
         // Business Resources
         Route::resources([

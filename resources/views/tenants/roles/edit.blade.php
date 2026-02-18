@@ -4,7 +4,7 @@
     @php
         $breadcrumbs = [
             ['label' => __('People')],
-            ['label' => __('Roles'), 'url' => route('roles.index')],
+            ['label' => __('Roles'), 'url' => route('tenant.roles.index')],
             ['label' => __('Edit')],
         ];
 
@@ -22,7 +22,7 @@
 
     <x-breadcrumb title="{{ __('Edit Role') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <a href="{{ route('roles.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
+            <a href="{{ route('tenant.roles.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 
@@ -38,7 +38,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('roles.update', $role) }}">
+            <form method="POST" action="{{ route('tenant.roles.update', $role) }}">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="guard_name" value="{{ $role->guard_name }}">
@@ -47,8 +47,8 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label" for="name">{{ __('Name') }}</label>
                         <input type="text" name="name" id="name"
-                            class="form-control @error('name') is-invalid @enderror"
-                            value="{{ old('name', $role->name) }}" required>
+                            class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $role->name) }}"
+                            required>
                         @error('name')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
@@ -67,9 +67,8 @@
                                     <div class="fw-semibold mb-2">{{ ucfirst(str_replace('_', ' ', $group)) }}</div>
                                     @foreach ($groupPermissions as $permission)
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox"
-                                                name="permissions[]" value="{{ $permission->id }}"
-                                                id="permission-{{ $permission->id }}"
+                                            <input class="form-check-input" type="checkbox" name="permissions[]"
+                                                value="{{ $permission->id }}" id="permission-{{ $permission->id }}"
                                                 @checked($oldPermissions->contains($permission->id))>
                                             <label class="form-check-label" for="permission-{{ $permission->id }}">
                                                 {{ $permission->name }}

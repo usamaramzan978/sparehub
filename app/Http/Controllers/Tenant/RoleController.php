@@ -17,8 +17,6 @@ final class RoleController extends Controller
 {
     public function index(Request $request): View
     {
-        Gate::authorize('viewAny', Role::class);
-
         $roles = Role::query()
             ->with('permissions')
             ->latest()
@@ -29,8 +27,6 @@ final class RoleController extends Controller
 
     public function create(): View
     {
-        Gate::authorize('create', Role::class);
-
         $permissions = Permission::query()->orderBy('name')->get();
 
         return view('tenants.roles.create', [
@@ -40,8 +36,6 @@ final class RoleController extends Controller
 
     public function store(RoleRequest $request): RedirectResponse
     {
-        Gate::authorize('create', Role::class);
-
         $payload = $request->validated();
         $permissions = $payload['permissions'] ?? [];
         unset($payload['permissions']);
@@ -55,8 +49,6 @@ final class RoleController extends Controller
 
     public function show(Role $role): View
     {
-        Gate::authorize('view', $role);
-
         $role->load('permissions');
 
         return view('tenants.roles.show', ['role' => $role]);
@@ -64,8 +56,6 @@ final class RoleController extends Controller
 
     public function edit(Role $role): View
     {
-        Gate::authorize('update', $role);
-
         $permissions = Permission::query()->orderBy('name')->get();
         $role->load('permissions');
 

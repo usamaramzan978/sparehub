@@ -22,7 +22,8 @@
                                 @php
                                     $tenantKey = (string) tenant('id');
 
-                                    $isDashboard = request()->routeIs('tenant.dashboard');
+                                    $isDashboard = request()->routeIs('tenant.dashboard', 'tenant.end-of-day');
+                                    $isEndOfDay = request()->routeIs('tenant.end-of-day');
 
                                     $isMasterData = request()->routeIs(
                                         'tenant.branches.*',
@@ -85,9 +86,20 @@
                                     $isVendorPayments = request()->routeIs('tenant.vendor-payments.*');
                                     $isInventory = request()->routeIs('tenant.inventory.*');
 
-                                    $isAccessControl = request()->routeIs('tenant.users.*', 'tenant.roles.*');
+                                    $isAccessControl = request()->routeIs(
+                                        'tenant.users.*',
+                                        'tenant.roles.*',
+                                        'tenant.permissions.*',
+                                    );
+                                    $isEmployees = request()->routeIs(
+                                        'tenant.employee-attendances.*',
+                                        'tenant.employee-salaries.*',
+                                    );
+                                    $isEmployeeAttendances = request()->routeIs('tenant.employee-attendances.*');
+                                    $isEmployeeSalaries = request()->routeIs('tenant.employee-salaries.*');
                                     $isUsers = request()->routeIs('tenant.users.*');
                                     $isRoles = request()->routeIs('tenant.roles.*');
+                                    $isPermissions = request()->routeIs('tenant.permissions.*');
                                     $isSystem = request()->routeIs('tenant.reports.*', 'tenant.settings.*');
                                     $isReports = request()->routeIs('tenant.reports.*');
                                     $isSettings = request()->routeIs('tenant.settings.*');
@@ -102,6 +114,13 @@
                                             class="side-menu__item {{ $isDashboard ? 'active' : '' }}">
                                             <i class="ri-dashboard-line side-menu__icon"></i>
                                             <span class="side-menu__label">{{ __('Overview') }}</span>
+                                        </a>
+                                    </li>
+                                    <li class="slide {{ $isEndOfDay ? 'active' : '' }}">
+                                        <a href="{{ route('tenant.end-of-day') }}"
+                                            class="side-menu__item {{ $isEndOfDay ? 'active' : '' }}">
+                                            <i class="ri-file-chart-line side-menu__icon"></i>
+                                            <span class="side-menu__label">{{ __('End Of Day') }}</span>
                                         </a>
                                     </li>
 
@@ -481,7 +500,7 @@
                                         </ul>
                                     </li>
 
-                                    <li class="slide has-sub {{ $isAccessControl ? 'active open' : '' }}">
+                                    {{-- <li class="slide has-sub {{ $isAccessControl ? 'active open' : '' }}">
                                         <a href="javascript:void(0);"
                                             class="side-menu__item {{ $isAccessControl ? 'active' : '' }}">
                                             <i class="ri-shield-user-line side-menu__icon"></i>
@@ -508,27 +527,41 @@
                                                     </li>
                                                 </ul>
                                             </li>
-                                            <li class="slide has-sub {{ $isRoles ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
+                                            <li class="slide {{ $isRoles ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.roles.index') }}"
                                                     class="side-menu__item {{ $isRoles ? 'active' : '' }}">
                                                     {{ __('Roles') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
                                                 </a>
-                                                <ul class="slide-menu child2 {{ $isRoles ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.roles.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.roles.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.roles.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.roles.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.roles.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.roles.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
                                             </li>
-                                            <li class="slide"><a href="#"
-                                                    class="side-menu__item">{{ __('Permissions') }}</a></li>
+                                            <li class="slide {{ $isPermissions ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.permissions.index') }}"
+                                                    class="side-menu__item {{ $isPermissions ? 'active' : '' }}">
+                                                    {{ __('Permissions') }}
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </li> --}}
+
+                                    <li class="slide has-sub {{ $isEmployees ? 'active open' : '' }}">
+                                        <a href="javascript:void(0);"
+                                            class="side-menu__item {{ $isEmployees ? 'active' : '' }}">
+                                            <i class="ri-team-line side-menu__icon"></i>
+                                            <span class="side-menu__label">{{ __('Employees') }}</span>
+                                            <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                                        </a>
+                                        <ul class="slide-menu child1 {{ $isEmployees ? 'open' : '' }}">
+                                            <li class="slide {{ $isEmployeeAttendances ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.employee-attendances.index') }}"
+                                                    class="side-menu__item {{ $isEmployeeAttendances ? 'active' : '' }}">
+                                                    {{ __('Attendance') }}
+                                                </a>
+                                            </li>
+                                            <li class="slide {{ $isEmployeeSalaries ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.employee-salaries.index') }}"
+                                                    class="side-menu__item {{ $isEmployeeSalaries ? 'active' : '' }}">
+                                                    {{ __('Salaries') }}
+                                                </a>
+                                            </li>
                                         </ul>
                                     </li>
 

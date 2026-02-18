@@ -22,6 +22,7 @@ final class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory;
+
     use HasRoles;
     use HasUuids;
     use Notifiable;
@@ -111,6 +112,16 @@ final class User extends Authenticatable
     public function loginAttempts(): HasMany
     {
         return $this->hasMany(LoginAttempt::class);
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(EmployeeAttendance::class);
+    }
+
+    public function salaries(): HasMany
+    {
+        return $this->hasMany(EmployeeSalary::class);
     }
 
     /**

@@ -6,7 +6,7 @@
 
         $breadcrumbs = [
             ['label' => __('Access Control')],
-            ['label' => __('Roles'), 'url' => route('roles.index')],
+            ['label' => __('Roles'), 'url' => route('tenant.roles.index')],
             ['label' => __('Details')],
         ];
 
@@ -26,8 +26,8 @@
 
     <x-breadcrumb title="{{ __('Role Details') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <a href="{{ route('roles.edit', $role) }}" class="btn btn-secondary">{{ __('Edit') }}</a>
-            <a href="{{ route('roles.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
+            <a href="{{ route('tenant.roles.edit', $role) }}" class="btn btn-secondary">{{ __('Edit') }}</a>
+            <a href="{{ route('tenant.roles.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 

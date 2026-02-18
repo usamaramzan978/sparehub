@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Enums\BranchStatus;
 use App\Enums\LoginUserType;
 use App\Enums\RecordStatus;
+use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Models\Branch;
 use App\Models\Brand;
@@ -29,6 +30,7 @@ final class TenantDemoSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(TenantRolePermissionSeeder::class);
 
         $branch = Branch::query()->firstOrCreate(
             ['code' => 'MAIN'],
@@ -80,6 +82,7 @@ final class TenantDemoSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+        $owner->assignRole(RoleName::TENANT_OWNER->value);
 
         $tenantId = (string) tenant('id');
 
