@@ -10,6 +10,7 @@ final class LogoutAction
 {
     public function handle(): void
     {
-        Auth::guard('web')->logout();
+        // Auth::guard('web')->logout();
+        Auth::guard('user')->logout();
     }
 }

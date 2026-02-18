@@ -19,6 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 final class TenantController extends Controller
 {
@@ -116,6 +117,17 @@ final class TenantController extends Controller
 
         if (! $ownerUserId) {
             return;
+        }
+
+        // ✅ Registration validation (tenant context)
+        $existsInThisTenant = LoginMap::query()
+            ->where('email', $ownerEmail)
+            ->where('tenant_id', tenant()->getTenantKey()) // same tenant only
+            ->exists();
+        if ($existsInThisTenant) {
+            throw ValidationException::withMessages([
+                'email' => ['This email is already registered in your organization.'],
+            ]);
         }
 
         LoginMap::query()->updateOrCreate(

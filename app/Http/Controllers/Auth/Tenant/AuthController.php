@@ -139,8 +139,8 @@ final class AuthController extends Controller
         abort_unless(Str::isUuid($nonce), 403, 'Invalid request.');
 
         $payload = rescue(
-            fn () => Tenancy::central(
-                fn () => Cache::store('database')->pull('login_nonce:'.$nonce)
+            fn() => Tenancy::central(
+                fn() => Cache::store('database')->pull('login_nonce:' . $nonce)
             ),
             null,
             false
@@ -195,6 +195,9 @@ final class AuthController extends Controller
         request()->session()->regenerateToken();
 
         return to_route('auth.login');
+        // return redirect()->route('tenant.login', [
+        //     'tenant' => tenant()->getTenantKey()
+        // ]);
     }
 
     public function register(RegisterRequest $request, RegisterAction $action, IssueTwoStepCodeAction $twoStep): RedirectResponse
