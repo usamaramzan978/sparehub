@@ -12,7 +12,7 @@ trait BranchScopedBySession
     public static function bootBranchScopedBySession(): void
     {
         static::addGlobalScope('session_branch', function (Builder $builder): void {
-            if (app()->runningInConsole()) {
+            if (! self::shouldApplySessionBranchScope()) {
                 return;
             }
 
@@ -25,14 +25,29 @@ trait BranchScopedBySession
         });
 
         static::saving(function (Model $model): void {
-            if (app()->runningInConsole()) {
+            if (! self::shouldApplySessionBranchScope()) {
                 return;
             }
 
             $branchId = session('tenant.current_branch_id');
-            if ($branchId && $model->isFillable('branch_id')) {
+            if (
+                $branchId
+                && $model->isFillable('branch_id')
+                && ! $model->getAttribute('branch_id')
+            ) {
                 $model->setAttribute('branch_id', $branchId);
             }
         });
+    }
+
+    private static function shouldApplySessionBranchScope(): bool
+    {
+        if (app()->runningInConsole() || ! app()->bound('request')) {
+            return false;
+        }
+
+        $route = request()->route();
+
+        return $route !== null && request()->routeIs('tenant.*');
     }
 }

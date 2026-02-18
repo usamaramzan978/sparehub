@@ -8,6 +8,7 @@ use App\Enums\TenantStatus;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
@@ -24,17 +25,16 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
         'name',
         'slug',
         'status',
+        'plan_id',
         'data',
     ];
 
     protected $casts = [
         'status' => TenantStatus::class,
+        'plan_id' => 'integer',
         'data' => 'array',
     ];
 
-    /**
-     * Ensure these columns are stored as real columns, not in the data JSON.
-     */
     public static function getCustomColumns(): array
     {
         return [
@@ -42,10 +42,16 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
             'name',
             'slug',
             'status',
+            'plan_id',
             'data',
             'created_at',
             'updated_at',
         ];
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
     }
 
     #[Scope]

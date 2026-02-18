@@ -15,8 +15,8 @@ return new class extends Migration
     {
         Schema::create('domains', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->string('domain', 255)->unique();
             $table->string('tenant_id');
+            $table->string('domain', 255);
 
             $table->timestamps();
             $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');

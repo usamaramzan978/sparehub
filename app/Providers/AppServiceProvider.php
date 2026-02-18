@@ -8,6 +8,9 @@ use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\DB;
 
 final class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +27,13 @@ final class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $app = $this->app;
+
+        DB::prohibitDestructiveCommands($app->isProduction());
+        Model::shouldBeStrict(! $app->isProduction());
+
+        Paginator::useBootstrapFive();
+
         // Runs on every request after middleware (including tenancy) has fired
         $this->app['events']->listen(
             \Stancl\Tenancy\Events\TenancyInitialized::class,

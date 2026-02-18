@@ -7,7 +7,8 @@ use App\Http\Middleware\EnsureTwoStepVerified;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request; // ✅ NOT Illuminate\Support\Facades\Request
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,9 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {
-            // Don't redirect if already going to login
             if ($request->routeIs('tenant.login')) {
                 return null;
+            }
+
+            if ($request->routeIs('system.*')) {
+                return route('system.login');
             }
 
             if (function_exists('tenant') && tenant()) {
@@ -37,9 +41,12 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $middleware->redirectUsersTo(function (Request $request) {
-            // Don't redirect if already going to dashboard
-            if ($request->routeIs('tenant.dashboard')) {
+            if ($request->routeIs('tenant.dashboard') || $request->routeIs('system.dashboard')) {
                 return null;
+            }
+
+            if (Auth::guard('system')->check()) {
+                return route('system.dashboard');
             }
 
             if (function_exists('tenant') && tenant()) {

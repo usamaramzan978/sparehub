@@ -77,8 +77,9 @@
                                             <label for="system-email" class="form-label text-default">Email</label>
                                             <div class="position-relative">
                                                 <input type="email" class="form-control form-control-lg" id="system-email"
-                                                    name="email" value="{{ old('email') }}"
-                                                    placeholder="Enter email address" autocomplete="email" required>
+                                                    name="email" value="systemowner@local.com"
+                                                    placeholder="Enter email address" autocomplete="email" required
+                                                    autofocus>
                                             </div>
                                         </div>
                                         <div class="col-xl-12 mb-2">
@@ -89,7 +90,7 @@
                                             <div class="position-relative">
                                                 <input type="password" class="form-control form-control-lg"
                                                     id="system-password" name="password" placeholder="Enter password"
-                                                    autocomplete="current-password" required>
+                                                    autocomplete="current-password" required value="password">
                                                 <a href="javascript:void(0);" class="show-password-button text-muted"
                                                     data-target="system-password" id="button-addon2"><i
                                                         class="ri-eye-off-line align-middle"></i></a>
