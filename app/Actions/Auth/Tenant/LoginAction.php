@@ -15,21 +15,58 @@ final class LoginAction
     {
         $email = mb_strtolower(mb_trim($email));
 
-        $login = LoginMap::query()
+        $logins = LoginMap::query()
             ->where('email', $email)
             ->where('type', LoginUserType::USER->value)
-            ->first();
+            ->where('status', true)
+            ->with('tenant:id,name')
+            ->get();
 
-        if (! $login || ! Hash::check($password, $login->password)) {
+        if ($logins->isEmpty()) {
+            // ✅ Always hash even if email not found (constant-time)
+            Hash::check($password, Hash::make('dummy'));
+
             throw ValidationException::withMessages([
                 'email' => [trans('auth.failed')],
             ]);
         }
 
+        // ✅ Check password against ALL logins (constant time regardless of match position)
+        $matchedLogins = collect();
+
+        foreach ($logins as $login) {
+            if (Hash::check($password, (string) $login->password)) {
+                $matchedLogins->push($login);
+            }
+        }
+
+        if ($matchedLogins->isEmpty()) {
+            throw ValidationException::withMessages([
+                'email' => [trans('auth.failed')],
+            ]);
+        }
+
+        // ✅ Single tenant — return directly
+        if ($matchedLogins->count() === 1) {
+            $login = $matchedLogins->first();
+
+            return [
+                'tenant' => $login->tenant_id,
+                'type' => $login->type,
+                'type_id' => $login->type_id,
+                'remember' => $remember,
+            ];
+        }
+
+        // ✅ Multiple tenants — return picker flag
         return [
-            'tenant' => $login->tenant_id,
-            'type' => $login->type,
-            'type_id' => $login->type_id,
+            'multiple_tenants' => true,
+            'tenants' => $matchedLogins->map(fn (LoginMap $login) => [
+                'tenant_id' => $login->tenant_id,
+                'tenant_name' => $login->tenant?->name ?? 'Tenant '.$login->tenant_id,
+                'type_id' => $login->type_id,
+                'type' => $login->type,
+            ])->toArray(),
             'remember' => $remember,
         ];
     }

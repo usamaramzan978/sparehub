@@ -12,12 +12,14 @@ use App\Actions\Auth\Tenant\RegisterAction;
 use App\Actions\Auth\Tenant\ResetPasswordAction;
 use App\Actions\Auth\Tenant\VerifyTwoStepCodeAction;
 use App\Enums\LoginUserType;
+use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\Tenant\ForgotPasswordRequest;
 use App\Http\Requests\Auth\Tenant\LoginRequest;
 use App\Http\Requests\Auth\Tenant\RegisterRequest;
 use App\Http\Requests\Auth\Tenant\ResetPasswordRequest;
 use App\Http\Requests\Auth\Tenant\TwoStepVerificationRequest;
+use App\Models\LoginMap;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -63,27 +65,67 @@ final class AuthController extends Controller
             $request->boolean('remember')
         );
 
-        $nonce = (string) Str::uuid();
-        Cache::store('database')->put(
-            'login_nonce:'.$nonce,
-            [
-                'type_id' => $data['type_id'],
-                'type' => $data['type'],
+        // ✅ Multiple tenants — show picker
+        if (isset($data['multiple_tenants'])) {
+            session()->put('multi_tenant_login', [
+                'tenants' => $data['tenants'],
                 'remember' => $data['remember'],
-            ],
-            now()->addSeconds(30)
-        );
+                'expires_at' => now()->addMinutes(5),
+            ]);
 
-        $signedUrl = URL::temporarySignedRoute(
-            'tenant.authenticate',
-            now()->addSeconds(30),
-            [
-                'tenant' => $data['tenant'],
-                'nonce' => $nonce,
-            ]
-        );
+            return redirect()->route('auth.choose-tenant');
+        }
 
-        return redirect()->to($signedUrl);
+        // ✅ Single tenant — proceed to authenticate
+        return $this->generateAuthenticateRedirect(
+            $data['tenant'],
+            $data['type_id'],
+            $data['type'],
+            $data['remember']
+        );
+    }
+
+    public function showChooseTenant(): View|RedirectResponse
+    {
+        $data = session('multi_tenant_login');
+
+        if (! $data || now()->gt($data['expires_at'])) {
+            return redirect()->route('auth.login')
+                ->withErrors(['email' => 'Session expired. Please login again.']);
+        }
+
+        return view('auth.tenant.choose-tenant', [
+            'tenants' => $data['tenants'],
+        ]);
+    }
+
+    public function chooseTenant(Request $request): RedirectResponse
+    {
+        $data = session('multi_tenant_login');
+
+        if (! $data || now()->gt($data['expires_at'])) {
+            return redirect()->route('auth.login')
+                ->withErrors(['email' => 'Session expired. Please login again.']);
+        }
+
+        $selectedTenantId = $request->input('tenant_id');
+
+        // ✅ Verify the selected tenant was in the validated list
+        $tenant = collect($data['tenants'])
+            ->firstWhere('tenant_id', $selectedTenantId);
+
+        if (! $tenant) {
+            abort(403, 'Unauthorized tenant selection.');
+        }
+
+        session()->forget('multi_tenant_login');
+
+        return $this->generateAuthenticateRedirect(
+            $tenant['tenant_id'],
+            $tenant['type_id'],
+            $tenant['type'],
+            $data['remember']
+        );
     }
 
     public function authenticateTenant(Request $request): RedirectResponse
@@ -110,6 +152,19 @@ final class AuthController extends Controller
         }
 
         abort_if(($payload['type'] ?? null) !== LoginUserType::USER->value, 403, 'Invalid login type.');
+        abort_if(($payload['tenant_id'] ?? null) !== $tenantId, 403, 'Invalid tenant context.');
+
+        $activeLoginMapExists = LoginMap::query()
+            ->where('tenant_id', $tenantId)
+            ->where('type', LoginUserType::USER->value)
+            ->where('type_id', (string) $payload['type_id'])
+            ->where('status', true)
+            ->exists();
+
+        if (! $activeLoginMapExists) {
+            return to_route('tenant.login', ['tenant' => $tenantId])
+                ->withErrors(['email' => 'Your account is inactive. Please contact administrator.']);
+        }
 
         $user = User::query()
             ->withoutGlobalScope('session_branch')
@@ -118,6 +173,12 @@ final class AuthController extends Controller
         if (! $user) {
             return to_route('tenant.login', ['tenant' => $tenantId])
                 ->withErrors(['email' => 'Login failed.']);
+        }
+
+        $userStatus = $user->status instanceof UserStatus ? $user->status->value : (string) $user->status;
+        if ($userStatus !== UserStatus::ACTIVE->value) {
+            return to_route('tenant.login', ['tenant' => $tenantId])
+                ->withErrors(['email' => 'Your account is inactive. Please contact administrator.']);
         }
 
         Auth::guard('user')->login($user, (bool) $payload['remember']);
@@ -166,5 +227,36 @@ final class AuthController extends Controller
         $action->handle($request->session(), $request->input('code', []));
 
         return redirect()->intended('/');
+    }
+
+    private function generateAuthenticateRedirect(
+        string $tenantId,
+        string $typeId,
+        string $type,
+        bool $remember
+    ): RedirectResponse {
+        $nonce = (string) Str::uuid();
+
+        Cache::store('database')->put(
+            "login_nonce:{$nonce}",
+            [
+                'type_id' => $typeId,
+                'type' => $type,
+                'remember' => $remember,
+                'tenant_id' => $tenantId,
+            ],
+            now()->addSeconds(30)
+        );
+
+        $signedUrl = URL::temporarySignedRoute(
+            'tenant.authenticate',
+            now()->addSeconds(30),
+            [
+                'tenant' => $tenantId,
+                'nonce' => $nonce,
+            ]
+        );
+
+        return redirect()->to($signedUrl);
     }
 }

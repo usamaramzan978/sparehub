@@ -52,13 +52,13 @@ Route::middleware([
     PreventAccessFromCentralDomains::class,
 ])->prefix('firm/{tenant}')->name('tenant.')->group(function (): void {
 
-    Route::get('authenticate', (new TenantAuthController())->authenticateTenant(...))
+    Route::get('authenticate', [TenantAuthController::class, 'authenticateTenant'])
         ->middleware('throttle:10,1')
         ->name('authenticate');
 
     Route::middleware('guest:user')->group(function (): void {
         Route::get('login', (new TenantAuthController())->showLogin(...))->name('login')->middleware(['throttle:60,1']);
-        Route::post('login', (new TenantAuthController())->login(...))->middleware('throttle:60,1')->name('auth.login.submit');
+        Route::post('login', (new TenantAuthController())->login(...))->middleware('throttle:6,1')->name('auth.login.submit');
         Route::get('register', (new TenantAuthController())->showRegister(...))->name('register');
         Route::post('register', (new TenantAuthController())->register(...))->name('auth.register.submit');
         Route::get('forgot-password', (new TenantAuthController())->showForgotPassword(...))->name('forgot-password');

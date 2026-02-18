@@ -10,10 +10,17 @@ use App\Http\Controllers\System\TenantController;
 use App\Http\Controllers\System\TenantUserController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('guest')->group(function (): void {
+Route::middleware('guest:user')->group(function (): void {
     Route::get('/', (new TenantAuthController())->showLogin(...))->name('auth.login');
-    Route::post('/', (new TenantAuthController())->login(...))->middleware(['throttle:60,1'])
+    Route::post('/', (new TenantAuthController())->login(...))->middleware(['throttle:6,1'])
         ->name('auth.login.submit');
+
+    // ✅ Tenant picker routes
+    Route::get('choose-tenant', [TenantAuthController::class, 'showChooseTenant'])
+        ->name('auth.choose-tenant');
+
+    Route::post('choose-tenant', [TenantAuthController::class, 'chooseTenant'])
+        ->name('auth.choose-tenant.submit');
 
     Route::get('forgot-password', (new TenantAuthController())->showForgotPassword(...))->name('auth.forgot-password');
     Route::post('forgot-password', (new TenantAuthController())->forgotPassword(...))->name('auth.forgot-password.submit');
