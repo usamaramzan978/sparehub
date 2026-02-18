@@ -8,10 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\EmployeeAttendanceRequest;
 use App\Models\EmployeeAttendance;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
 
 final class EmployeeAttendanceController extends Controller
 {
@@ -20,7 +20,7 @@ final class EmployeeAttendanceController extends Controller
         $branchId = $this->currentBranchId();
         $attendanceDateInput = mb_trim($request->string('attendance_date')->toString());
         $attendanceDate = $attendanceDateInput !== ''
-            ? Carbon::parse($attendanceDateInput)->toDateString()
+            ? Date::parse($attendanceDateInput)->toDateString()
             : now()->toDateString();
 
         $employees = User::query()
@@ -63,15 +63,15 @@ final class EmployeeAttendanceController extends Controller
         ]);
 
         if ($action === 'check_in') {
-            $attendance->check_in_at = now();
+            $attendance->check_in_at = now()->toDateTimeString();
         }
 
         if ($action === 'check_out') {
             if ($attendance->check_in_at === null) {
-                $attendance->check_in_at = now();
+                $attendance->check_in_at = now()->toDateTimeString();
             }
 
-            $attendance->check_out_at = now();
+            $attendance->check_out_at = now()->toDateTimeString();
         }
 
         if ($action === 'mark_absent') {
@@ -81,11 +81,11 @@ final class EmployeeAttendanceController extends Controller
         }
 
         if ($attendance->check_in_at !== null && $attendance->check_out_at !== null) {
-            $checkInAt = Carbon::parse($attendance->check_in_at);
-            $checkOutAt = Carbon::parse($attendance->check_out_at);
+            $checkInAt = Date::parse($attendance->check_in_at);
+            $checkOutAt = Date::parse($attendance->check_out_at);
 
             if ($checkOutAt->greaterThan($checkInAt)) {
-                $attendance->total_minutes = $checkInAt->diffInMinutes($checkOutAt);
+                $attendance->total_minutes = (int) $checkInAt->diffInMinutes($checkOutAt);
             }
         }
 

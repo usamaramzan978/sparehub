@@ -85,11 +85,11 @@ final class SaleRequest extends FormRequest
                 $lineType = is_array($item) ? ($item['line_type'] ?? null) : null;
 
                 if ($lineType === SaleLineType::PRODUCT->value && empty($item['product_id'])) {
-                    $validator->errors()->add("items.$index.product_id", 'The product field is required for product line type.');
+                    $validator->errors()->add(sprintf('items.%s.product_id', $index), 'The product field is required for product line type.');
                 }
 
                 if ($lineType === SaleLineType::SERVICE->value && empty($item['service_catalog_id'])) {
-                    $validator->errors()->add("items.$index.service_catalog_id", 'The service field is required for service line type.');
+                    $validator->errors()->add(sprintf('items.%s.service_catalog_id', $index), 'The service field is required for service line type.');
                 }
             }
         });

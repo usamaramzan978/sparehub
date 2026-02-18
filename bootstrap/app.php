@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.two-step' => EnsureTwoStepVerified::class,
         ]);
 
-        $middleware->redirectGuestsTo(function (Request $request) {
+        $middleware->redirectGuestsTo(function (Request $request): ?string {
             if ($request->routeIs('tenant.login')) {
                 return null;
             }
@@ -40,7 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
             return route('auth.login');
         });
 
-        $middleware->redirectUsersTo(function (Request $request) {
+        $middleware->redirectUsersTo(function (Request $request): ?string {
             if ($request->routeIs('tenant.dashboard') || $request->routeIs('system.dashboard')) {
                 return null;
             }

@@ -15,7 +15,6 @@ use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -27,10 +26,9 @@ final class TenantUserController extends Controller
         $tenantId = mb_trim($request->string('tenant_id')->toString());
         $selectedTenant = $tenantId !== '' ? Tenant::query()->find($tenantId) : null;
 
-        $tenantUsers = collect();
+        $tenantUsers = [];
         if ($selectedTenant instanceof Tenant) {
-            /** @var Collection<int, array{id:string,name:string,email:string,phone:?string,status:string,branch:?string,created_at:string}> $tenantUsers */
-            $tenantUsers = $selectedTenant->run(function () {
+            $tenantUsers = $selectedTenant->run(function (): array {
                 return User::query()
                     ->with('branch:id,name')
                     ->latest()
@@ -44,10 +42,11 @@ final class TenantUserController extends Controller
                             'email' => (string) $user->email,
                             'phone' => $user->phone,
                             'status' => $status,
-                            'branch' => $user->branch?->name,
+                            'branch' => data_get($user, 'branch.name'),
                             'created_at' => $user->created_at?->format('Y-m-d H:i') ?? '-',
                         ];
-                    });
+                    })
+                    ->all();
             });
         }
 
@@ -87,7 +86,7 @@ final class TenantUserController extends Controller
                 ]);
             }
 
-            $branch = Branch::query()->orderByDesc('is_default')->orderBy('created_at')->first();
+            $branch = Branch::query()->orderByDesc('is_default')->oldest()->first();
 
             if (! $branch instanceof Branch) {
                 $branch = Branch::query()->create([

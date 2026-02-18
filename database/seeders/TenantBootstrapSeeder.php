@@ -26,9 +26,7 @@ final class TenantBootstrapSeeder extends Seeder
     {
         $tenant = tenant();
 
-        if (! $tenant) {
-            throw new RuntimeException('Tenant context is required for TenantBootstrapSeeder.');
-        }
+        throw_unless($tenant, RuntimeException::class, 'Tenant context is required for TenantBootstrapSeeder.');
 
         $tenant->run(function (): void {
 
@@ -162,26 +160,26 @@ final class TenantBootstrapSeeder extends Seeder
              * Fetch References
              * ---------------------------------------------------------
              */
-            $taxGST = Tax::where('code', 'GST')->firstOrFail();
+            $taxGST = Tax::query()->where('code', 'GST')->firstOrFail();
 
-            $unitPCS = Unit::where('code', 'PCS')->firstOrFail();
-            $unitSET = Unit::where('code', 'SET')->firstOrFail();
-            $unitLTR = Unit::where('code', 'LTR')->firstOrFail();
+            $unitPCS = Unit::query()->where('code', 'PCS')->firstOrFail();
+            $unitSET = Unit::query()->where('code', 'SET')->firstOrFail();
+            $unitLTR = Unit::query()->where('code', 'LTR')->firstOrFail();
 
-            $catEngine = Category::where('slug', 'engine-parts')->firstOrFail();
-            $catBrake = Category::where('slug', 'brake-parts')->firstOrFail();
-            $catElectrical = Category::where('slug', 'electrical-parts')->firstOrFail();
-            $catBody = Category::where('slug', 'body-parts')->firstOrFail();
-            $catSuspension = Category::where('slug', 'suspension-parts')->firstOrFail();
-            $catOil = Category::where('slug', 'lubricants')->firstOrFail();
+            $catEngine = Category::query()->where('slug', 'engine-parts')->firstOrFail();
+            $catBrake = Category::query()->where('slug', 'brake-parts')->firstOrFail();
+            $catElectrical = Category::query()->where('slug', 'electrical-parts')->firstOrFail();
+            $catBody = Category::query()->where('slug', 'body-parts')->firstOrFail();
+            $catSuspension = Category::query()->where('slug', 'suspension-parts')->firstOrFail();
+            $catOil = Category::query()->where('slug', 'lubricants')->firstOrFail();
 
-            $brandHonda = Brand::where('slug', 'honda')->firstOrFail();
-            $brandSuzuki = Brand::where('slug', 'suzuki')->firstOrFail();
-            $brandYamaha = Brand::where('slug', 'yamaha')->firstOrFail();
-            $brandUnique = Brand::where('slug', 'unique')->firstOrFail();
-            $brandUnited = Brand::where('slug', 'united')->firstOrFail();
-            $brandOsaka = Brand::where('slug', 'osaka')->firstOrFail();
-            $brandAtlas = Brand::where('slug', 'atlas')->firstOrFail();
+            $brandHonda = Brand::query()->where('slug', 'honda')->firstOrFail();
+            $brandSuzuki = Brand::query()->where('slug', 'suzuki')->firstOrFail();
+            $brandYamaha = Brand::query()->where('slug', 'yamaha')->firstOrFail();
+            $brandUnique = Brand::query()->where('slug', 'unique')->firstOrFail();
+            $brandUnited = Brand::query()->where('slug', 'united')->firstOrFail();
+            $brandOsaka = Brand::query()->where('slug', 'osaka')->firstOrFail();
+            $brandAtlas = Brand::query()->where('slug', 'atlas')->firstOrFail();
 
             /**
              * ---------------------------------------------------------
@@ -548,7 +546,7 @@ final class TenantBootstrapSeeder extends Seeder
             TenantSetting::query()->firstOrCreate(
                 ['branch_id' => $branch->id],
                 [
-                    'company_name' => 'SpareHub Bike POS - ' . $branch->name,
+                    'company_name' => 'SpareHub Bike POS - '.$branch->name,
                     'support_email' => 'support@sparehub.pk',
                     'support_phone' => '0300-0000000',
                     'enable_two_factor' => false,

@@ -11,8 +11,8 @@ use App\Http\Controllers\System\TenantUserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function (): void {
-    Route::get('/', [TenantAuthController::class, 'showLogin'])->name('auth.login');
-    Route::post('/', [TenantAuthController::class, 'login'])->middleware(['throttle:60,1'])
+    Route::get('/', (new TenantAuthController())->showLogin(...))->name('auth.login');
+    Route::post('/', (new TenantAuthController())->login(...))->middleware(['throttle:60,1'])
         ->name('auth.login.submit');
 
     Route::get('forgot-password', (new TenantAuthController())->showForgotPassword(...))->name('auth.forgot-password');
@@ -23,9 +23,7 @@ Route::middleware('guest')->group(function (): void {
 });
 
 Route::prefix('system')->name('system.')->group(function (): void {
-    Route::get('/', function () {
-        return redirect()->route('system.dashboard');
-    })->middleware('auth:system');
+    Route::get('/', fn () => to_route('system.dashboard'))->middleware('auth:system');
 
     Route::middleware('guest:system')->group(function (): void {
         Route::view('login', 'auth.system.login')->name('login');

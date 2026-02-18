@@ -71,7 +71,7 @@ final class PurchaseReturnRequest extends FormRequest
 
             foreach ($items as $index => $item) {
                 if (! is_array($item) || empty($item['product_id'])) {
-                    $validator->errors()->add("items.$index.product_id", 'The product field is required.');
+                    $validator->errors()->add(sprintf('items.%s.product_id', $index), 'The product field is required.');
                 }
             }
         });

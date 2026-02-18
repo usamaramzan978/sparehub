@@ -13,9 +13,9 @@ use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\SalePayment;
 use App\Models\VendorPayment;
-use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
 
 final class EndOfDayController extends Controller
 {
@@ -24,11 +24,11 @@ final class EndOfDayController extends Controller
         $branchId = $this->currentBranchId();
         $selectedDateInput = mb_trim($request->string('date')->toString());
         $selectedDate = $selectedDateInput !== ''
-            ? Carbon::parse($selectedDateInput)->toDateString()
+            ? Date::parse($selectedDateInput)->toDateString()
             : now()->toDateString();
-        $dayStart = Carbon::parse($selectedDate)->startOfDay();
-        $dayEnd = Carbon::parse($selectedDate)->endOfDay();
-        $monthStart = Carbon::parse($selectedDate)->startOfMonth();
+        $dayStart = Date::parse($selectedDate)->startOfDay();
+        $dayEnd = Date::parse($selectedDate)->endOfDay();
+        $monthStart = Date::parse($selectedDate)->startOfMonth();
 
         $salesQuery = Sale::query()
             ->where('branch_id', $branchId)

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Stancl\Tenancy\Events\TenancyInitialized;
 
 final class AppServiceProvider extends ServiceProvider
 {
@@ -33,9 +35,9 @@ final class AppServiceProvider extends ServiceProvider
         Paginator::useBootstrapFive();
 
         // Runs on every request after middleware (including tenancy) has fired
-        $this->app['events']->listen(
-            \Stancl\Tenancy\Events\TenancyInitialized::class,
-            function (\Stancl\Tenancy\Events\TenancyInitialized $event) {
+        $this->app->make(Dispatcher::class)->listen(
+            TenancyInitialized::class,
+            function (TenancyInitialized $event): void {
                 $tenantId = (string) $event->tenancy->tenant->getTenantKey();
                 URL::defaults(['tenant' => $tenantId]);
             }

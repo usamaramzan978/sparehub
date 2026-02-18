@@ -41,7 +41,7 @@ final class PurchaseItemController extends Controller
     {
         $payload = $request->validated();
         $payload['branch_id'] = $this->currentBranchId();
-        $payload['received_qty'] = $payload['received_qty'] ?? 0;
+        $payload['received_qty'] ??= 0;
         $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_cost']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
 
         $item = PurchaseItem::query()->create($payload);
@@ -77,7 +77,7 @@ final class PurchaseItemController extends Controller
 
         $payload = $request->validated();
         $payload['branch_id'] = $this->currentBranchId();
-        $payload['received_qty'] = $payload['received_qty'] ?? 0;
+        $payload['received_qty'] ??= 0;
         $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_cost']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
 
         $purchaseItem->update($payload);

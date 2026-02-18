@@ -19,8 +19,8 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\SalePayment;
 use App\Models\ServiceCatalog;
-use App\Models\TenantSetting;
 use App\Models\Tax;
+use App\Models\TenantSetting;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -185,17 +185,15 @@ final class PosController extends Controller
             'items.*.name' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $items = collect($validated['items'])->map(function (array $item): array {
-            return [
-                'type' => $item['type'],
-                'ref_id' => $item['ref_id'],
-                'qty' => (float) $item['qty'],
-                'price' => (float) $item['price'],
-                'tax_rate' => (float) ($item['tax_rate'] ?? 0),
-                'tax_inclusive' => (bool) ($item['tax_inclusive'] ?? false),
-                'name' => (string) ($item['name'] ?? ''),
-            ];
-        });
+        $items = collect($validated['items'])->map(fn (array $item): array => [
+            'type' => $item['type'],
+            'ref_id' => $item['ref_id'],
+            'qty' => (float) $item['qty'],
+            'price' => (float) $item['price'],
+            'tax_rate' => (float) ($item['tax_rate'] ?? 0),
+            'tax_inclusive' => (bool) ($item['tax_inclusive'] ?? false),
+            'name' => (string) ($item['name'] ?? ''),
+        ]);
 
         $productIds = $items->where('type', 'product')->pluck('ref_id')->all();
         $serviceIds = $items->where('type', 'service')->pluck('ref_id')->all();
@@ -222,6 +220,7 @@ final class PosController extends Controller
         $discountValue = (float) ($validated['discount_value'] ?? 0);
         $discountTotal = $discountType === 'percent' ? ($subTotal * $discountValue / 100) : $discountValue;
         $discountTotal = min(max($discountTotal, 0), $subTotal);
+
         $discountRatio = $subTotal > 0 ? ($discountTotal / $subTotal) : 0;
 
         $taxTotal = 0.0;
@@ -260,13 +259,10 @@ final class PosController extends Controller
         $cashReceived = (float) ($validated['cash_received'] ?? 0);
         $paymentProofPath = $request->file('payment_proof')?->store('sale-payment-proofs', 'public');
 
-        if ($paymentMode === 'cash' || $paymentMode === 'online') {
-            $paidTotal = $grandTotal;
-        } else {
-            $paidTotal = min($cashReceived, $grandTotal);
-        }
+        $paidTotal = $paymentMode === 'cash' || $paymentMode === 'online' ? $grandTotal : min($cashReceived, $grandTotal);
 
         $paidTotal = max($paidTotal, 0);
+
         $balanceDue = $grandTotal - $paidTotal;
 
         $hasProduct = $items->contains(fn (array $item): bool => $item['type'] === 'product');
@@ -356,7 +352,7 @@ final class PosController extends Controller
         }
 
         return to_route('tenant.pos.index', ['tenant' => $tenantRouteKey])
-            ->with('status', "POS sale {$sale->invoice_no} created.");
+            ->with('status', sprintf('POS sale %s created.', $sale->invoice_no));
     }
 
     /**
@@ -372,10 +368,10 @@ final class PosController extends Controller
             ->where('is_service_item', false)
             ->where(function ($builder) use ($query): void {
                 $builder
-                    ->where('name', 'like', "%{$query}%")
-                    ->orWhere('sku', 'like', "%{$query}%")
-                    ->orWhere('barcode', 'like', "%{$query}%")
-                    ->orWhere('part_number', 'like', "%{$query}%");
+                    ->where('name', 'like', sprintf('%%%s%%', $query))
+                    ->orWhere('sku', 'like', sprintf('%%%s%%', $query))
+                    ->orWhere('barcode', 'like', sprintf('%%%s%%', $query))
+                    ->orWhere('part_number', 'like', sprintf('%%%s%%', $query));
             })
             ->limit($limit)
             ->get();
@@ -411,9 +407,9 @@ final class PosController extends Controller
             ->where('status', RecordStatus::ACTIVE->value)
             ->where(function ($builder) use ($query): void {
                 $builder
-                    ->where('name', 'like', "%{$query}%")
-                    ->orWhere('code', 'like', "%{$query}%")
-                    ->orWhere('category', 'like', "%{$query}%");
+                    ->where('name', 'like', sprintf('%%%s%%', $query))
+                    ->orWhere('code', 'like', sprintf('%%%s%%', $query))
+                    ->orWhere('category', 'like', sprintf('%%%s%%', $query));
             })
             ->limit($limit)
             ->get()
@@ -494,6 +490,6 @@ final class PosController extends Controller
             $next = $suffix + 1;
         }
 
-        return $base.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        return $base.mb_str_pad((string) $next, 4, '0', STR_PAD_LEFT);
     }
 }

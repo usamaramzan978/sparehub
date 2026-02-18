@@ -22,11 +22,12 @@
                                 @php
                                     $tenantKey = (string) tenant('id');
 
-                                    $isDashboard = request()->routeIs('tenant.dashboard', 'tenant.end-of-day');
+                                    $isDashboard = request()->routeIs('tenant.dashboard');
                                     $isEndOfDay = request()->routeIs('tenant.end-of-day');
 
                                     $isMasterData = request()->routeIs(
                                         'tenant.branches.*',
+                                        'tenant.warehouses.*',
                                         'tenant.units.*',
                                         'tenant.taxes.*',
                                         'tenant.categories.*',
@@ -39,6 +40,7 @@
                                         'tenant.vendors.*',
                                     );
                                     $isBranches = request()->routeIs('tenant.branches.*');
+                                    $isWarehouses = request()->routeIs('tenant.warehouses.*');
                                     $isUnits = request()->routeIs('tenant.units.*');
                                     $isTaxes = request()->routeIs('tenant.taxes.*');
                                     $isCategories = request()->routeIs('tenant.categories.*');
@@ -152,8 +154,10 @@
                                                 </ul>
                                             </li>
 
-                                            <li class="slide"><a href="#"
-                                                    class="side-menu__item">{{ __('Warehouses') }}</a></li>
+                                            <li class="slide {{ $isWarehouses ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.warehouses.index') }}"
+                                                    class="side-menu__item {{ $isWarehouses ? 'active' : '' }}">{{ __('Warehouses') }}</a>
+                                            </li>
 
                                             <li class="slide {{ $isUnits ? 'active' : '' }}">
                                                 <a href="{{ route('tenant.units.index') }}"

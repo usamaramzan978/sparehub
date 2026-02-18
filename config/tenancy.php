@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Bootstrappers\SpatiePermissionsBootstrapper;
 use App\Models\Domain;
 use App\Models\Tenant;
-use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;

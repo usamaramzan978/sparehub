@@ -7,19 +7,19 @@ namespace App\Http\Controllers\Tenant;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\ProductRequest;
-use App\Models\Brand;
 use App\Models\Branch;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\ProductPrice;
 use App\Models\Tax;
 use App\Models\Unit;
-use Illuminate\Support\Collection;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 final class ProductController extends Controller
 {
@@ -105,17 +105,15 @@ final class ProductController extends Controller
             ->sum('qty_reserved');
 
         /** @var Collection<int, array{name:string,sku:string,on_hand:float,cost:float,sale:float,status:string,effective_from:string|null}> $priceRows */
-        $priceRows = $priceHistory->map(function (ProductPrice $price) use ($product, $stockOnHand): array {
-            return [
-                'name' => $product->name,
-                'sku' => $product->sku,
-                'on_hand' => $stockOnHand,
-                'cost' => (float) $price->cost,
-                'sale' => (float) $price->retail_price,
-                'status' => $product->status->value,
-                'effective_from' => $price->effective_from?->format('Y-m-d H:i'),
-            ];
-        });
+        $priceRows = $priceHistory->map(fn (ProductPrice $price): array => [
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'on_hand' => $stockOnHand,
+            'cost' => (float) $price->cost,
+            'sale' => (float) $price->retail_price,
+            'status' => $product->status->value,
+            'effective_from' => $price->effective_from?->format('Y-m-d H:i'),
+        ]);
 
         return view('tenants.products.show', [
             'product' => $product,

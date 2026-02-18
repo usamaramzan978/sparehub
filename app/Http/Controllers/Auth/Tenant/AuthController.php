@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Stancl\Tenancy\Facades\Tenancy;
 
 final class AuthController extends Controller
 {
@@ -66,7 +67,7 @@ final class AuthController extends Controller
         // 2️⃣ Generate one-time nonce stored in central cache
         $nonce = (string) Str::uuid();
         Cache::store('database')->put(
-            "login_nonce:{$nonce}",
+            'login_nonce:'.$nonce,
             [
                 'type_id' => $data['type_id'],
                 'type' => $data['type'],
@@ -92,37 +93,31 @@ final class AuthController extends Controller
     public function authenticateTenant(Request $request): RedirectResponse
     {
         // 1️⃣ Validate signed URL
-        if (! $request->hasValidSignature()) {
-            abort(403, 'Link expired or invalid.');
-        }
+        abort_unless($request->hasValidSignature(), 403, 'Link expired or invalid.');
 
         $tenantId = (string) tenant()->getTenantKey();
 
         // 2️⃣ Validate nonce format
         $nonce = (string) $request->query('nonce');
 
-        if (! Str::isUuid($nonce)) {
-            abort(403, 'Invalid request.');
-        }
+        abort_unless(Str::isUuid($nonce), 403, 'Invalid request.');
 
         // 3️⃣ Consume nonce atomically from central cache
         $payload = rescue(
-            fn () => \Stancl\Tenancy\Facades\Tenancy::central(
-                fn () => Cache::store('database')->pull("login_nonce:{$nonce}")
+            fn () => Tenancy::central(
+                fn () => Cache::store('database')->pull('login_nonce:'.$nonce)
             ),
             null,
             false
         );
 
         if (! $payload) {
-            return redirect()->route('tenant.login', ['tenant' => $tenantId])
+            return to_route('tenant.login', ['tenant' => $tenantId])
                 ->withErrors(['email' => 'Login link expired. Please try again.']);
         }
 
         // 4️⃣ Verify login type
-        if (($payload['type'] ?? null) !== LoginUserType::USER->value) {
-            abort(403, 'Invalid login type.');
-        }
+        abort_if(($payload['type'] ?? null) !== LoginUserType::USER->value, 403, 'Invalid login type.');
 
         // 5️⃣ Load user in tenant context
         $user = User::query()
@@ -130,7 +125,7 @@ final class AuthController extends Controller
             ->find($payload['type_id']);
 
         if (! $user) {
-            return redirect()->route('tenant.login', ['tenant' => $tenantId])
+            return to_route('tenant.login', ['tenant' => $tenantId])
                 ->withErrors(['email' => 'Login failed.']);
         }
 
@@ -139,7 +134,7 @@ final class AuthController extends Controller
         $request->session()->regenerate();
 
         // 7️⃣ Redirect to dashboard
-        return redirect()->route('tenant.dashboard', ['tenant' => $tenantId]);
+        return to_route('tenant.dashboard', ['tenant' => $tenantId]);
     }
 
     public function logout(LogoutAction $action): RedirectResponse

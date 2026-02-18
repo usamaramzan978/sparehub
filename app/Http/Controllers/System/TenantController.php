@@ -31,8 +31,8 @@ final class TenantController extends Controller
             ->with(['plan'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($tenantQuery) use ($search): void {
-                    $tenantQuery->where('name', 'like', "%{$search}%")
-                        ->orWhere('slug', 'like', "%{$search}%");
+                    $tenantQuery->where('name', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('slug', 'like', sprintf('%%%s%%', $search));
                 });
             })
             ->latest()
@@ -90,7 +90,7 @@ final class TenantController extends Controller
 
         $ownerUserId = $tenant->run(function () use ($validated, $ownerEmail, $ownerPasswordHash): ?string {
 
-            $branch = Branch::query()->orderByDesc('is_default')->orderBy('created_at')->first();
+            $branch = Branch::query()->orderByDesc('is_default')->oldest()->first();
 
             if (! $branch) {
                 $branch = Branch::query()->create([

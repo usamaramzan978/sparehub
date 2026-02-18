@@ -8,10 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\EmployeeSalaryRequest;
 use App\Models\EmployeeSalary;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
 
 final class EmployeeSalaryController extends Controller
 {
@@ -20,7 +20,7 @@ final class EmployeeSalaryController extends Controller
         $branchId = $this->currentBranchId();
         $salaryMonth = $request->string('salary_month')->toString();
         $selectedMonth = $salaryMonth !== ''
-            ? Carbon::createFromFormat('Y-m', $salaryMonth)->startOfMonth()
+            ? Date::createFromFormat('Y-m', $salaryMonth)->startOfMonth()
             : now()->startOfMonth();
 
         $employees = User::query()
@@ -54,7 +54,7 @@ final class EmployeeSalaryController extends Controller
     {
         $payload = $request->validated();
         $branchId = $this->currentBranchId();
-        $salaryMonth = Carbon::parse((string) $payload['salary_month'])->startOfMonth()->toDateString();
+        $salaryMonth = Date::parse((string) $payload['salary_month'])->startOfMonth()->toDateString();
         $basicSalary = (float) $payload['basic_salary'];
         $bonus = (float) ($payload['bonus'] ?? 0);
         $deduction = (float) ($payload['deduction'] ?? 0);
@@ -81,7 +81,7 @@ final class EmployeeSalaryController extends Controller
 
         return to_route('tenant.employee-salaries.index', [
             'tenant' => (string) tenant('id'),
-            'salary_month' => Carbon::parse($salaryMonth)->format('Y-m'),
+            'salary_month' => Date::parse($salaryMonth)->format('Y-m'),
         ])->with('status', 'Salary record updated.');
     }
 }

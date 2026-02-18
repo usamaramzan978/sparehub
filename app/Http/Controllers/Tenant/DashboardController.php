@@ -15,6 +15,7 @@ use App\Http\Requests\Tenant\DashboardFilterRequest;
 use App\Models\Customer;
 use App\Models\InventoryStock;
 use App\Models\JobCard;
+use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\SalePayment;
@@ -23,6 +24,7 @@ use App\Models\VendorPayment;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Str;
 
 final class DashboardController extends Controller
@@ -187,7 +189,7 @@ final class DashboardController extends Controller
             ->orderBy('qty_on_hand')
             ->limit(8)
             ->get()
-            ->filter(fn (InventoryStock $stock): bool => (bool) $stock->product?->track_stock)
+            ->filter(fn (InventoryStock $stock): bool => $stock->product instanceof Product && (bool) $stock->product->track_stock)
             ->values();
 
         $recentSales = Sale::query()
@@ -240,15 +242,15 @@ final class DashboardController extends Controller
         $dateFrom = mb_trim($request->string('date_from')->toString());
         $dateTo = mb_trim($request->string('date_to')->toString());
 
-        $startDate = $dateFrom !== '' ? Carbon::parse($dateFrom)->startOfDay() : now()->subDays(29)->startOfDay();
-        $endDate = $dateTo !== '' ? Carbon::parse($dateTo)->endOfDay() : now()->endOfDay();
+        $startDate = $dateFrom !== '' ? Date::parse($dateFrom)->startOfDay() : now()->subDays(29)->startOfDay();
+        $endDate = $dateTo !== '' ? Date::parse($dateTo)->endOfDay() : now()->endOfDay();
 
         if ($dateFrom !== '' && $dateTo === '') {
-            $endDate = Carbon::parse($dateFrom)->endOfDay();
+            $endDate = Date::parse($dateFrom)->endOfDay();
         }
 
         if ($dateTo !== '' && $dateFrom === '') {
-            $startDate = Carbon::parse($dateTo)->startOfDay();
+            $startDate = Date::parse($dateTo)->startOfDay();
         }
 
         return [$startDate, $endDate];
