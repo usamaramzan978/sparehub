@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\Tenant\AuthController as TenantAuthController;
 use App\Http\Controllers\System\DashboardController as SystemDashboardController;
 use App\Http\Controllers\System\PlanController;
 use App\Http\Controllers\System\TenantController;
+use App\Http\Controllers\System\TenantUserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function (): void {
@@ -40,6 +41,7 @@ Route::prefix('system')->name('system.')->group(function (): void {
         Route::get('dashboard', SystemDashboardController::class)->name('dashboard');
         Route::resource('plans', PlanController::class)->except(['show']);
         Route::resource('tenants', TenantController::class)->except(['show', 'destroy']);
+        Route::resource('tenant-users', TenantUserController::class)->only(['index', 'create', 'store']);
         Route::post('logout', (new SystemAuthController())->logout(...))->name('logout');
     });
 });

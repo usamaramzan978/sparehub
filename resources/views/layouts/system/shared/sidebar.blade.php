@@ -12,7 +12,8 @@
                     $isDashboard = request()->routeIs('system.dashboard');
                     $isTenants = request()->routeIs('system.tenants.*');
                     $isPlans = request()->routeIs('system.plans.*');
-                    $isManagement = $isTenants || $isPlans;
+                    $isTenantUsers = request()->routeIs('system.tenant-users.*');
+                    $isManagement = $isTenants || $isPlans || $isTenantUsers;
                 @endphp
 
                 <nav class="main-menu-container nav nav-pills flex-column">
@@ -41,6 +42,11 @@
                                 <li class="slide {{ $isPlans ? 'active' : '' }}">
                                     <a href="{{ route('system.plans.index') }}" class="side-menu__item {{ $isPlans ? 'active' : '' }}">
                                         {{ __('Plans') }}
+                                    </a>
+                                </li>
+                                <li class="slide {{ $isTenantUsers ? 'active' : '' }}">
+                                    <a href="{{ route('system.tenant-users.index') }}" class="side-menu__item {{ $isTenantUsers ? 'active' : '' }}">
+                                        {{ __('Tenant Users') }}
                                     </a>
                                 </li>
                             </ul>
