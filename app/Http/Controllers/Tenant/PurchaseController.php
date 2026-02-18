@@ -17,7 +17,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 final class PurchaseController extends Controller
 {
@@ -62,7 +61,7 @@ final class PurchaseController extends Controller
         $payload['branch_id'] = $branchId;
         $payload['created_by'] = auth('user')->id();
 
-        DB::transaction(function () use ($payload, $items, $branchId): void {
+        Purchase::query()->getConnection()->transaction(function () use ($payload, $items, $branchId): void {
             $purchase = Purchase::query()->create($payload);
             $this->syncPurchaseItems($purchase, $items, $branchId);
         });
@@ -112,7 +111,7 @@ final class PurchaseController extends Controller
 
         $payload['branch_id'] = $branchId;
 
-        DB::transaction(function () use ($purchase, $payload, $items, $branchId): void {
+        Purchase::query()->getConnection()->transaction(function () use ($purchase, $payload, $items, $branchId): void {
             $purchase->update($payload);
             $this->syncPurchaseItems($purchase, $items, $branchId);
         });

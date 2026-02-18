@@ -5,18 +5,15 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tenant\BranchSwitchRequest;
 use App\Models\Branch;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 final class BranchSwitchController extends Controller
 {
-    public function store(Request $request): RedirectResponse
+    public function store(BranchSwitchRequest $request): RedirectResponse
     {
-
-        $payload = $request->validate([
-            'branch_id' => ['required', 'uuid', 'exists:branches,id'],
-        ]);
+        $payload = $request->validated();
 
         $branch = Branch::query()
             ->active()

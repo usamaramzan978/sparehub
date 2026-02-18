@@ -18,7 +18,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 final class PurchaseReturnController extends Controller
 {
@@ -61,7 +60,7 @@ final class PurchaseReturnController extends Controller
         $payload['branch_id'] = $this->currentBranchId();
         $payload['created_by'] = auth('user')->id();
 
-        DB::transaction(function () use ($payload, $items): void {
+        PurchaseReturn::query()->getConnection()->transaction(function () use ($payload, $items): void {
             $purchaseReturn = PurchaseReturn::query()->create($payload);
             $this->syncPurchaseReturnItems($purchaseReturn, $items);
         });
@@ -108,7 +107,7 @@ final class PurchaseReturnController extends Controller
 
         $payload['branch_id'] = $this->currentBranchId();
 
-        DB::transaction(function () use ($purchaseReturn, $payload, $items): void {
+        PurchaseReturn::query()->getConnection()->transaction(function () use ($purchaseReturn, $payload, $items): void {
             $purchaseReturn->update($payload);
             $this->syncPurchaseReturnItems($purchaseReturn, $items);
         });

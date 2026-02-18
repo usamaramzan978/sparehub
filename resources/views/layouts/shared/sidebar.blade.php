@@ -64,24 +64,28 @@
                                     $isSales = request()->routeIs(
                                         'tenant.pos.*',
                                         'tenant.sales.*',
+                                        'tenant.sales-tree.*',
                                         'tenant.sale-items.*',
                                         'tenant.sale-payments.*',
                                         'tenant.sale-holds.*',
                                     );
                                     $isPos = request()->routeIs('tenant.pos.*');
                                     $isSalesInvoices = request()->routeIs('tenant.sales.*');
+                                    $isSalesTree = request()->routeIs('tenant.sales-tree.*');
                                     $isSaleItems = request()->routeIs('tenant.sale-items.*');
                                     $isSalePayments = request()->routeIs('tenant.sale-payments.*');
                                     $isSaleHolds = request()->routeIs('tenant.sale-holds.*');
 
                                     $isPurchases = request()->routeIs(
                                         'tenant.purchases.*',
+                                        'tenant.purchases-tree.*',
                                         'tenant.purchase-items.*',
                                         'tenant.purchase-returns.*',
                                         'tenant.purchase-return-items.*',
                                         'tenant.vendor-payments.*',
                                     );
                                     $isPurchaseInvoices = request()->routeIs('tenant.purchases.*');
+                                    $isPurchasesTree = request()->routeIs('tenant.purchases-tree.*');
                                     $isPurchaseItems = request()->routeIs('tenant.purchase-items.*');
                                     $isPurchaseReturns = request()->routeIs('tenant.purchase-returns.*');
                                     $isPurchaseReturnItems = request()->routeIs('tenant.purchase-return-items.*');
@@ -335,6 +339,10 @@
                                                     </li>
                                                 </ul>
                                             </li>
+                                            <li class="slide {{ $isSalesTree ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.sales-tree.index') }}"
+                                                    class="side-menu__item {{ $isSalesTree ? 'active' : '' }}">{{ __('Sales Tree') }}</a>
+                                            </li>
                                             <li class="slide has-sub {{ $isSaleItems ? 'active open' : '' }}">
                                                 <a href="javascript:void(0);"
                                                     class="side-menu__item {{ $isSaleItems ? 'active' : '' }}">
@@ -407,6 +415,10 @@
                                                             class="side-menu__item {{ request()->routeIs('tenant.purchases.create') ? 'active' : '' }}">{{ __('Create') }}</a>
                                                     </li>
                                                 </ul>
+                                            </li>
+                                            <li class="slide {{ $isPurchasesTree ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.purchases-tree.index') }}"
+                                                    class="side-menu__item {{ $isPurchasesTree ? 'active' : '' }}">{{ __('Purchases Tree') }}</a>
                                             </li>
                                             <li class="slide has-sub {{ $isPurchaseItems ? 'active open' : '' }}">
                                                 <a href="javascript:void(0);"
@@ -497,10 +509,10 @@
                                             <i class="ri-arrow-right-s-line side-menu__angle"></i>
                                         </a>
                                         <ul class="slide-menu child1 {{ $isInventory ? 'open' : '' }}">
-                                            <li class="slide"><a href="#"
-                                                    class="side-menu__item">{{ __('Inventory Stocks') }}</a></li>
-                                            <li class="slide"><a href="#"
-                                                    class="side-menu__item">{{ __('Stock Moves') }}</a></li>
+                                            <li class="slide {{ request()->routeIs('tenant.inventory.index') ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.inventory.index') }}"
+                                                    class="side-menu__item {{ request()->routeIs('tenant.inventory.index') ? 'active' : '' }}">{{ __('Inventory Stocks') }}</a>
+                                            </li>
                                         </ul>
                                     </li>
 

@@ -28,26 +28,24 @@ final class TenantUserController extends Controller
 
         $tenantUsers = [];
         if ($selectedTenant instanceof Tenant) {
-            $tenantUsers = $selectedTenant->run(function (): array {
-                return User::query()
-                    ->with('branch:id,name')
-                    ->latest()
-                    ->get()
-                    ->map(function (User $user): array {
-                        $status = $user->status instanceof UserStatus ? $user->status->value : (string) $user->status;
+            $tenantUsers = $selectedTenant->run(fn (): array => User::query()
+                ->with('branch:id,name')
+                ->latest()
+                ->get()
+                ->map(function (User $user): array {
+                    $status = $user->status instanceof UserStatus ? $user->status->value : (string) $user->status;
 
-                        return [
-                            'id' => (string) $user->id,
-                            'name' => (string) $user->name,
-                            'email' => (string) $user->email,
-                            'phone' => $user->phone,
-                            'status' => $status,
-                            'branch' => data_get($user, 'branch.name'),
-                            'created_at' => $user->created_at?->format('Y-m-d H:i') ?? '-',
-                        ];
-                    })
-                    ->all();
-            });
+                    return [
+                        'id' => (string) $user->id,
+                        'name' => (string) $user->name,
+                        'email' => (string) $user->email,
+                        'phone' => $user->phone,
+                        'status' => $status,
+                        'branch' => data_get($user, 'branch.name'),
+                        'created_at' => $user->created_at?->format('Y-m-d H:i') ?? '-',
+                    ];
+                })
+                ->all());
         }
 
         return view('system.tenant-users.index', [

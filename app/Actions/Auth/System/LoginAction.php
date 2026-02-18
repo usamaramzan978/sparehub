@@ -24,13 +24,10 @@ final class LoginAction
         $ipAddress = request()->ip();
         $userAgent = request()->userAgent();
 
-        // Check rate limiting first
         $this->ensureIsNotRateLimited($email, $ipAddress);
 
-        // Find user by email
         $user = SystemUser::query()->where('email', $email)->first();
 
-        // Validate credentials
         if (! $user || ! Hash::check($password, $user->password)) {
             $this->handleFailedLogin($email, $ipAddress, $userAgent, $user?->id, 'invalid_credentials');
 
@@ -39,7 +36,6 @@ final class LoginAction
             ]);
         }
 
-        // Check user status
         if ($user->status !== UserStatus::ACTIVE) {
             $this->handleBlockedLogin($email, $ipAddress, $userAgent, $user->id, $user->status);
 
@@ -54,7 +50,6 @@ final class LoginAction
             ]);
         }
 
-        // Attempt authentication
         $ok = Auth::guard('system')->attempt([
             'email' => $email,
             'password' => $password,
@@ -69,10 +64,8 @@ final class LoginAction
             ]);
         }
 
-        // Successful login
         $this->handleSuccessfulLogin($user, $ipAddress, $userAgent);
 
-        // Clear rate limiter on success
         RateLimiter::clear($this->throttleKey($email, $ipAddress));
     }
 
@@ -110,10 +103,8 @@ final class LoginAction
      */
     private function handleSuccessfulLogin(SystemUser $user, string $ipAddress, ?string $userAgent): void
     {
-        // Update last login timestamp
         $user->updateLastLogin($ipAddress);
 
-        // Log successful login
         Log::info('Successful system login', [
             'email' => $user->email,
             'user_id' => $user->id,
@@ -121,7 +112,6 @@ final class LoginAction
             'user_agent' => $userAgent,
         ]);
 
-        // Record login attempt
         LoginAttempt::query()->create([
             'email' => $user->email,
             'ip_address' => $ipAddress,
@@ -143,10 +133,8 @@ final class LoginAction
         ?string $userId,
         string $reason
     ): void {
-        // Increment rate limiter
         RateLimiter::hit($this->throttleKey($email, $ipAddress), 60);
 
-        // Log failed attempt
         Log::warning('Failed system login attempt', [
             'email' => $email,
             'ip_address' => $ipAddress,
@@ -154,7 +142,6 @@ final class LoginAction
             'reason' => $reason,
         ]);
 
-        // Record login attempt
         LoginAttempt::query()->create([
             'email' => $email,
             'ip_address' => $ipAddress,
@@ -177,7 +164,6 @@ final class LoginAction
         string $userId,
         UserStatus $status
     ): void {
-        // Log blocked attempt
         Log::warning('Blocked system login attempt', [
             'email' => $email,
             'user_id' => $userId,
@@ -186,7 +172,6 @@ final class LoginAction
             'status' => $status->value,
         ]);
 
-        // Record login attempt
         LoginAttempt::query()->create([
             'email' => $email,
             'ip_address' => $ipAddress,

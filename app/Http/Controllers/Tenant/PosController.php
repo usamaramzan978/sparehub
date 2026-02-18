@@ -10,6 +10,7 @@ use App\Enums\RecordStatus;
 use App\Enums\SaleLineType;
 use App\Enums\SaleStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tenant\PosStoreRequest;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\InventoryStock;
@@ -26,8 +27,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 final class PosController extends Controller
 {
@@ -159,31 +158,10 @@ final class PosController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(PosStoreRequest $request): RedirectResponse
     {
         $branchId = $this->currentBranchId();
-
-        $validated = $request->validate([
-            'customer_id' => ['nullable', 'uuid', Rule::exists('customers', 'id')->where(fn ($query) => $query->where('branch_id', $branchId))],
-            'status' => ['required', Rule::in([
-                SaleStatus::POSTED->value,
-                SaleStatus::DRAFT->value,
-                SaleStatus::HOLD->value,
-            ])],
-            'discount_type' => ['nullable', Rule::in(['amount', 'percent'])],
-            'discount_value' => ['nullable', 'numeric', 'min:0'],
-            'payment_mode' => ['nullable', Rule::in(['cash', 'online', 'debit'])],
-            'payment_proof' => [$request->string('payment_mode')->toString() === 'online' ? 'required' : 'nullable', 'image', 'max:5120'],
-            'cash_received' => ['nullable', 'numeric', 'min:0'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.type' => ['required', Rule::in(['product', 'service'])],
-            'items.*.ref_id' => ['required', 'uuid'],
-            'items.*.qty' => ['required', 'numeric', 'gt:0'],
-            'items.*.price' => ['required', 'numeric', 'min:0'],
-            'items.*.tax_rate' => ['nullable', 'numeric', 'min:0'],
-            'items.*.tax_inclusive' => ['nullable', 'boolean'],
-            'items.*.name' => ['nullable', 'string', 'max:200'],
-        ]);
+        $validated = $request->validated();
 
         $items = collect($validated['items'])->map(fn (array $item): array => [
             'type' => $item['type'],
@@ -275,7 +253,7 @@ final class PosController extends Controller
             $invoiceType = InvoiceType::SERVICE;
         }
 
-        $sale = DB::transaction(function () use (
+        $sale = Sale::query()->getConnection()->transaction(function () use (
             $branchId,
             $validated,
             $invoiceType,
