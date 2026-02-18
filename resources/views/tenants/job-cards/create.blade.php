@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -33,8 +33,7 @@
                     <div class="col-md-3 mb-3">
                         <label class="form-label" for="job_no">{{ __('Job No') }}</label>
                         <input type="text" name="job_no" id="job_no"
-                            class="form-control @error('job_no') is-invalid @enderror" value="{{ old('job_no') }}"
-                            required>
+                            class="form-control @error('job_no') is-invalid @enderror" value="{{ old('job_no') }}" required>
                         @error('job_no')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror

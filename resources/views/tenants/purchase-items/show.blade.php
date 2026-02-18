@@ -11,18 +11,20 @@
 
     <x-breadcrumb title="{{ __('Purchase Item Details') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <a href="{{ route('tenant.purchase-items.edit', $purchaseItem) }}" class="btn btn-outline-primary">{{ __('Edit') }}</a>
+            <a href="{{ route('tenant.purchase-items.edit', $purchaseItem) }}"
+                class="btn btn-outline-primary">{{ __('Edit') }}</a>
             <a href="{{ route('tenant.purchase-items.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
                 <div>
                     <div class="text-muted small">{{ __('Product') }}</div>
                     <h5 class="mb-1">{{ $purchaseItem->product?->name ?? '-' }}</h5>
-                    <div class="text-muted small">{{ __('Purchase') }}: {{ $purchaseItem->purchase?->purchase_no ?? '-' }}</div>
+                    <div class="text-muted small">{{ __('Purchase') }}: {{ $purchaseItem->purchase?->purchase_no ?? '-' }}
+                    </div>
                 </div>
                 <div class="text-end">
                     <div class="text-muted small">{{ __('Vendor') }}</div>
@@ -77,7 +79,8 @@
                 <div class="col-12 col-md-6">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Purchase Date') }}</div>
-                        <div class="fw-semibold">{{ $purchaseItem->purchase?->purchase_date?->format('Y-m-d') ?? '-' }}</div>
+                        <div class="fw-semibold">{{ $purchaseItem->purchase?->purchase_date?->format('Y-m-d') ?? '-' }}
+                        </div>
                     </div>
                 </div>
             </div>

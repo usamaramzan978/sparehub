@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -53,8 +53,7 @@
                             class="form-select singl-select-2 @error('received_by') is-invalid @enderror">
                             <option value="">{{ __('Unassigned') }}</option>
                             @foreach ($receivers as $receiver)
-                                <option value="{{ $receiver->id }}"
-                                    @selected(old('received_by', $salePayment->received_by) === $receiver->id)>
+                                <option value="{{ $receiver->id }}" @selected(old('received_by', $salePayment->received_by) === $receiver->id)>
                                     {{ $receiver->name }}
                                 </option>
                             @endforeach
@@ -69,8 +68,7 @@
                         <select name="payment_method" id="payment_method"
                             class="form-select singl-select-2 @error('payment_method') is-invalid @enderror" required>
                             @foreach ($methods as $method)
-                                <option value="{{ $method->value }}"
-                                    @selected(old('payment_method', $salePayment->payment_method->value) === $method->value)>
+                                <option value="{{ $method->value }}" @selected(old('payment_method', $salePayment->payment_method->value) === $method->value)>
                                     {{ ucfirst($method->value) }}
                                 </option>
                             @endforeach

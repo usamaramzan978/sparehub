@@ -2,10 +2,7 @@
 
 @section('content')
     @php
-        $breadcrumbs = [
-            ['label' => __('Workshop')],
-            ['label' => __('Job Cards')],
-        ];
+        $breadcrumbs = [['label' => __('Workshop')], ['label' => __('Job Cards')]];
     @endphp
 
     <x-breadcrumb title="{{ __('Job Cards') }}" :items="$breadcrumbs">
@@ -14,7 +11,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <form method="GET" action="{{ route('tenant.job-cards.index') }}" class="row g-2 mb-3">
                 <div class="col-md-10">
@@ -24,7 +21,8 @@
                 </div>
                 <div class="col-md-2 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary w-100">{{ __('Filter') }}</button>
-                    <a href="{{ route('tenant.job-cards.index') }}" class="btn btn-outline-secondary">{{ __('Reset') }}</a>
+                    <a href="{{ route('tenant.job-cards.index') }}"
+                        class="btn btn-outline-secondary">{{ __('Reset') }}</a>
                 </div>
             </form>
 

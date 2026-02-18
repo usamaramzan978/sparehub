@@ -2,10 +2,7 @@
 
 @section('content')
     @php
-        $breadcrumbs = [
-            ['label' => __('Catalog')],
-            ['label' => __('Service Catalog')],
-        ];
+        $breadcrumbs = [['label' => __('Catalog')], ['label' => __('Service Catalog')]];
     @endphp
 
     <x-breadcrumb title="{{ __('Service Catalog') }}" :items="$breadcrumbs">
@@ -24,7 +21,7 @@
         </div>
     @endif
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">

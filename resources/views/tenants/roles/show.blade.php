@@ -31,7 +31,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="row mb-3">
                 <div class="col-md-4">

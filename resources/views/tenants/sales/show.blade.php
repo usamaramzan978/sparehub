@@ -25,13 +25,14 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
                 <div>
                     <div class="text-muted small">{{ __('Invoice') }}</div>
                     <h5 class="mb-1">{{ $sale->invoice_no }}</h5>
-                    <div class="text-muted small">{{ __('Date') }}: {{ $sale->invoice_date?->format('Y-m-d') ?? '-' }}</div>
+                    <div class="text-muted small">{{ __('Date') }}: {{ $sale->invoice_date?->format('Y-m-d') ?? '-' }}
+                    </div>
                 </div>
                 <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $sale->status->value)) }}</span>
             </div>
@@ -109,7 +110,7 @@
         </div>
     </div>
 
-    <div class="card mt-4">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-header">
             <h6 class="mb-0">{{ __('Sale Items') }}</h6>
         </div>
@@ -132,7 +133,8 @@
                         @forelse ($sale->items as $saleItem)
                             <tr>
                                 <td>{{ ucfirst($saleItem->line_type->value) }}</td>
-                                <td>{{ $saleItem->description ?: ($saleItem->product?->name ?? $saleItem->serviceCatalog?->name ?? '-') }}</td>
+                                <td>{{ $saleItem->description ?: $saleItem->product?->name ?? ($saleItem->serviceCatalog?->name ?? '-') }}
+                                </td>
                                 <td class="text-end">{{ number_format((float) $saleItem->qty, 3) }}</td>
                                 <td class="text-end">{{ number_format((float) $saleItem->unit_price, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) $saleItem->discount_amount, 2) }}</td>
@@ -157,7 +159,7 @@
         </div>
     </div>
 
-    <div class="card mt-4">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-header">
             <h6 class="mb-0">{{ __('Sale Payments') }}</h6>
         </div>

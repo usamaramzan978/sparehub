@@ -29,13 +29,14 @@
                     <button type="submit" class="btn btn-primary">{{ __('Filter') }}</button>
                 </div>
                 <div class="col-auto">
-                    <a href="{{ route('system.tenant-users.index') }}" class="btn btn-outline-secondary">{{ __('Reset') }}</a>
+                    <a href="{{ route('system.tenant-users.index') }}"
+                        class="btn btn-outline-secondary">{{ __('Reset') }}</a>
                 </div>
             </form>
         </div>
     </div>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-striped mb-0 align-middle">
@@ -50,9 +51,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (! $selectedTenant)
+                        @if (!$selectedTenant)
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-4">{{ __('Select a tenant to view users.') }}</td>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    {{ __('Select a tenant to view users.') }}</td>
                             </tr>
                         @else
                             @forelse ($tenantUsers as $user)
@@ -61,12 +63,14 @@
                                     <td>{{ $user['email'] }}</td>
                                     <td>{{ $user['phone'] ?: '-' }}</td>
                                     <td>{{ $user['branch'] ?: '-' }}</td>
-                                    <td><span class="badge bg-info-transparent">{{ strtoupper($user['status']) }}</span></td>
+                                    <td><span class="badge bg-info-transparent">{{ strtoupper($user['status']) }}</span>
+                                    </td>
                                     <td>{{ $user['created_at'] }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">{{ __('No users found for selected tenant.') }}</td>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        {{ __('No users found for selected tenant.') }}</td>
                                 </tr>
                             @endforelse
                         @endif

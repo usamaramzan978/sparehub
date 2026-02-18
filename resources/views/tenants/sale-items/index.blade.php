@@ -11,7 +11,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
@@ -31,7 +31,8 @@
                             <tr>
                                 <td>{{ $item->sale?->invoice_no ?? '-' }}</td>
                                 <td>{{ ucfirst($item->line_type->value) }}</td>
-                                <td>{{ $item->description ?: ($item->product?->name ?? $item->serviceCatalog?->name ?? '-') }}</td>
+                                <td>{{ $item->description ?: $item->product?->name ?? ($item->serviceCatalog?->name ?? '-') }}
+                                </td>
                                 <td>{{ number_format((float) $item->qty, 3) }}</td>
                                 <td>{{ number_format((float) $item->unit_price, 2) }}</td>
                                 <td>{{ number_format((float) $item->line_total, 2) }}</td>

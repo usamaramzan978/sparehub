@@ -8,7 +8,8 @@
             ['label' => __('Details')],
         ];
 
-        $statusClass = $serviceCatalog->status->value === 'active' ? 'bg-success-transparent' : 'bg-secondary-transparent';
+        $statusClass =
+            $serviceCatalog->status->value === 'active' ? 'bg-success-transparent' : 'bg-secondary-transparent';
 
         $metaRows = [
             ['label' => __('Code'), 'value' => $serviceCatalog->code],
@@ -31,13 +32,14 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
                 <div>
                     <div class="text-muted small">{{ __('Service') }}</div>
                     <h5 class="mb-1">{{ $serviceCatalog->name }}</h5>
-                    <div class="text-muted small">{{ __('Base Price') }}: {{ number_format((float) $serviceCatalog->base_price, 2) }}</div>
+                    <div class="text-muted small">{{ __('Base Price') }}:
+                        {{ number_format((float) $serviceCatalog->base_price, 2) }}</div>
                 </div>
                 <span class="badge {{ $statusClass }}">{{ ucfirst($serviceCatalog->status->value) }}</span>
             </div>

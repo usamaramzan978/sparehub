@@ -2,10 +2,7 @@
 
 @section('content')
     @php
-        $breadcrumbs = [
-            ['label' => __('People')],
-            ['label' => __('Users')],
-        ];
+        $breadcrumbs = [['label' => __('People')], ['label' => __('Users')]];
     @endphp
 
     <x-breadcrumb title="{{ __('Users') }}" :items="$breadcrumbs">
@@ -14,13 +11,13 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <form method="GET" action="{{ route('tenant.users.index') }}" class="row g-2 mb-3">
                 <div class="col-md-5">
                     <label class="form-label" for="search">{{ __('Search') }}</label>
-                    <input type="text" name="search" id="search" class="form-control"
-                        value="{{ request('search') }}" placeholder="{{ __('Name, email, phone') }}">
+                    <input type="text" name="search" id="search" class="form-control" value="{{ request('search') }}"
+                        placeholder="{{ __('Name, email, phone') }}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label" for="status">{{ __('Status') }}</label>
@@ -92,8 +89,7 @@
                                         <button type="button"
                                             class="btn btn-sm btn-icon btn-danger-light btn-wave waves-effect waves-light js-delete-modal"
                                             data-action="{{ route('tenant.users.destroy', $user) }}"
-                                            data-name="{{ $user->name }}"
-                                            data-title="{{ __('Delete User') }}"
+                                            data-name="{{ $user->name }}" data-title="{{ __('Delete User') }}"
                                             data-message="{{ __('Are you sure you want to delete this user?') }}"
                                             data-bs-toggle="modal" data-bs-target="#userDeleteModal"
                                             title="{{ __('Delete') }}">

@@ -8,7 +8,10 @@
             ['label' => __('Details')],
         ];
 
-        $payloadJson = json_encode($saleHold->payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $payloadJson = json_encode(
+            $saleHold->payload,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+        );
     @endphp
 
     <x-breadcrumb title="{{ __('Sale Hold Details') }}" :items="$breadcrumbs">
@@ -17,7 +20,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
                 <div>

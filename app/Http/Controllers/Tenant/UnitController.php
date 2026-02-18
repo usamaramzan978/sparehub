@@ -31,7 +31,9 @@ final class UnitController extends Controller
 
     public function store(UnitRequest $request): RedirectResponse
     {
-        Unit::query()->create($request->validated());
+        $validated = $request->validated();
+        $validated['is_fractional'] = $request->boolean('is_fractional');
+        Unit::query()->create($validated);
 
         return to_route('tenant.units.index')
             ->with('status', 'Created.');
@@ -39,7 +41,9 @@ final class UnitController extends Controller
 
     public function update(UnitRequest $request, Unit $unit): RedirectResponse
     {
-        $unit->update($request->validated());
+        $validated = $request->validated();
+        $validated['is_fractional'] = $request->boolean('is_fractional');
+        $unit->update($validated);
 
         return to_route('tenant.units.index')
             ->with('status', 'Updated.');

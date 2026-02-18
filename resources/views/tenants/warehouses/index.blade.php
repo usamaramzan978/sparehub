@@ -4,10 +4,7 @@
     @include('tenants.warehouses.partials.create', ['statuses' => $statuses])
 
     @php
-        $breadcrumbs = [
-            ['label' => __('Master Data')],
-            ['label' => __('Warehouses')],
-        ];
+        $breadcrumbs = [['label' => __('Master Data')], ['label' => __('Warehouses')]];
     @endphp
 
     <x-breadcrumb title="{{ __('Warehouses') }}" :items="$breadcrumbs">
@@ -28,17 +25,18 @@
         </div>
     @endif
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <form method="GET" action="{{ route('tenant.warehouses.index') }}" class="row g-2 mb-3">
                 <div class="col-md-10">
                     <label class="form-label" for="search">{{ __('Search') }}</label>
-                    <input type="text" name="search" id="search" class="form-control"
-                        value="{{ request('search') }}" placeholder="{{ __('Search by warehouse name or code') }}">
+                    <input type="text" name="search" id="search" class="form-control" value="{{ request('search') }}"
+                        placeholder="{{ __('Search by warehouse name or code') }}">
                 </div>
                 <div class="col-md-2 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary w-100">{{ __('Filter') }}</button>
-                    <a href="{{ route('tenant.warehouses.index') }}" class="btn btn-outline-secondary">{{ __('Reset') }}</a>
+                    <a href="{{ route('tenant.warehouses.index') }}"
+                        class="btn btn-outline-secondary">{{ __('Reset') }}</a>
                 </div>
             </form>
 
@@ -71,8 +69,7 @@
                                         <span class="d-inline-block" data-bs-toggle="tooltip" title="{{ __('View') }}">
                                             <button type="button"
                                                 class="btn btn-sm btn-icon btn-primary-light btn-wave waves-effect waves-light js-view-warehouse"
-                                                data-code="{{ $warehouse->code }}"
-                                                data-name="{{ $warehouse->name }}"
+                                                data-code="{{ $warehouse->code }}" data-name="{{ $warehouse->name }}"
                                                 data-branch="{{ $warehouse->branch?->name ?: '-' }}"
                                                 data-status="{{ $warehouse->status->value }}" data-bs-toggle="modal"
                                                 data-bs-target="#warehouseViewModal">

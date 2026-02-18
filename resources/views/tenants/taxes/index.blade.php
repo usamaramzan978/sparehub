@@ -2,10 +2,7 @@
 
 @section('content')
     @php
-        $breadcrumbs = [
-            ['label' => __('Finance')],
-            ['label' => __('Taxes')],
-        ];
+        $breadcrumbs = [['label' => __('Finance')], ['label' => __('Taxes')]];
     @endphp
 
     @include('tenants.taxes.partials.create', ['statuses' => $statuses])
@@ -28,7 +25,7 @@
         </div>
     @endif
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
@@ -59,12 +56,11 @@
                                         <span class="d-inline-block" data-bs-toggle="tooltip" title="{{ __('View') }}">
                                             <button type="button"
                                                 class="btn btn-sm btn-icon btn-primary-light btn-wave waves-effect waves-light js-view-tax"
-                                                data-code="{{ $tax->code }}"
-                                                data-name="{{ $tax->name }}"
+                                                data-code="{{ $tax->code }}" data-name="{{ $tax->name }}"
                                                 data-rate="{{ $tax->rate }}"
                                                 data-inclusive="{{ $tax->is_inclusive ? __('Yes') : __('No') }}"
-                                                data-status="{{ $tax->status->value }}"
-                                                data-bs-toggle="modal" data-bs-target="#taxViewModal">
+                                                data-status="{{ $tax->status->value }}" data-bs-toggle="modal"
+                                                data-bs-target="#taxViewModal">
                                                 <i class="ri-eye-line"></i>
                                             </button>
                                         </span>
@@ -79,8 +75,7 @@
                                             <button type="button"
                                                 class="btn btn-sm btn-icon btn-danger-light btn-wave waves-effect waves-light js-delete-modal"
                                                 data-action="{{ route('tenant.taxes.destroy', $tax) }}"
-                                                data-name="{{ $tax->code }}"
-                                                data-title="{{ __('Delete Tax') }}"
+                                                data-name="{{ $tax->code }}" data-title="{{ __('Delete Tax') }}"
                                                 data-message="{{ __('Are you sure you want to delete this tax?') }}"
                                                 data-bs-toggle="modal" data-bs-target="#taxDeleteModal">
                                                 <i class="ri-delete-bin-line"></i>
@@ -89,7 +84,10 @@
                                     </div>
                                 </td>
                             </tr>
-                            @include('tenants.taxes.partials.edit', ['tax' => $tax, 'statuses' => $statuses])
+                            @include('tenants.taxes.partials.edit', [
+                                'tax' => $tax,
+                                'statuses' => $statuses,
+                            ])
                         @empty
                             <tr>
                                 <td colspan="5" class="text-center text-muted">{{ __('No taxes found.') }}</td>

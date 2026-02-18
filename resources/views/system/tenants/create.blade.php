@@ -6,11 +6,14 @@
         <a href="{{ route('system.tenants.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
     </div>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <form method="POST" action="{{ route('system.tenants.store') }}">
                 @csrf
-                @include('system.tenants.partials.form', ['tenant' => new \App\Models\Tenant(), 'isCreate' => true])
+                @include('system.tenants.partials.form', [
+                    'tenant' => new \App\Models\Tenant(),
+                    'isCreate' => true,
+                ])
 
                 <div class="mt-4 d-flex justify-content-end gap-2">
                     <a href="{{ route('system.tenants.index') }}" class="btn btn-light">{{ __('Cancel') }}</a>

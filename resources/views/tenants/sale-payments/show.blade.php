@@ -11,18 +11,20 @@
 
     <x-breadcrumb title="{{ __('Sale Payment Details') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <a href="{{ route('tenant.sale-payments.edit', $salePayment) }}" class="btn btn-outline-primary">{{ __('Edit') }}</a>
+            <a href="{{ route('tenant.sale-payments.edit', $salePayment) }}"
+                class="btn btn-outline-primary">{{ __('Edit') }}</a>
             <a href="{{ route('tenant.sale-payments.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
                 <div>
                     <div class="text-muted small">{{ __('Invoice') }}</div>
                     <h5 class="mb-1">{{ $salePayment->sale?->invoice_no ?? '-' }}</h5>
-                    <div class="text-muted small">{{ __('Customer') }}: {{ $salePayment->sale?->customer?->name ?? '-' }}</div>
+                    <div class="text-muted small">{{ __('Customer') }}: {{ $salePayment->sale?->customer?->name ?? '-' }}
+                    </div>
                 </div>
                 <div class="text-end">
                     <div class="text-muted small">{{ __('Amount') }}</div>
@@ -69,8 +71,8 @@
                 <div class="border rounded p-3 mt-3">
                     <div class="text-muted small mb-2">{{ __('Payment Proof') }}</div>
                     <a href="{{ asset('storage/' . $salePayment->payment_proof_path) }}" target="_blank" rel="noopener">
-                        <img src="{{ asset('storage/' . $salePayment->payment_proof_path) }}" alt="{{ __('Payment Proof') }}"
-                            class="img-fluid rounded" style="max-height: 320px;">
+                        <img src="{{ asset('storage/' . $salePayment->payment_proof_path) }}"
+                            alt="{{ __('Payment Proof') }}" class="img-fluid rounded" style="max-height: 320px;">
                     </a>
                 </div>
             @endif

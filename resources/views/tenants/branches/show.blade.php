@@ -27,7 +27,7 @@
 
     <div class="row g-3">
         <div class="col-12 col-lg-7">
-            <div class="card h-100">
+            <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                         <div>
@@ -58,7 +58,7 @@
         </div>
 
         <div class="col-12 col-lg-5">
-            <div class="card h-100">
+            <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-header">
                     <h6 class="mb-0">{{ __('Branch Snapshot') }}</h6>
                 </div>

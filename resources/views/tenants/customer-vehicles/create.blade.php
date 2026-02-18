@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -84,8 +84,7 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label" for="chassis_no">{{ __('Chassis No') }}</label>
                         <input type="text" name="chassis_no" id="chassis_no"
-                            class="form-control @error('chassis_no') is-invalid @enderror"
-                            value="{{ old('chassis_no') }}">
+                            class="form-control @error('chassis_no') is-invalid @enderror" value="{{ old('chassis_no') }}">
                         @error('chassis_no')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
@@ -93,8 +92,7 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label" for="engine_no">{{ __('Engine No') }}</label>
                         <input type="text" name="engine_no" id="engine_no"
-                            class="form-control @error('engine_no') is-invalid @enderror"
-                            value="{{ old('engine_no') }}">
+                            class="form-control @error('engine_no') is-invalid @enderror" value="{{ old('engine_no') }}">
                         @error('engine_no')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror

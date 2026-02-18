@@ -9,7 +9,7 @@
         <a href="{{ route('system.plans.create') }}" class="btn btn-primary">{{ __('Create Plan') }}</a>
     </div>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-striped mb-0 align-middle">
@@ -33,16 +33,21 @@
                                 </td>
                                 <td>
                                     <div>{{ __('Monthly') }}: {{ number_format((float) $plan->monthly_price, 2) }}</div>
-                                    <small class="text-muted">{{ __('Annual') }}: {{ $plan->annual_price !== null ? number_format((float) $plan->annual_price, 2) : '-' }}</small>
+                                    <small class="text-muted">{{ __('Annual') }}:
+                                        {{ $plan->annual_price !== null ? number_format((float) $plan->annual_price, 2) : '-' }}</small>
                                 </td>
                                 <td>
                                     <div>{{ __('Users') }}: {{ $plan->max_users ?? '∞' }}</div>
-                                    <small class="text-muted">{{ __('Branches') }}: {{ $plan->max_branches ?? '∞' }}</small>
+                                    <small class="text-muted">{{ __('Branches') }}:
+                                        {{ $plan->max_branches ?? '∞' }}</small>
                                 </td>
-                                <td><span class="badge bg-secondary-transparent">{{ strtoupper($plan->status?->value ?? (string) $plan->status) }}</span></td>
+                                <td><span
+                                        class="badge bg-secondary-transparent">{{ strtoupper($plan->status?->value ?? (string) $plan->status) }}</span>
+                                </td>
                                 <td class="text-end">
                                     <div class="btn-list justify-content-end">
-                                        <a href="{{ route('system.plans.edit', $plan) }}" class="btn btn-sm btn-secondary-light">
+                                        <a href="{{ route('system.plans.edit', $plan) }}"
+                                            class="btn btn-sm btn-secondary-light">
                                             <i class="ri-edit-line"></i>
                                         </a>
                                         <form method="POST" action="{{ route('system.plans.destroy', $plan) }}"

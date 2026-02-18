@@ -17,7 +17,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -85,8 +85,7 @@
                             class="form-select singl-select-2 @error('default_tax_id') is-invalid @enderror">
                             <option value="">{{ __('No tax') }}</option>
                             @foreach ($taxes as $tax)
-                                <option value="{{ $tax->id }}"
-                                    @selected(old('default_tax_id', $serviceCatalog->default_tax_id) === $tax->id)>
+                                <option value="{{ $tax->id }}" @selected(old('default_tax_id', $serviceCatalog->default_tax_id) === $tax->id)>
                                     {{ $tax->name }} ({{ $tax->rate }}%)
                                 </option>
                             @endforeach
@@ -100,8 +99,7 @@
                         <select name="status" id="status"
                             class="form-select singl-select-2 @error('status') is-invalid @enderror" required>
                             @foreach ($statuses as $status)
-                                <option value="{{ $status->value }}"
-                                    @selected(old('status', $serviceCatalog->status->value) === $status->value)>
+                                <option value="{{ $status->value }}" @selected(old('status', $serviceCatalog->status->value) === $status->value)>
                                     {{ ucfirst($status->value) }}
                                 </option>
                             @endforeach
@@ -113,8 +111,8 @@
                     <div class="col-md-12 mb-3">
                         <div class="form-check">
                             <input type="hidden" name="is_taxable" value="0">
-                            <input class="form-check-input" type="checkbox" value="1" id="is_taxable"
-                                name="is_taxable" @checked((bool) old('is_taxable', $serviceCatalog->is_taxable))>
+                            <input class="form-check-input" type="checkbox" value="1" id="is_taxable" name="is_taxable"
+                                @checked((bool) old('is_taxable', $serviceCatalog->is_taxable))>
                             <label class="form-check-label" for="is_taxable">{{ __('Taxable Service') }}</label>
                         </div>
                     </div>

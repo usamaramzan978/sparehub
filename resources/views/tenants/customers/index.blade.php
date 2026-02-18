@@ -2,10 +2,7 @@
 
 @section('content')
     @php
-        $breadcrumbs = [
-            ['label' => __('People')],
-            ['label' => __('Customers')],
-        ];
+        $breadcrumbs = [['label' => __('People')], ['label' => __('Customers')]];
     @endphp
 
     <x-breadcrumb title="{{ __('Customers') }}" :items="$breadcrumbs">
@@ -14,7 +11,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
@@ -59,8 +56,7 @@
                                         <button type="button"
                                             class="btn btn-sm btn-icon btn-danger-light btn-wave waves-effect waves-light js-delete-modal"
                                             data-action="{{ route('tenant.customers.destroy', $customer) }}"
-                                            data-name="{{ $customer->name }}"
-                                            data-title="{{ __('Delete Customer') }}"
+                                            data-name="{{ $customer->name }}" data-title="{{ __('Delete Customer') }}"
                                             data-message="{{ __('Are you sure you want to delete this customer?') }}"
                                             data-bs-toggle="modal" data-bs-target="#customerDeleteModal"
                                             title="{{ __('Delete') }}">

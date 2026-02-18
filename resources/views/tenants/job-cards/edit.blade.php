@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -55,8 +55,7 @@
                             class="form-select singl-select-2 @error('customer_id') is-invalid @enderror" required>
                             <option value="">{{ __('Select customer') }}</option>
                             @foreach ($customers as $customer)
-                                <option value="{{ $customer->id }}"
-                                    @selected(old('customer_id', $jobCard->customer_id) === $customer->id)>
+                                <option value="{{ $customer->id }}" @selected(old('customer_id', $jobCard->customer_id) === $customer->id)>
                                     {{ $customer->name }} ({{ $customer->code }})
                                 </option>
                             @endforeach
@@ -87,8 +86,7 @@
                             class="form-select singl-select-2 @error('assigned_employee_id') is-invalid @enderror">
                             <option value="">{{ __('Unassigned') }}</option>
                             @foreach ($employees as $employee)
-                                <option value="{{ $employee->id }}"
-                                    @selected(old('assigned_employee_id', $jobCard->assigned_employee_id) === $employee->id)>
+                                <option value="{{ $employee->id }}" @selected(old('assigned_employee_id', $jobCard->assigned_employee_id) === $employee->id)>
                                     {{ $employee->name }}
                                 </option>
                             @endforeach

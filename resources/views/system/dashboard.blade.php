@@ -49,7 +49,7 @@
 
     <div class="row g-3">
         <div class="col-12 col-xl-7">
-            <div class="card">
+            <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">{{ __('Recent Tenants') }}</h6>
                     <a href="{{ route('system.tenants.index') }}" class="btn btn-sm btn-outline-secondary">{{ __('View All') }}</a>
@@ -89,7 +89,7 @@
         </div>
 
         <div class="col-12 col-xl-5">
-            <div class="card">
+            <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-header">
                     <h6 class="mb-0">{{ __('Recent System Users') }}</h6>
                 </div>

@@ -33,7 +33,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
                 <div>
@@ -80,7 +80,7 @@
         </div>
     </div>
 
-    <div class="card mt-4">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-header">
             <h6 class="mb-0">{{ __('Vehicles') }}</h6>
         </div>
@@ -122,7 +122,7 @@
         </div>
     </div>
 
-    <div class="card mt-4">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-header">
             <h6 class="mb-0">{{ __('Recent Sales') }}</h6>
         </div>

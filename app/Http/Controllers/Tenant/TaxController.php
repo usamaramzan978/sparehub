@@ -32,7 +32,9 @@ final class TaxController extends Controller
 
     public function store(TaxRequest $request): RedirectResponse
     {
-        Tax::query()->create($request->validated());
+        $validated = $request->validated();
+        $validated['is_inclusive'] = $request->boolean('is_inclusive');
+        Tax::query()->create();
 
         return to_route('tenant.taxes.index')
             ->with('status', 'Created.');
@@ -40,7 +42,9 @@ final class TaxController extends Controller
 
     public function update(TaxRequest $request, Tax $tax): RedirectResponse
     {
-        $tax->update($request->validated());
+        $validated = $request->validated();
+        $validated['is_inclusive'] = $request->boolean('is_inclusive');
+        $tax->update($validated);
 
         return to_route('tenant.taxes.index')
             ->with('status', 'Updated.');

@@ -11,7 +11,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
@@ -60,7 +60,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted">{{ __('No vendor payments found.') }}</td>
+                                <td colspan="7" class="text-center text-muted">{{ __('No vendor payments found.') }}
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

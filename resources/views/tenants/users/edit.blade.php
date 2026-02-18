@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -34,8 +34,8 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="name">{{ __('Name') }}</label>
                         <input type="text" name="name" id="name"
-                            class="form-control @error('name') is-invalid @enderror"
-                            value="{{ old('name', $user->name) }}" required>
+                            class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $user->name) }}"
+                            required>
                         @error('name')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
@@ -82,7 +82,8 @@
 
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="status">{{ __('Status') }}</label>
-                        <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
+                        <select name="status" id="status" class="form-select @error('status') is-invalid @enderror"
+                            required>
                             @foreach ($statuses as $status)
                                 <option value="{{ $status->value }}" @selected(old('status', $user->status->value) === $status->value)>
                                     {{ ucfirst($status->value) }}

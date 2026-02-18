@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -52,8 +52,7 @@
                         <select name="line_type" id="line_type"
                             class="form-select singl-select-2 @error('line_type') is-invalid @enderror" required>
                             @foreach ($lineTypes as $lineType)
-                                <option value="{{ $lineType->value }}"
-                                    @selected(old('line_type', $saleItem->line_type->value) === $lineType->value)>
+                                <option value="{{ $lineType->value }}" @selected(old('line_type', $saleItem->line_type->value) === $lineType->value)>
                                     {{ ucfirst($lineType->value) }}
                                 </option>
                             @endforeach
@@ -69,8 +68,7 @@
                             class="form-select singl-select-2 @error('product_id') is-invalid @enderror">
                             <option value="">{{ __('None') }}</option>
                             @foreach ($products as $product)
-                                <option value="{{ $product->id }}"
-                                    @selected(old('product_id', $saleItem->product_id) === $product->id)>
+                                <option value="{{ $product->id }}" @selected(old('product_id', $saleItem->product_id) === $product->id)>
                                     {{ $product->name }}
                                 </option>
                             @endforeach
@@ -86,8 +84,7 @@
                             class="form-select singl-select-2 @error('service_catalog_id') is-invalid @enderror">
                             <option value="">{{ __('None') }}</option>
                             @foreach ($serviceCatalogs as $serviceCatalog)
-                                <option value="{{ $serviceCatalog->id }}"
-                                    @selected(old('service_catalog_id', $saleItem->service_catalog_id) === $serviceCatalog->id)>
+                                <option value="{{ $serviceCatalog->id }}" @selected(old('service_catalog_id', $saleItem->service_catalog_id) === $serviceCatalog->id)>
                                     {{ $serviceCatalog->name }}
                                 </option>
                             @endforeach
@@ -103,8 +100,7 @@
                             class="form-select singl-select-2 @error('job_card_service_id') is-invalid @enderror">
                             <option value="">{{ __('None') }}</option>
                             @foreach ($jobCardServices as $jobCardService)
-                                <option value="{{ $jobCardService->id }}"
-                                    @selected(old('job_card_service_id', $saleItem->job_card_service_id) === $jobCardService->id)>
+                                <option value="{{ $jobCardService->id }}" @selected(old('job_card_service_id', $saleItem->job_card_service_id) === $jobCardService->id)>
                                     {{ $jobCardService->service_name }}
                                 </option>
                             @endforeach

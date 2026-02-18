@@ -25,7 +25,7 @@ final class CategoryController extends Controller
             ->with('parent')
             ->when(
                 $search !== '',
-                fn (Builder $query) => $query->where('name', 'like', sprintf('%%%s%%', $search))
+                fn(Builder $query) => $query->where('name', 'like', sprintf('%%%s%%', $search))
             )
             ->latest()
             ->paginate($perPage)
@@ -70,16 +70,6 @@ final class CategoryController extends Controller
             ->with('status', 'Deleted.');
     }
 
-    public function toggleStatus(Category $category): RedirectResponse
-    {
-        $category->status = $category->status === RecordStatus::ACTIVE
-            ? RecordStatus::INACTIVE
-            : RecordStatus::ACTIVE;
-        $category->save();
-
-        return back()->with('status', 'Status updated.');
-    }
-
     private function buildUniqueSlug(string $name, ?string $ignoreCategoryId = null): string
     {
         $baseSlug = Str::slug($name);
@@ -100,7 +90,7 @@ final class CategoryController extends Controller
     {
         return Category::query()
             ->where('slug', $slug)
-            ->when($ignoreCategoryId !== null, fn (Builder $query) => $query->whereKeyNot($ignoreCategoryId))
+            ->when($ignoreCategoryId !== null, fn(Builder $query) => $query->whereKeyNot($ignoreCategoryId))
             ->exists();
     }
 }

@@ -11,18 +11,20 @@
 
     <x-breadcrumb title="{{ __('Purchase Return Details') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <a href="{{ route('tenant.purchase-returns.edit', $purchaseReturn) }}" class="btn btn-outline-primary">{{ __('Edit') }}</a>
+            <a href="{{ route('tenant.purchase-returns.edit', $purchaseReturn) }}"
+                class="btn btn-outline-primary">{{ __('Edit') }}</a>
             <a href="{{ route('tenant.purchase-returns.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
                 <div>
                     <div class="text-muted small">{{ __('Return No') }}</div>
                     <h5 class="mb-1">{{ $purchaseReturn->return_no }}</h5>
-                    <div class="text-muted small">{{ __('Date') }}: {{ $purchaseReturn->return_date?->format('Y-m-d') ?? '-' }}</div>
+                    <div class="text-muted small">{{ __('Date') }}:
+                        {{ $purchaseReturn->return_date?->format('Y-m-d') ?? '-' }}</div>
                 </div>
                 <div class="text-end">
                     <div class="text-muted small">{{ __('Status') }}</div>

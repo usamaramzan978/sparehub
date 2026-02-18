@@ -14,8 +14,8 @@
             <form method="GET" action="{{ route('system.tenants.index') }}" class="row g-2 align-items-end">
                 <div class="col-12 col-md-6 col-xl-4">
                     <label for="tenant-search" class="form-label">{{ __('Search') }}</label>
-                    <input id="tenant-search" type="text" name="search" class="form-control"
-                        value="{{ $search }}" placeholder="Name, slug, or domain">
+                    <input id="tenant-search" type="text" name="search" class="form-control" value="{{ $search }}"
+                        placeholder="Name, slug, or domain">
                 </div>
                 <div class="col-auto">
                     <button type="submit" class="btn btn-primary">{{ __('Filter') }}</button>
@@ -27,7 +27,7 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-striped mb-0 align-middle">
@@ -54,9 +54,12 @@
                                     <div>{{ $tenant->data['owner_name'] ?? '-' }}</div>
                                     <small class="text-muted">{{ $tenant->data['owner_email'] ?? '' }}</small>
                                 </td>
-                                <td><span class="badge bg-info-transparent">{{ strtoupper($tenant->status?->value ?? (string) $tenant->status) }}</span></td>
+                                <td><span
+                                        class="badge bg-info-transparent">{{ strtoupper($tenant->status?->value ?? (string) $tenant->status) }}</span>
+                                </td>
                                 <td class="text-end">
-                                    <a href="{{ route('system.tenants.edit', $tenant) }}" class="btn btn-sm btn-secondary-light">
+                                    <a href="{{ route('system.tenants.edit', $tenant) }}"
+                                        class="btn btn-sm btn-secondary-light">
                                         <i class="ri-edit-line"></i>
                                     </a>
                                 </td>

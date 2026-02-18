@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -75,8 +75,7 @@
                         <select name="payment_method" id="payment_method"
                             class="form-select singl-select-2 @error('payment_method') is-invalid @enderror" required>
                             @foreach ($methods as $method)
-                                <option value="{{ $method->value }}"
-                                    @selected(old('payment_method', $vendorPayment->payment_method->value) === $method->value)>
+                                <option value="{{ $method->value }}" @selected(old('payment_method', $vendorPayment->payment_method->value) === $method->value)>
                                     {{ ucfirst($method->value) }}
                                 </option>
                             @endforeach

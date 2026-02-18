@@ -11,12 +11,13 @@
 
     <x-breadcrumb title="{{ __('Job Card Part Details') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <a href="{{ route('tenant.job-card-parts.edit', $partLine) }}" class="btn btn-outline-primary">{{ __('Edit') }}</a>
+            <a href="{{ route('tenant.job-card-parts.edit', $partLine) }}"
+                class="btn btn-outline-primary">{{ __('Edit') }}</a>
             <a href="{{ route('tenant.job-card-parts.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
                 <div>

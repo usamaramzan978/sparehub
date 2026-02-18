@@ -16,7 +16,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -81,8 +81,7 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="ntn">{{ __('NTN') }}</label>
                         <input type="text" name="ntn" id="ntn"
-                            class="form-control @error('ntn') is-invalid @enderror"
-                            value="{{ old('ntn', $vendor->ntn) }}">
+                            class="form-control @error('ntn') is-invalid @enderror" value="{{ old('ntn', $vendor->ntn) }}">
                         @error('ntn')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror

@@ -11,11 +11,12 @@
 
     <x-breadcrumb title="{{ __('Edit Purchase Return Item') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <a href="{{ route('tenant.purchase-return-items.index') }}" class="btn btn-outline-secondary">{{ __('Back') }}</a>
+            <a href="{{ route('tenant.purchase-return-items.index') }}"
+                class="btn btn-outline-secondary">{{ __('Back') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -53,7 +54,8 @@
                             <option value="">{{ __('None') }}</option>
                             @foreach ($purchaseItems as $purchaseItem)
                                 <option value="{{ $purchaseItem->id }}" @selected(old('purchase_item_id', $purchaseReturnItem->purchase_item_id) === $purchaseItem->id)>
-                                    {{ $purchaseItem->purchase?->purchase_no ?? '-' }} - {{ $purchaseItem->product?->name ?? '-' }}
+                                    {{ $purchaseItem->purchase?->purchase_no ?? '-' }} -
+                                    {{ $purchaseItem->product?->name ?? '-' }}
                                 </option>
                             @endforeach
                         </select>

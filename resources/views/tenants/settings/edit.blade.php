@@ -10,7 +10,7 @@
 
     <div class="row">
         <div class="col-lg-3 mb-4">
-            <div class="card">
+            <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="mb-3">{{ __('Settings') }}</h6>
                     <div class="list-group list-group-flush">
@@ -32,12 +32,13 @@
                 @csrf
                 @method('PUT')
 
-                <div class="card mb-4" id="general-settings">
+                <div class="card custom-card border-0 shadow-sm h-100" id="general-settings">
                     <div class="card-header">
                         <h6 class="mb-0">{{ __('General Settings') }}</h6>
                     </div>
                     <div class="card-body">
-                        <p class="text-muted small mb-3">{{ __('Basic company profile used across invoices and headers.') }}</p>
+                        <p class="text-muted small mb-3">{{ __('Basic company profile used across invoices and headers.') }}
+                        </p>
                         @if ($errors->any())
                             <div class="alert alert-danger">
                                 <ul class="mb-0">
@@ -94,7 +95,7 @@
                     </div>
                 </div>
 
-                <div class="card mb-4" id="notification-settings">
+                <div class="card custom-card border-0 shadow-sm h-100" id="notification-settings">
                     <div class="card-header">
                         <h6 class="mb-0">{{ __('Notifications') }}</h6>
                     </div>
@@ -113,7 +114,7 @@
                     </div>
                 </div>
 
-                <div class="card mb-4" id="system-settings">
+                <div class="card custom-card border-0 shadow-sm h-100" id="system-settings">
                     <div class="card-header">
                         <h6 class="mb-0">{{ __('System Settings') }}</h6>
                     </div>
@@ -126,7 +127,8 @@
                                     <select name="locale" id="locale"
                                         class="form-select singl-select-2 @error('locale') is-invalid @enderror">
                                         <option value="">
-                                            {{ __('Use system default') }} ({{ config('tenancy.ui.default_locale', config('app.locale')) }})
+                                            {{ __('Use system default') }}
+                                            ({{ config('tenancy.ui.default_locale', config('app.locale')) }})
                                         </option>
                                         @foreach ($locales as $code => $label)
                                             <option value="{{ $code }}" @selected(old('locale', $setting?->locale) === $code)>
@@ -178,7 +180,8 @@
                                 @enderror
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label" for="otp_expiry_minutes">{{ __('OTP Expiry (minutes)') }}</label>
+                                <label class="form-label"
+                                    for="otp_expiry_minutes">{{ __('OTP Expiry (minutes)') }}</label>
                                 <input type="number" name="otp_expiry_minutes" id="otp_expiry_minutes"
                                     class="form-control @error('otp_expiry_minutes') is-invalid @enderror"
                                     value="{{ old('otp_expiry_minutes', $setting?->otp_expiry_minutes ?? 10) }}"

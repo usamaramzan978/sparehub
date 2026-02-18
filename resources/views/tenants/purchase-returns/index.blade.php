@@ -11,7 +11,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <form method="GET" action="{{ route('tenant.purchase-returns.index') }}" class="row g-2 mb-3">
                 <div class="col-md-10">
@@ -21,7 +21,8 @@
                 </div>
                 <div class="col-md-2 d-flex align-items-end gap-2">
                     <button class="btn btn-primary w-100" type="submit">{{ __('Filter') }}</button>
-                    <a href="{{ route('tenant.purchase-returns.index') }}" class="btn btn-outline-secondary">{{ __('Reset') }}</a>
+                    <a href="{{ route('tenant.purchase-returns.index') }}"
+                        class="btn btn-outline-secondary">{{ __('Reset') }}</a>
                 </div>
             </form>
 
@@ -72,7 +73,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted">{{ __('No purchase returns found.') }}</td>
+                                <td colspan="7" class="text-center text-muted">{{ __('No purchase returns found.') }}
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

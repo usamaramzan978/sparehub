@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -33,7 +33,8 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="payment_no">{{ __('Payment No') }}</label>
                         <input type="text" name="payment_no" id="payment_no"
-                            class="form-control @error('payment_no') is-invalid @enderror" value="{{ old('payment_no') }}" required>
+                            class="form-control @error('payment_no') is-invalid @enderror" value="{{ old('payment_no') }}"
+                            required>
                         @error('payment_no')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
@@ -85,7 +86,8 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="amount">{{ __('Amount') }}</label>
                         <input type="number" step="0.01" min="0.01" name="amount" id="amount"
-                            class="form-control @error('amount') is-invalid @enderror" value="{{ old('amount') }}" required>
+                            class="form-control @error('amount') is-invalid @enderror" value="{{ old('amount') }}"
+                            required>
                         @error('amount')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
@@ -102,7 +104,8 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label" for="reference_no">{{ __('Reference No') }}</label>
                         <input type="text" name="reference_no" id="reference_no"
-                            class="form-control @error('reference_no') is-invalid @enderror" value="{{ old('reference_no') }}">
+                            class="form-control @error('reference_no') is-invalid @enderror"
+                            value="{{ old('reference_no') }}">
                         @error('reference_no')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror

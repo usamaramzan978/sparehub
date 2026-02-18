@@ -8,7 +8,7 @@
             ['label' => __('Details')],
         ];
 
-        $itemName = $saleItem->description ?: ($saleItem->product?->name ?? $saleItem->serviceCatalog?->name ?? '-');
+        $itemName = $saleItem->description ?: $saleItem->product?->name ?? ($saleItem->serviceCatalog?->name ?? '-');
     @endphp
 
     <x-breadcrumb title="{{ __('Sale Item Details') }}" :items="$breadcrumbs">
@@ -18,7 +18,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
                 <div>

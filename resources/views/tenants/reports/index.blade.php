@@ -2,10 +2,7 @@
 
 @section('content')
     @php
-        $breadcrumbs = [
-            ['label' => __('System')],
-            ['label' => __('Reports')],
-        ];
+        $breadcrumbs = [['label' => __('System')], ['label' => __('Reports')]];
     @endphp
 
     <x-breadcrumb title="{{ __('Reports') }}" :items="$breadcrumbs">
@@ -17,7 +14,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <form method="GET" action="{{ route('tenant.reports.index') }}" class="row g-3">
                 <div class="col-md-2">
@@ -109,12 +106,13 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label" for="search">{{ __('Search') }}</label>
-                    <input type="text" id="search" name="search" class="form-control" value="{{ request('search') }}"
-                        placeholder="{{ __('Invoice, vendor, ref') }}">
+                    <input type="text" id="search" name="search" class="form-control"
+                        value="{{ request('search') }}" placeholder="{{ __('Invoice, vendor, ref') }}">
                 </div>
                 <div class="col-md-2 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary w-100">{{ __('Apply') }}</button>
-                    <a href="{{ route('tenant.reports.index') }}" class="btn btn-outline-secondary">{{ __('Reset') }}</a>
+                    <a href="{{ route('tenant.reports.index') }}"
+                        class="btn btn-outline-secondary">{{ __('Reset') }}</a>
                 </div>
             </form>
         </div>
@@ -122,31 +120,77 @@
 
     <div class="row g-3 mt-1">
         <div class="col-12 col-md-6 col-xl-3">
-            <div class="card"><div class="card-body"><div class="text-muted small">{{ __('Sales Total') }}</div><h5 class="mb-0">{{ number_format($summary['sales_total'], 2) }}</h5><small>{{ $summary['sales_count'] }} {{ __('invoices') }}</small></div></div>
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Sales Total') }}</div>
+                    <h5 class="mb-0">{{ number_format($summary['sales_total'], 2) }}</h5>
+                    <small>{{ $summary['sales_count'] }} {{ __('invoices') }}</small>
+                </div>
+            </div>
         </div>
         <div class="col-12 col-md-6 col-xl-3">
-            <div class="card"><div class="card-body"><div class="text-muted small">{{ __('Purchases Total') }}</div><h5 class="mb-0">{{ number_format($summary['purchases_total'], 2) }}</h5><small>{{ $summary['purchases_count'] }} {{ __('orders') }}</small></div></div>
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Purchases Total') }}</div>
+                    <h5 class="mb-0">{{ number_format($summary['purchases_total'], 2) }}</h5>
+                    <small>{{ $summary['purchases_count'] }} {{ __('orders') }}</small>
+                </div>
+            </div>
         </div>
         <div class="col-12 col-md-6 col-xl-3">
-            <div class="card"><div class="card-body"><div class="text-muted small">{{ __('Receivables') }}</div><h5 class="mb-0">{{ number_format($summary['receivables_total'], 2) }}</h5><small>{{ __('Outstanding sales') }}</small></div></div>
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Receivables') }}</div>
+                    <h5 class="mb-0">{{ number_format($summary['receivables_total'], 2) }}</h5>
+                    <small>{{ __('Outstanding sales') }}</small>
+                </div>
+            </div>
         </div>
         <div class="col-12 col-md-6 col-xl-3">
-            <div class="card"><div class="card-body"><div class="text-muted small">{{ __('Payables') }}</div><h5 class="mb-0">{{ number_format($summary['payables_total'], 2) }}</h5><small>{{ __('Outstanding purchases') }}</small></div></div>
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Payables') }}</div>
+                    <h5 class="mb-0">{{ number_format($summary['payables_total'], 2) }}</h5>
+                    <small>{{ __('Outstanding purchases') }}</small>
+                </div>
+            </div>
         </div>
         <div class="col-12 col-md-6 col-xl-3">
-            <div class="card"><div class="card-body"><div class="text-muted small">{{ __('Sale Payments') }}</div><h5 class="mb-0">{{ number_format($summary['sale_payments_total'], 2) }}</h5></div></div>
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Sale Payments') }}</div>
+                    <h5 class="mb-0">{{ number_format($summary['sale_payments_total'], 2) }}</h5>
+                </div>
+            </div>
         </div>
         <div class="col-12 col-md-6 col-xl-3">
-            <div class="card"><div class="card-body"><div class="text-muted small">{{ __('Vendor Payments') }}</div><h5 class="mb-0">{{ number_format($summary['vendor_payments_total'], 2) }}</h5></div></div>
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Vendor Payments') }}</div>
+                    <h5 class="mb-0">{{ number_format($summary['vendor_payments_total'], 2) }}</h5>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="card mt-3">
-        <div class="card-header"><h6 class="mb-0">{{ __('Sales Invoices Report') }}</h6></div>
+    <div class="card custom-card border-0 shadow-sm h-100">
+        <div class="card-header">
+            <h6 class="mb-0">{{ __('Sales Invoices Report') }}</h6>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
-                    <thead><tr><th>{{ __('Invoice') }}</th><th>{{ __('Date') }}</th><th>{{ __('Customer') }}</th><th>{{ __('Type') }}</th><th>{{ __('Status') }}</th><th class="text-end">{{ __('Grand Total') }}</th><th class="text-end">{{ __('Balance') }}</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>{{ __('Invoice') }}</th>
+                            <th>{{ __('Date') }}</th>
+                            <th>{{ __('Customer') }}</th>
+                            <th>{{ __('Type') }}</th>
+                            <th>{{ __('Status') }}</th>
+                            <th class="text-end">{{ __('Grand Total') }}</th>
+                            <th class="text-end">{{ __('Balance') }}</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         @forelse ($sales as $sale)
                             <tr>
@@ -159,7 +203,9 @@
                                 <td class="text-end">{{ number_format((float) $sale->balance_due, 2) }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="text-center text-muted">{{ __('No sales found.') }}</td></tr>
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">{{ __('No sales found.') }}</td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -168,12 +214,23 @@
         </div>
     </div>
 
-    <div class="card mt-3">
-        <div class="card-header"><h6 class="mb-0">{{ __('Purchase Invoices Report') }}</h6></div>
+    <div class="card custom-card border-0 shadow-sm h-100">
+        <div class="card-header">
+            <h6 class="mb-0">{{ __('Purchase Invoices Report') }}</h6>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
-                    <thead><tr><th>{{ __('Purchase') }}</th><th>{{ __('Date') }}</th><th>{{ __('Vendor') }}</th><th>{{ __('Status') }}</th><th class="text-end">{{ __('Grand Total') }}</th><th class="text-end">{{ __('Balance') }}</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>{{ __('Purchase') }}</th>
+                            <th>{{ __('Date') }}</th>
+                            <th>{{ __('Vendor') }}</th>
+                            <th>{{ __('Status') }}</th>
+                            <th class="text-end">{{ __('Grand Total') }}</th>
+                            <th class="text-end">{{ __('Balance') }}</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         @forelse ($purchases as $purchase)
                             <tr>
@@ -185,7 +242,9 @@
                                 <td class="text-end">{{ number_format((float) $purchase->balance_due, 2) }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="text-center text-muted">{{ __('No purchases found.') }}</td></tr>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">{{ __('No purchases found.') }}</td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -194,12 +253,22 @@
         </div>
     </div>
 
-    <div class="card mt-3">
-        <div class="card-header"><h6 class="mb-0">{{ __('Sale Payments Report') }}</h6></div>
+    <div class="card custom-card border-0 shadow-sm h-100">
+        <div class="card-header">
+            <h6 class="mb-0">{{ __('Sale Payments Report') }}</h6>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
-                    <thead><tr><th>{{ __('Invoice') }}</th><th>{{ __('Method') }}</th><th>{{ __('Paid At') }}</th><th>{{ __('Reference') }}</th><th class="text-end">{{ __('Amount') }}</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>{{ __('Invoice') }}</th>
+                            <th>{{ __('Method') }}</th>
+                            <th>{{ __('Paid At') }}</th>
+                            <th>{{ __('Reference') }}</th>
+                            <th class="text-end">{{ __('Amount') }}</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         @forelse ($salePayments as $payment)
                             <tr>
@@ -210,7 +279,10 @@
                                 <td class="text-end">{{ number_format((float) $payment->amount, 2) }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="text-center text-muted">{{ __('No sale payments found.') }}</td></tr>
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">{{ __('No sale payments found.') }}
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -219,12 +291,22 @@
         </div>
     </div>
 
-    <div class="card mt-3">
-        <div class="card-header"><h6 class="mb-0">{{ __('Vendor Payments Report') }}</h6></div>
+    <div class="card custom-card border-0 shadow-sm h-100">
+        <div class="card-header">
+            <h6 class="mb-0">{{ __('Vendor Payments Report') }}</h6>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
-                    <thead><tr><th>{{ __('Payment No') }}</th><th>{{ __('Vendor') }}</th><th>{{ __('Method') }}</th><th>{{ __('Paid At') }}</th><th class="text-end">{{ __('Amount') }}</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>{{ __('Payment No') }}</th>
+                            <th>{{ __('Vendor') }}</th>
+                            <th>{{ __('Method') }}</th>
+                            <th>{{ __('Paid At') }}</th>
+                            <th class="text-end">{{ __('Amount') }}</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         @forelse ($vendorPayments as $payment)
                             <tr>
@@ -235,7 +317,10 @@
                                 <td class="text-end">{{ number_format((float) $payment->amount, 2) }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="text-center text-muted">{{ __('No vendor payments found.') }}</td></tr>
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">{{ __('No vendor payments found.') }}
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -244,14 +329,23 @@
         </div>
     </div>
 
-    <div class="row g-3 mt-1">
-        <div class="col-12 col-xl-6">
-            <div class="card">
-                <div class="card-header"><h6 class="mb-0">{{ __('Receivables Report') }}</h6></div>
+    <div class="row g-3 mt-1 mb-3">
+        <div class="col-2 col-xl-6">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">{{ __('Receivables Report') }}</h6>
+                </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-striped align-middle mb-0">
-                            <thead><tr><th>{{ __('Invoice') }}</th><th>{{ __('Customer') }}</th><th>{{ __('Date') }}</th><th class="text-end">{{ __('Balance') }}</th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Invoice') }}</th>
+                                    <th>{{ __('Customer') }}</th>
+                                    <th>{{ __('Date') }}</th>
+                                    <th class="text-end">{{ __('Balance') }}</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 @forelse ($receivables as $sale)
                                     <tr>
@@ -261,7 +355,10 @@
                                         <td class="text-end">{{ number_format((float) $sale->balance_due, 2) }}</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="4" class="text-center text-muted">{{ __('No receivables found.') }}</td></tr>
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">
+                                            {{ __('No receivables found.') }}</td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -271,12 +368,21 @@
             </div>
         </div>
         <div class="col-12 col-xl-6">
-            <div class="card">
-                <div class="card-header"><h6 class="mb-0">{{ __('Payables Report') }}</h6></div>
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">{{ __('Payables Report') }}</h6>
+                </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-striped align-middle mb-0">
-                            <thead><tr><th>{{ __('Purchase') }}</th><th>{{ __('Vendor') }}</th><th>{{ __('Date') }}</th><th class="text-end">{{ __('Balance') }}</th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Purchase') }}</th>
+                                    <th>{{ __('Vendor') }}</th>
+                                    <th>{{ __('Date') }}</th>
+                                    <th class="text-end">{{ __('Balance') }}</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 @forelse ($payables as $purchase)
                                     <tr>
@@ -286,7 +392,10 @@
                                         <td class="text-end">{{ number_format((float) $purchase->balance_due, 2) }}</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="4" class="text-center text-muted">{{ __('No payables found.') }}</td></tr>
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">{{ __('No payables found.') }}
+                                        </td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>

@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -52,8 +52,7 @@
                             class="form-select singl-select-2 @error('service_catalog_id') is-invalid @enderror">
                             <option value="">{{ __('Custom service') }}</option>
                             @foreach ($serviceCatalogs as $serviceCatalog)
-                                <option value="{{ $serviceCatalog->id }}"
-                                    @selected(old('service_catalog_id', $serviceLine->service_catalog_id) === $serviceCatalog->id)>
+                                <option value="{{ $serviceCatalog->id }}" @selected(old('service_catalog_id', $serviceLine->service_catalog_id) === $serviceCatalog->id)>
                                     {{ $serviceCatalog->name }}
                                 </option>
                             @endforeach
@@ -68,8 +67,7 @@
                             class="form-select singl-select-2 @error('technician_id') is-invalid @enderror">
                             <option value="">{{ __('Unassigned') }}</option>
                             @foreach ($technicians as $technician)
-                                <option value="{{ $technician->id }}"
-                                    @selected(old('technician_id', $serviceLine->technician_id) === $technician->id)>
+                                <option value="{{ $technician->id }}" @selected(old('technician_id', $serviceLine->technician_id) === $technician->id)>
                                     {{ $technician->name }}
                                 </option>
                             @endforeach
@@ -111,8 +109,7 @@
                         <select name="status" id="status"
                             class="form-select singl-select-2 @error('status') is-invalid @enderror" required>
                             @foreach ($statuses as $status)
-                                <option value="{{ $status->value }}"
-                                    @selected(old('status', $serviceLine->status->value) === $status->value)>
+                                <option value="{{ $status->value }}" @selected(old('status', $serviceLine->status->value) === $status->value)>
                                     {{ ucfirst(str_replace('_', ' ', $status->value)) }}
                                 </option>
                             @endforeach

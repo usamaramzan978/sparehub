@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -33,15 +33,17 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="sku">{{ __('SKU') }}</label>
-                        <input type="text" name="sku" id="sku" class="form-control @error('sku') is-invalid @enderror"
-                            value="{{ old('sku', $product->sku) }}" required>
+                        <input type="text" name="sku" id="sku"
+                            class="form-control @error('sku') is-invalid @enderror" value="{{ old('sku', $product->sku) }}"
+                            required>
                         @error('sku')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-md-5 mb-3">
                         <label class="form-label" for="name">{{ __('Name') }}</label>
-                        <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror"
+                        <input type="text" name="name" id="name"
+                            class="form-control @error('name') is-invalid @enderror"
                             value="{{ old('name', $product->name) }}" required>
                         @error('name')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
@@ -49,10 +51,11 @@
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label" for="status">{{ __('Status') }}</label>
-                        <select name="status" id="status" class="form-select singl-select-2 @error('status') is-invalid @enderror"
-                            required>
+                        <select name="status" id="status"
+                            class="form-select singl-select-2 @error('status') is-invalid @enderror" required>
                             @foreach ($statuses as $status)
-                                <option value="{{ $status->value }}" @selected(old('status', $product->status->value) === $status->value)>{{ ucfirst($status->value) }}</option>
+                                <option value="{{ $status->value }}" @selected(old('status', $product->status->value) === $status->value)>
+                                    {{ ucfirst($status->value) }}</option>
                             @endforeach
                         </select>
                         @error('status')
@@ -84,7 +87,8 @@
                             class="form-select singl-select-2 @error('default_unit_id') is-invalid @enderror">
                             <option value="">{{ __('None') }}</option>
                             @foreach ($units as $unit)
-                                <option value="{{ $unit->id }}" @selected(old('default_unit_id', $product->default_unit_id) === $unit->id)>{{ $unit->name }}</option>
+                                <option value="{{ $unit->id }}" @selected(old('default_unit_id', $product->default_unit_id) === $unit->id)>{{ $unit->name }}
+                                </option>
                             @endforeach
                         </select>
                         @error('default_unit_id')
@@ -98,7 +102,8 @@
                             class="form-select singl-select-2 @error('category_id') is-invalid @enderror">
                             <option value="">{{ __('None') }}</option>
                             @foreach ($categories as $category)
-                                <option value="{{ $category->id }}" @selected(old('category_id', $product->category_id) === $category->id)>{{ $category->name }}</option>
+                                <option value="{{ $category->id }}" @selected(old('category_id', $product->category_id) === $category->id)>{{ $category->name }}
+                                </option>
                             @endforeach
                         </select>
                         @error('category_id')
@@ -111,7 +116,8 @@
                             class="form-select singl-select-2 @error('brand_id') is-invalid @enderror">
                             <option value="">{{ __('None') }}</option>
                             @foreach ($brands as $brand)
-                                <option value="{{ $brand->id }}" @selected(old('brand_id', $product->brand_id) === $brand->id)>{{ $brand->name }}</option>
+                                <option value="{{ $brand->id }}" @selected(old('brand_id', $product->brand_id) === $brand->id)>{{ $brand->name }}
+                                </option>
                             @endforeach
                         </select>
                         @error('brand_id')
@@ -157,8 +163,8 @@
 
                     <div class="col-md-12 mb-3">
                         <label class="form-label" for="description">{{ __('Description') }}</label>
-                        <textarea name="description" id="description"
-                            class="form-control @error('description') is-invalid @enderror" rows="4">{{ old('description', $product->description) }}</textarea>
+                        <textarea name="description" id="description" class="form-control @error('description') is-invalid @enderror"
+                            rows="4">{{ old('description', $product->description) }}</textarea>
                         @error('description')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror

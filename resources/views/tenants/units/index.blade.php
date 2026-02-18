@@ -4,10 +4,7 @@
     @include('tenants.units.partials.create', ['statuses' => $statuses])
 
     @php
-        $breadcrumbs = [
-            ['label' => __('Catalog')],
-            ['label' => __('Units')],
-        ];
+        $breadcrumbs = [['label' => __('Catalog')], ['label' => __('Units')]];
     @endphp
 
     <x-breadcrumb title="{{ __('Units') }}" :items="$breadcrumbs">
@@ -28,7 +25,7 @@
         </div>
     @endif
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
@@ -59,8 +56,7 @@
                                         <span class="d-inline-block" data-bs-toggle="tooltip" title="{{ __('View') }}">
                                             <button type="button"
                                                 class="btn btn-sm btn-icon btn-primary-light btn-wave waves-effect waves-light js-view-unit"
-                                                data-code="{{ $unit->code }}"
-                                                data-name="{{ $unit->name }}"
+                                                data-code="{{ $unit->code }}" data-name="{{ $unit->name }}"
                                                 data-fractional="{{ $unit->is_fractional ? __('Yes') : __('No') }}"
                                                 data-status="{{ $unit->status->value }}" data-bs-toggle="modal"
                                                 data-bs-target="#unitViewModal">
@@ -78,8 +74,7 @@
                                             <button type="button"
                                                 class="btn btn-sm btn-icon btn-danger-light btn-wave waves-effect waves-light js-delete-modal"
                                                 data-action="{{ route('tenant.units.destroy', $unit) }}"
-                                                data-name="{{ $unit->name }}"
-                                                data-title="{{ __('Delete Unit') }}"
+                                                data-name="{{ $unit->name }}" data-title="{{ __('Delete Unit') }}"
                                                 data-message="{{ __('Are you sure you want to delete this unit?') }}"
                                                 data-bs-toggle="modal" data-bs-target="#unitDeleteModal">
                                                 <i class="ri-delete-bin-line"></i>
@@ -88,7 +83,10 @@
                                     </div>
                                 </td>
                             </tr>
-                            @include('tenants.units.partials.edit', ['unit' => $unit, 'statuses' => $statuses])
+                            @include('tenants.units.partials.edit', [
+                                'unit' => $unit,
+                                'statuses' => $statuses,
+                            ])
                         @empty
                             <tr>
                                 <td colspan="5" class="text-center text-muted">{{ __('No units found.') }}</td>
@@ -135,7 +133,8 @@
                 button.addEventListener('click', () => {
                     document.getElementById('unit-view-code').textContent = button.dataset.code || '-';
                     document.getElementById('unit-view-name').textContent = button.dataset.name || '-';
-                    document.getElementById('unit-view-fractional').textContent = button.dataset.fractional || '-';
+                    document.getElementById('unit-view-fractional').textContent = button.dataset.fractional ||
+                        '-';
                     document.getElementById('unit-view-status').textContent = button.dataset.status || '-';
                 });
             });

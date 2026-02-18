@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -32,24 +32,24 @@
                 <div class="row">
                     <div class="col-md-3 mb-3">
                         <label class="form-label" for="code">{{ __('Code') }}</label>
-                        <input type="text" name="code" id="code" class="form-control @error('code') is-invalid @enderror"
-                            value="{{ old('code') }}" required>
+                        <input type="text" name="code" id="code"
+                            class="form-control @error('code') is-invalid @enderror" value="{{ old('code') }}" required>
                         @error('code')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-md-5 mb-3">
                         <label class="form-label" for="name">{{ __('Name') }}</label>
-                        <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror"
-                            value="{{ old('name') }}" required>
+                        <input type="text" name="name" id="name"
+                            class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
                         @error('name')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="phone">{{ __('Phone') }}</label>
-                        <input type="text" name="phone" id="phone" class="form-control @error('phone') is-invalid @enderror"
-                            value="{{ old('phone') }}">
+                        <input type="text" name="phone" id="phone"
+                            class="form-control @error('phone') is-invalid @enderror" value="{{ old('phone') }}">
                         @error('phone')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
@@ -57,24 +57,24 @@
 
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="email">{{ __('Email') }}</label>
-                        <input type="email" name="email" id="email" class="form-control @error('email') is-invalid @enderror"
-                            value="{{ old('email') }}">
+                        <input type="email" name="email" id="email"
+                            class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}">
                         @error('email')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="cnic">{{ __('CNIC') }}</label>
-                        <input type="text" name="cnic" id="cnic" class="form-control @error('cnic') is-invalid @enderror"
-                            value="{{ old('cnic') }}">
+                        <input type="text" name="cnic" id="cnic"
+                            class="form-control @error('cnic') is-invalid @enderror" value="{{ old('cnic') }}">
                         @error('cnic')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="ntn">{{ __('NTN') }}</label>
-                        <input type="text" name="ntn" id="ntn" class="form-control @error('ntn') is-invalid @enderror"
-                            value="{{ old('ntn') }}">
+                        <input type="text" name="ntn" id="ntn"
+                            class="form-control @error('ntn') is-invalid @enderror" value="{{ old('ntn') }}">
                         @error('ntn')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
@@ -82,8 +82,8 @@
 
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="city">{{ __('City') }}</label>
-                        <input type="text" name="city" id="city" class="form-control @error('city') is-invalid @enderror"
-                            value="{{ old('city') }}">
+                        <input type="text" name="city" id="city"
+                            class="form-control @error('city') is-invalid @enderror" value="{{ old('city') }}">
                         @error('city')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
@@ -116,7 +116,8 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="status">{{ __('Status') }}</label>
-                        <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
+                        <select name="status" id="status" class="form-select @error('status') is-invalid @enderror"
+                            required>
                             @foreach ($statuses as $status)
                                 <option value="{{ $status->value }}" @selected(old('status', 'active') === $status->value)>
                                     {{ ucfirst($status->value) }}

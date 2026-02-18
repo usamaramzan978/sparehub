@@ -19,7 +19,8 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label" for="date_to">{{ __('Date To') }}</label>
-                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ $filters['date_to'] }}">
+                    <input type="date" class="form-control" id="date_to" name="date_to"
+                        value="{{ $filters['date_to'] }}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label" for="customer_id">{{ __('Customer') }}</label>
@@ -35,36 +36,80 @@
                     <select class="form-select" id="status" name="status">
                         <option value="">{{ __('All') }}</option>
                         @foreach ($statuses as $status)
-                            <option value="{{ $status->value }}" @selected($filters['status'] === $status->value)>{{ ucfirst(str_replace('_', ' ', $status->value)) }}</option>
+                            <option value="{{ $status->value }}" @selected($filters['status'] === $status->value)>
+                                {{ ucfirst(str_replace('_', ' ', $status->value)) }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label" for="search">{{ __('Search') }}</label>
-                    <input type="text" class="form-control" id="search" name="search" value="{{ $filters['search'] }}"
-                        placeholder="{{ __('Invoice, customer, product') }}">
+                    <input type="text" class="form-control" id="search" name="search"
+                        value="{{ $filters['search'] }}" placeholder="{{ __('Invoice, customer, product') }}">
                 </div>
                 <div class="col-12 d-flex justify-content-end gap-2">
                     <button type="submit" class="btn btn-primary">{{ __('Filter') }}</button>
-                    <a href="{{ route('tenant.sales-tree.index') }}" class="btn btn-outline-secondary">{{ __('Reset') }}</a>
+                    <a href="{{ route('tenant.sales-tree.index') }}"
+                        class="btn btn-outline-secondary">{{ __('Reset') }}</a>
                 </div>
             </form>
         </div>
     </div>
 
     <div class="row g-3 mb-3">
-        <div class="col-12 col-md-4"><div class="card"><div class="card-body"><div class="text-muted small">{{ __('Customers') }}</div><h5 class="mb-0">{{ $summary['customers_count'] }}</h5></div></div></div>
-        <div class="col-12 col-md-4"><div class="card"><div class="card-body"><div class="text-muted small">{{ __('Invoices') }}</div><h5 class="mb-0">{{ $summary['invoices_count'] }}</h5></div></div></div>
-        <div class="col-12 col-md-4"><div class="card"><div class="card-body"><div class="text-muted small">{{ __('Items') }}</div><h5 class="mb-0">{{ $summary['items_count'] }}</h5></div></div></div>
-        <div class="col-12 col-md-4"><div class="card"><div class="card-body"><div class="text-muted small">{{ __('Total Sales') }}</div><h5 class="mb-0">{{ $money($summary['grand_total']) }}</h5></div></div></div>
-        <div class="col-12 col-md-4"><div class="card"><div class="card-body"><div class="text-muted small">{{ __('Paid') }}</div><h5 class="mb-0">{{ $money($summary['paid_total']) }}</h5></div></div></div>
-        <div class="col-12 col-md-4"><div class="card"><div class="card-body"><div class="text-muted small">{{ __('Balance Due') }}</div><h5 class="mb-0">{{ $money($summary['balance_due']) }}</h5></div></div></div>
+        <div class="col-12 col-md-4">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Customers') }}</div>
+                    <h5 class="mb-0">{{ $summary['customers_count'] }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Invoices') }}</div>
+                    <h5 class="mb-0">{{ $summary['invoices_count'] }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Items') }}</div>
+                    <h5 class="mb-0">{{ $summary['items_count'] }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Total Sales') }}</div>
+                    <h5 class="mb-0">{{ $money($summary['grand_total']) }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Paid') }}</div>
+                    <h5 class="mb-0">{{ $money($summary['paid_total']) }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Balance Due') }}</div>
+                    <h5 class="mb-0">{{ $money($summary['balance_due']) }}</h5>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h6 class="card-title mb-0">{{ __('Sales Tree') }}</h6>
-            <span class="text-muted small">{{ __('Customer -> Invoices -> Items') }}</span>
+            <span class="text-muted small">{{ __('Customer->Invoices->Items') }}</span>
         </div>
         <div class="card-body">
             @forelse ($groupedSales as $index => $group)
@@ -76,7 +121,8 @@
                                 <span class="fw-semibold">{{ $group['customer_name'] }}</span>
                                 <span class="badge bg-primary-transparent ms-2">{{ $group['invoices_count'] }}
                                     {{ __('Invoices') }}</span>
-                                <span class="ms-2 text-muted">{{ __('Total:') }} {{ $money($group['grand_total']) }}</span>
+                                <span class="ms-2 text-muted">{{ __('Total:') }}
+                                    {{ $money($group['grand_total']) }}</span>
                             </button>
                         </h2>
                         <div id="sales-collapse-{{ $index }}"
@@ -105,7 +151,7 @@
                                                         <div class="small text-muted">
                                                             @foreach ($sale->items as $line)
                                                                 <div>
-                                                                    {{ $line->product?->name ?? $line->serviceCatalog?->name ?? ($line->description ?: '-') }}
+                                                                    {{ $line->product?->name ?? ($line->serviceCatalog?->name ?? ($line->description ?: '-')) }}
                                                                 </div>
                                                             @endforeach
                                                         </div>

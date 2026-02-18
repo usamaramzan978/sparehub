@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @include('tenants.purchases.partials.form', [
                 'formAction' => route('tenant.purchases.store'),

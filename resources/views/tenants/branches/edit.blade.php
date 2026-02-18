@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -55,8 +55,7 @@
                             class="form-select singl-select-2 @error('warehouse_id') is-invalid @enderror">
                             <option value="">{{ __('Select') }}</option>
                             @foreach ($warehouses as $warehouse)
-                                <option value="{{ $warehouse->id }}"
-                                    @selected(old('warehouse_id', $branch->warehouse_id) === $warehouse->id)>
+                                <option value="{{ $warehouse->id }}" @selected(old('warehouse_id', $branch->warehouse_id) === $warehouse->id)>
                                     {{ $warehouse->name }}
                                 </option>
                             @endforeach
@@ -70,8 +69,7 @@
                         <select name="status" id="status"
                             class="form-select singl-select-2 @error('status') is-invalid @enderror" required>
                             @foreach ($statuses as $status)
-                                <option value="{{ $status->value }}"
-                                    @selected(old('status', $branch->status->value) === $status->value)>
+                                <option value="{{ $status->value }}" @selected(old('status', $branch->status->value) === $status->value)>
                                     {{ ucfirst($status->value) }}
                                 </option>
                             @endforeach

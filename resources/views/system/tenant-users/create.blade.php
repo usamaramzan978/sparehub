@@ -7,7 +7,7 @@
             class="btn btn-outline-secondary">{{ __('Back') }}</a>
     </div>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <form method="POST" action="{{ route('system.tenant-users.store') }}">
                 @csrf

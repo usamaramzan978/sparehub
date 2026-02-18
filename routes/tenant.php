@@ -145,10 +145,7 @@ Route::middleware([
         ]);
 
         Route::resource('brands', BrandController::class)->only(['index', 'store', 'update', 'destroy']);
-        Route::patch('brands/{brand}/toggle-status', [BrandController::class, 'toggleStatus'])->name('brands.toggle-status');
-
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
-        Route::patch('categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('categories.toggle-status');
 
         Route::resource('warehouses', WarehouseController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('taxes', TaxController::class)->only(['index', 'store', 'update', 'destroy']);

@@ -2,20 +2,16 @@
 
 @section('content')
     @php
-        $breadcrumbs = [
-            ['label' => __('Workshop')],
-            ['label' => __('Job Card Services')],
-        ];
+        $breadcrumbs = [['label' => __('Workshop')], ['label' => __('Job Card Services')]];
     @endphp
 
     <x-breadcrumb title="{{ __('Job Card Services') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <a href="{{ route('tenant.job-card-services.create') }}"
-                class="btn btn-primary">{{ __('Add Service Line') }}</a>
+            <a href="{{ route('tenant.job-card-services.create') }}" class="btn btn-primary">{{ __('Add Service Line') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">

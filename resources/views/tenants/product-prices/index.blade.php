@@ -4,10 +4,7 @@
     @include('tenants.product-prices.partials.create', ['products' => $products])
 
     @php
-        $breadcrumbs = [
-            ['label' => __('Catalog')],
-            ['label' => __('Product Prices')],
-        ];
+        $breadcrumbs = [['label' => __('Catalog')], ['label' => __('Product Prices')]];
     @endphp
 
     <x-breadcrumb title="{{ __('Product Prices') }}" :items="$breadcrumbs">
@@ -28,7 +25,7 @@
         </div>
     @endif
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">

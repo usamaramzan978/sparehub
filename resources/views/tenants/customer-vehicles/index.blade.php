@@ -2,10 +2,7 @@
 
 @section('content')
     @php
-        $breadcrumbs = [
-            ['label' => __('People')],
-            ['label' => __('Customer Vehicles')],
-        ];
+        $breadcrumbs = [['label' => __('People')], ['label' => __('Customer Vehicles')]];
     @endphp
 
     <x-breadcrumb title="{{ __('Customer Vehicles') }}" :items="$breadcrumbs">
@@ -24,7 +21,7 @@
         </div>
     @endif
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <form method="GET" action="{{ route('tenant.customer-vehicles.index') }}" class="row g-2 mb-3">
                 <div class="col-md-10">

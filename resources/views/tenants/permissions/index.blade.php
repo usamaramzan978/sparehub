@@ -4,10 +4,7 @@
     @php
         use Illuminate\Support\Str;
 
-        $breadcrumbs = [
-            ['label' => __('Access Control')],
-            ['label' => __('Permissions')],
-        ];
+        $breadcrumbs = [['label' => __('Access Control')], ['label' => __('Permissions')]];
 
         $actionOrder = ['view', 'create', 'update', 'delete'];
         $actionBadges = [
@@ -21,7 +18,7 @@
     <x-breadcrumb title="{{ __('Permissions') }}" :items="$breadcrumbs">
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
@@ -44,9 +41,11 @@
                                 });
 
                                 $guard = optional($permissions->first())->guard_name;
-                                $actions = $sorted->map(function ($permission) {
-                                    return (string) Str::of($permission->name)->after('.');
-                                })->values();
+                                $actions = $sorted
+                                    ->map(function ($permission) {
+                                        return (string) Str::of($permission->name)->after('.');
+                                    })
+                                    ->values();
                             @endphp
                             <tr>
                                 <td>{{ Str::headline($groupName) }}</td>
@@ -69,8 +68,8 @@
                                                 class="btn btn-sm btn-icon btn-primary-light btn-wave waves-effect waves-light js-view-permission"
                                                 data-module="{{ Str::headline($groupName) }}"
                                                 data-guard="{{ $guard }}"
-                                                data-permissions='@json($actions)'
-                                                data-bs-toggle="modal" data-bs-target="#permissionViewModal">
+                                                data-permissions='@json($actions)' data-bs-toggle="modal"
+                                                data-bs-target="#permissionViewModal">
                                                 <i class="ri-eye-line"></i>
                                             </button>
                                         </span>
@@ -116,7 +115,8 @@
         <script>
             document.querySelectorAll('.js-view-permission').forEach((button) => {
                 button.addEventListener('click', () => {
-                    document.getElementById('permission-view-module').textContent = button.dataset.module || '-';
+                    document.getElementById('permission-view-module').textContent = button.dataset.module ||
+                    '-';
                     document.getElementById('permission-view-guard').textContent = button.dataset.guard || '-';
 
                     const container = document.getElementById('permission-view-permissions');
@@ -144,7 +144,8 @@
                         const badge = document.createElement('span');
                         const key = (permission || '').toLowerCase();
                         badge.className = `badge ${badgeMap[key] || 'bg-info-transparent'}`;
-                        badge.textContent = permission.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                        badge.textContent = permission.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c
+                            .toUpperCase());
                         container.appendChild(badge);
                     });
                 });

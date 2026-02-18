@@ -16,13 +16,14 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
                 <div>
                     <div class="text-muted small">{{ __('Purchase No') }}</div>
                     <h5 class="mb-1">{{ $purchase->purchase_no }}</h5>
-                    <div class="text-muted small">{{ __('Date') }}: {{ $purchase->purchase_date?->format('Y-m-d') ?? '-' }}</div>
+                    <div class="text-muted small">{{ __('Date') }}:
+                        {{ $purchase->purchase_date?->format('Y-m-d') ?? '-' }}</div>
                 </div>
                 <div class="text-end">
                     <div class="text-muted small">{{ __('Status') }}</div>
@@ -180,7 +181,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted">{{ __('No vendor payments found.') }}</td>
+                                <td colspan="5" class="text-center text-muted">{{ __('No vendor payments found.') }}
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -222,7 +224,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted">{{ __('No purchase returns found.') }}</td>
+                                <td colspan="5" class="text-center text-muted">{{ __('No purchase returns found.') }}
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

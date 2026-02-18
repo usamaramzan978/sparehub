@@ -15,7 +15,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -83,8 +83,7 @@
                             class="form-select singl-select-2 @error('service_catalog_id') is-invalid @enderror">
                             <option value="">{{ __('None') }}</option>
                             @foreach ($serviceCatalogs as $serviceCatalog)
-                                <option value="{{ $serviceCatalog->id }}"
-                                    @selected(old('service_catalog_id') === $serviceCatalog->id)>
+                                <option value="{{ $serviceCatalog->id }}" @selected(old('service_catalog_id') === $serviceCatalog->id)>
                                     {{ $serviceCatalog->name }}
                                 </option>
                             @endforeach
@@ -100,8 +99,7 @@
                             class="form-select singl-select-2 @error('job_card_service_id') is-invalid @enderror">
                             <option value="">{{ __('None') }}</option>
                             @foreach ($jobCardServices as $jobCardService)
-                                <option value="{{ $jobCardService->id }}"
-                                    @selected(old('job_card_service_id') === $jobCardService->id)>
+                                <option value="{{ $jobCardService->id }}" @selected(old('job_card_service_id') === $jobCardService->id)>
                                     {{ $jobCardService->service_name }}
                                 </option>
                             @endforeach
@@ -114,7 +112,8 @@
                     <div class="col-md-8 mb-3">
                         <label class="form-label" for="description">{{ __('Description') }}</label>
                         <input type="text" name="description" id="description"
-                            class="form-control @error('description') is-invalid @enderror" value="{{ old('description') }}">
+                            class="form-control @error('description') is-invalid @enderror"
+                            value="{{ old('description') }}">
                         @error('description')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
@@ -123,8 +122,7 @@
                     <div class="col-md-2 mb-3">
                         <label class="form-label" for="qty">{{ __('Qty') }}</label>
                         <input type="number" step="0.001" min="0.001" name="qty" id="qty"
-                            class="form-control @error('qty') is-invalid @enderror" value="{{ old('qty', '1') }}"
-                            required>
+                            class="form-control @error('qty') is-invalid @enderror" value="{{ old('qty', '1') }}" required>
                         @error('qty')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror

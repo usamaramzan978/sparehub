@@ -2,10 +2,7 @@
 
 @section('content')
     @php
-        $breadcrumbs = [
-            ['label' => __('Operations')],
-            ['label' => __('Branches')],
-        ];
+        $breadcrumbs = [['label' => __('Operations')], ['label' => __('Branches')]];
         $canDeleteBranch = $items->total() > 1;
     @endphp
 
@@ -15,7 +12,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
@@ -56,12 +53,12 @@
                                             </a>
                                         </span>
                                         @if ($canDeleteBranch)
-                                            <span class="d-inline-block" data-bs-toggle="tooltip" title="{{ __('Delete') }}">
+                                            <span class="d-inline-block" data-bs-toggle="tooltip"
+                                                title="{{ __('Delete') }}">
                                                 <button type="button"
                                                     class="btn btn-sm btn-icon btn-danger-light btn-wave waves-effect waves-light js-delete-modal"
                                                     data-action="{{ route('tenant.branches.destroy', $branch) }}"
-                                                    data-name="{{ $branch->name }}"
-                                                    data-title="{{ __('Delete Branch') }}"
+                                                    data-name="{{ $branch->name }}" data-title="{{ __('Delete Branch') }}"
                                                     data-message="{{ __('Are you sure you want to delete this branch?') }}"
                                                     data-bs-toggle="modal" data-bs-target="#branchDeleteModal">
                                                     <i class="ri-delete-bin-line"></i>

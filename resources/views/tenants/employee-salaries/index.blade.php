@@ -2,11 +2,8 @@
 
 @section('content')
     @php
-        $breadcrumbs = [
-            ['label' => __('People')],
-            ['label' => __('Employee Salaries')],
-        ];
-        $currency = static fn (float $value): string => number_format($value, 2);
+        $breadcrumbs = [['label' => __('People')], ['label' => __('Employee Salaries')]];
+        $currency = static fn(float $value): string => number_format($value, 2);
     @endphp
 
     <x-breadcrumb title="{{ __('Employee Salaries') }}" :items="$breadcrumbs">
@@ -24,20 +21,40 @@
 
     <div class="row g-3 mb-3">
         <div class="col-12 col-md-3">
-            <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small">{{ __('Employees') }}</div><h4 class="mb-0">{{ $summary['employees_count'] }}</h4></div></div>
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Employees') }}</div>
+                    <h4 class="mb-0">{{ $summary['employees_count'] }}</h4>
+                </div>
+            </div>
         </div>
         <div class="col-12 col-md-3">
-            <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small">{{ __('Configured') }}</div><h4 class="mb-0">{{ $summary['configured_count'] }}</h4></div></div>
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Configured') }}</div>
+                    <h4 class="mb-0">{{ $summary['configured_count'] }}</h4>
+                </div>
+            </div>
         </div>
         <div class="col-12 col-md-3">
-            <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small">{{ __('Paid Total') }}</div><h4 class="mb-0">{{ $currency($summary['paid_total']) }}</h4></div></div>
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Paid Total') }}</div>
+                    <h4 class="mb-0">{{ $currency($summary['paid_total']) }}</h4>
+                </div>
+            </div>
         </div>
         <div class="col-12 col-md-3">
-            <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small">{{ __('Unpaid Total') }}</div><h4 class="mb-0">{{ $currency($summary['unpaid_total']) }}</h4></div></div>
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Unpaid Total') }}</div>
+                    <h4 class="mb-0">{{ $currency($summary['unpaid_total']) }}</h4>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
@@ -59,7 +76,7 @@
                                 $basic = (float) ($record?->basic_salary ?? 0);
                                 $bonus = (float) ($record?->bonus ?? 0);
                                 $deduction = (float) ($record?->deduction ?? 0);
-                                $net = max(($basic + $bonus) - $deduction, 0);
+                                $net = max($basic + $bonus - $deduction, 0);
                             @endphp
                             <tr>
                                 <td>
@@ -69,7 +86,8 @@
                                 <td>
                                     <input type="number" step="0.01" min="0" class="form-control form-control-sm"
                                         name="basic_salary" form="salary-form-{{ $employee->id }}"
-                                        value="{{ number_format($basic, 2, '.', '') }}" placeholder="{{ __('Basic') }}" required>
+                                        value="{{ number_format($basic, 2, '.', '') }}" placeholder="{{ __('Basic') }}"
+                                        required>
                                 </td>
                                 <td>
                                     <input type="number" step="0.01" min="0" class="form-control form-control-sm"
@@ -83,13 +101,14 @@
                                         placeholder="{{ __('Deduction') }}">
                                 </td>
                                 <td>
-                                    <input type="text" class="form-control form-control-sm" value="{{ $currency($net) }}"
-                                        readonly>
+                                    <input type="text" class="form-control form-control-sm"
+                                        value="{{ $currency($net) }}" readonly>
                                 </td>
                                 <td>
                                     @if ($record?->paid_at)
                                         <span class="badge bg-success-transparent">{{ __('Paid') }}</span>
-                                        <div><small class="text-muted">{{ $record->paid_at->format('Y-m-d') }}</small></div>
+                                        <div><small class="text-muted">{{ $record->paid_at->format('Y-m-d') }}</small>
+                                        </div>
                                     @else
                                         <span class="badge bg-warning-transparent">{{ __('Pending') }}</span>
                                     @endif
@@ -113,7 +132,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted">{{ __('No employees found for this branch.') }}</td>
+                                <td colspan="7" class="text-center text-muted">
+                                    {{ __('No employees found for this branch.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

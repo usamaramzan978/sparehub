@@ -32,9 +32,9 @@
         $inactiveCount = $rowCount - $activeCount;
     @endphp
 
-    <div class="row g-3">
+    <div class="row g-3 mb-3">
         <div class="col-12 col-lg-7">
-            <div class="card h-100">
+            <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                         <div>
@@ -110,7 +110,7 @@
         </div>
 
         <div class="col-12 col-lg-5">
-            <div class="card h-100">
+            <div class="card custom-card border-0 shadow-sm">
                 <div class="card-header">
                     <h6 class="mb-0">{{ __('Variant Overview') }}</h6>
                 </div>
@@ -143,7 +143,7 @@
         </div>
     </div>
 
-    <div class="card mt-4">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-header">
             <h6 class="mb-0">{{ __('Variants') }}</h6>
         </div>
@@ -171,7 +171,8 @@
                                 <td>
                                     {{ ucfirst($priceRow['status']) }}
                                     @if ($priceRow['effective_from'])
-                                        <div class="small text-muted">{{ __('Effective:') }} {{ $priceRow['effective_from'] }}</div>
+                                        <div class="small text-muted">{{ __('Effective:') }}
+                                            {{ $priceRow['effective_from'] }}</div>
                                     @endif
                                 </td>
                             </tr>
@@ -181,7 +182,8 @@
                                 <td>{{ $product->sku ?? '-' }}</td>
                                 <td class="text-end">{{ number_format($stockOnHand, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) ($latestPrice?->cost ?? 0), 2) }}</td>
-                                <td class="text-end">{{ number_format((float) ($latestPrice?->retail_price ?? 0), 2) }}</td>
+                                <td class="text-end">{{ number_format((float) ($latestPrice?->retail_price ?? 0), 2) }}
+                                </td>
                                 <td>{{ ucfirst($status) }}</td>
                             </tr>
                         @endforelse

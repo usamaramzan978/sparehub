@@ -7,11 +7,12 @@
 
     <x-breadcrumb title="{{ __('Purchase Return Items') }}" :items="$breadcrumbs">
         <x-slot:actions>
-            <a href="{{ route('tenant.purchase-return-items.create') }}" class="btn btn-primary">{{ __('Add Return Item') }}</a>
+            <a href="{{ route('tenant.purchase-return-items.create') }}"
+                class="btn btn-primary">{{ __('Add Return Item') }}</a>
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
@@ -47,8 +48,7 @@
                                         <button type="button"
                                             class="btn btn-sm btn-icon btn-danger-light btn-wave waves-effect waves-light js-delete-modal"
                                             data-action="{{ route('tenant.purchase-return-items.destroy', $item) }}"
-                                            data-name="{{ $item->id }}"
-                                            data-title="{{ __('Delete Return Item') }}"
+                                            data-name="{{ $item->id }}" data-title="{{ __('Delete Return Item') }}"
                                             data-message="{{ __('Are you sure you want to delete this return item?') }}"
                                             data-bs-toggle="modal" data-bs-target="#purchaseReturnItemDeleteModal">
                                             <i class="ri-delete-bin-line"></i>

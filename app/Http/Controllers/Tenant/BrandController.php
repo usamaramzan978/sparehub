@@ -23,7 +23,7 @@ final class BrandController extends Controller
         $brands = Brand::query()
             ->when(
                 mb_trim($request->string('search')->toString()) !== '',
-                fn (Builder $query) => $query->where('name', 'like', '%'.mb_trim($request->string('search')->toString()).'%')
+                fn(Builder $query) => $query->where('name', 'like', '%' . mb_trim($request->string('search')->toString()) . '%')
             )
             ->latest()
             ->paginate($perPage)
@@ -67,16 +67,6 @@ final class BrandController extends Controller
             ->with('status', 'Deleted.');
     }
 
-    public function toggleStatus(Brand $brand): RedirectResponse
-    {
-        $brand->status = $brand->status === BrandStatus::ACTIVE->value
-            ? BrandStatus::INACTIVE->value
-            : BrandStatus::ACTIVE->value;
-        $brand->save();
-
-        return back()->with('status', 'Status updated.');
-    }
-
     private function buildUniqueSlug(string $name, ?string $ignoreBrandId = null): string
     {
         $baseSlug = Str::slug($name);
@@ -97,7 +87,7 @@ final class BrandController extends Controller
     {
         return Brand::query()
             ->where('slug', $slug)
-            ->when($ignoreBrandId !== null, fn (Builder $query) => $query->whereKeyNot($ignoreBrandId))
+            ->when($ignoreBrandId !== null, fn(Builder $query) => $query->whereKeyNot($ignoreBrandId))
             ->exists();
     }
 }

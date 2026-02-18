@@ -17,7 +17,7 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -40,8 +40,7 @@
                             class="form-select singl-select-2 @error('customer_id') is-invalid @enderror" required>
                             <option value="">{{ __('Select customer') }}</option>
                             @foreach ($customers as $customer)
-                                <option value="{{ $customer->id }}"
-                                    @selected(old('customer_id', $vehicle->customer_id) === $customer->id)>
+                                <option value="{{ $customer->id }}" @selected(old('customer_id', $vehicle->customer_id) === $customer->id)>
                                     {{ $customer->name }} ({{ $customer->code }})
                                 </option>
                             @endforeach

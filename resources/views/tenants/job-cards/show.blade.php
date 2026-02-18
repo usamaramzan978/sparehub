@@ -16,13 +16,14 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
                 <div>
                     <div class="text-muted small">{{ __('Job No') }}</div>
                     <h5 class="mb-1">{{ $jobCard->job_no }}</h5>
-                    <div class="text-muted small">{{ __('Date') }}: {{ $jobCard->job_date?->format('Y-m-d') ?? '-' }}</div>
+                    <div class="text-muted small">{{ __('Date') }}: {{ $jobCard->job_date?->format('Y-m-d') ?? '-' }}
+                    </div>
                 </div>
                 <div class="text-end">
                     <div class="text-muted small">{{ __('Status') }}</div>

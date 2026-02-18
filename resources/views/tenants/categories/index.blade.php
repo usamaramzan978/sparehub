@@ -4,10 +4,7 @@
     @include('tenants.categories.partials.create', ['parents' => $parents, 'statuses' => $statuses])
 
     @php
-        $breadcrumbs = [
-            ['label' => __('Catalog')],
-            ['label' => __('Categories')],
-        ];
+        $breadcrumbs = [['label' => __('Catalog')], ['label' => __('Categories')]];
     @endphp
 
     <x-breadcrumb title="{{ __('Categories') }}" :items="$breadcrumbs">
@@ -28,17 +25,18 @@
         </div>
     @endif
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <form method="GET" action="{{ route('tenant.categories.index') }}" class="row g-2 mb-3">
                 <div class="col-md-10">
                     <label class="form-label" for="search">{{ __('Search') }}</label>
-                    <input type="text" name="search" id="search" class="form-control"
-                        value="{{ request('search') }}" placeholder="{{ __('Search by category name') }}">
+                    <input type="text" name="search" id="search" class="form-control" value="{{ request('search') }}"
+                        placeholder="{{ __('Search by category name') }}">
                 </div>
                 <div class="col-md-2 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary w-100">{{ __('Filter') }}</button>
-                    <a href="{{ route('tenant.categories.index') }}" class="btn btn-outline-secondary">{{ __('Reset') }}</a>
+                    <a href="{{ route('tenant.categories.index') }}"
+                        class="btn btn-outline-secondary">{{ __('Reset') }}</a>
                 </div>
             </form>
 
@@ -58,21 +56,15 @@
                                 <td>{{ $category->name }}</td>
                                 <td>{{ $category->parent?->name ?? '-' }}</td>
                                 <td>
-                                    <form method="POST" action="{{ route('tenant.categories.toggle-status', $category) }}">
-                                        @csrf
-                                        @method('PATCH')
-                                        @if ($category->status->value === 'active')
-                                            <button type="submit"
-                                                class="btn btn-sm btn-success-light btn-wave waves-effect waves-light">
-                                                {{ __('Active') }}
-                                            </button>
-                                        @else
-                                            <button type="submit"
-                                                class="btn btn-sm btn-secondary-light btn-wave waves-effect waves-light">
-                                                {{ __('Inactive') }}
-                                            </button>
-                                        @endif
-                                    </form>
+                                    @if ($category->status->value === 'active')
+                                        <span class="badge bg-success-transparent">
+                                            {{ __('Active') }}
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary-transparent">
+                                            {{ __('Inactive') }}
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-list">
@@ -81,8 +73,7 @@
                                                 class="btn btn-sm btn-icon btn-primary-light btn-wave waves-effect waves-light js-view-category"
                                                 data-name="{{ $category->name }}"
                                                 data-parent="{{ $category->parent?->name ?? '-' }}"
-                                                data-status="{{ $category->status->value }}"
-                                                data-bs-toggle="modal"
+                                                data-status="{{ $category->status->value }}" data-bs-toggle="modal"
                                                 data-bs-target="#categoryViewModal">
                                                 <i class="ri-eye-line"></i>
                                             </button>
@@ -90,7 +81,8 @@
                                         <span class="d-inline-block" data-bs-toggle="tooltip" title="{{ __('Edit') }}">
                                             <button type="button"
                                                 class="btn btn-sm btn-icon btn-secondary-light btn-wave waves-effect waves-light"
-                                                data-bs-toggle="modal" data-bs-target="#categoryEditModal-{{ $category->id }}">
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#categoryEditModal-{{ $category->id }}">
                                                 <i class="ri-edit-line"></i>
                                             </button>
                                         </span>

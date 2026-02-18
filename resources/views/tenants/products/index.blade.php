@@ -11,13 +11,13 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <form method="GET" action="{{ route('tenant.products.index') }}" class="row g-2 mb-3">
                 <div class="col-md-10">
                     <label class="form-label" for="search">{{ __('Search') }}</label>
-                    <input type="text" name="search" id="search" class="form-control"
-                        value="{{ request('search') }}" placeholder="{{ __('Name, SKU, part number') }}">
+                    <input type="text" name="search" id="search" class="form-control" value="{{ request('search') }}"
+                        placeholder="{{ __('Name, SKU, part number') }}">
                 </div>
                 <div class="col-md-2 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary w-100">{{ __('Filter') }}</button>

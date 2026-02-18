@@ -25,7 +25,7 @@
         </div>
     @endif
 
-    <div class="card">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-body">
             <form method="GET" action="{{ route('tenant.sale-holds.index') }}" class="row g-2 mb-3">
                 <div class="col-md-10">
@@ -35,7 +35,8 @@
                 </div>
                 <div class="col-md-2 d-flex align-items-end gap-2">
                     <button class="btn btn-primary w-100" type="submit">{{ __('Filter') }}</button>
-                    <a href="{{ route('tenant.sale-holds.index') }}" class="btn btn-outline-secondary">{{ __('Reset') }}</a>
+                    <a href="{{ route('tenant.sale-holds.index') }}"
+                        class="btn btn-outline-secondary">{{ __('Reset') }}</a>
                 </div>
             </form>
 
