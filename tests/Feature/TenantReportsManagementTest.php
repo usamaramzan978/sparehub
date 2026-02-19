@@ -148,6 +148,7 @@ it('shows reports index with summary metrics', function (): void {
     $response = $this->get(reportsTenantRoute('reports.index'));
 
     $response->assertSuccessful();
+
     $summary = $response->viewData('summary');
 
     expect($summary['sales_count'])->toBe(1);

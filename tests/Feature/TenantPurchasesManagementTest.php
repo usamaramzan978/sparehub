@@ -8,6 +8,7 @@ use App\Enums\RecordStatus;
 use App\Http\Controllers\Tenant\PurchaseController;
 use App\Models\Branch;
 use App\Models\Category;
+use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Tax;
@@ -151,6 +152,7 @@ it('shows purchases index for current branch only', function (): void {
     $response = $this->get(purchasesTenantRoute('purchases.index'));
 
     $response->assertSuccessful();
+
     expect($response->viewData('items')->total())->toBe(1);
 });
 
@@ -205,6 +207,47 @@ it('stores purchase and syncs totals from items', function (): void {
     expect((float) $purchase->grand_total)->toBe(445.0);
     expect((float) $purchase->balance_due)->toBe(445.0);
     expect($purchase->items()->count())->toBe(2);
+    expect((float) InventoryStock::query()
+        ->where('branch_id', $fixture['current']->id)
+        ->where('product_id', $fixture['product']->id)
+        ->value('qty_on_hand'))
+        ->toBe(3.0);
+});
+
+it('does not adjust stock for products with tracking disabled', function (): void {
+    $fixture = authenticatePurchasesUser();
+
+    $untrackedProduct = Product::query()->create([
+        'category_id' => $fixture['product']->category_id,
+        'default_tax_id' => $fixture['tax']->id,
+        'sku' => 'PUR-P-2',
+        'name' => 'Service Charge',
+        'track_stock' => false,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $response = $this->post(purchasesTenantRoute('purchases.store'), [
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_no' => 'PUR-STORE-2',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+        'items' => [
+            [
+                'product_id' => $untrackedProduct->id,
+                'tax_id' => $fixture['tax']->id,
+                'qty' => 2,
+                'unit_cost' => 100,
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect(purchasesTenantRoute('purchases.index'));
+
+    expect(InventoryStock::query()
+        ->where('branch_id', $fixture['current']->id)
+        ->where('product_id', $untrackedProduct->id)
+        ->exists())
+        ->toBeFalse();
 });
 
 it('validates required vendor and items when storing purchase', function (): void {

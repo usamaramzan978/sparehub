@@ -118,6 +118,7 @@ it('shows product prices index only for current branch', function (): void {
     $response = $this->get(productPricesTenantRoute('product-prices.index'));
 
     $response->assertSuccessful();
+
     $pricedProductNames = $response->viewData('items')
         ->getCollection()
         ->pluck('product.name')

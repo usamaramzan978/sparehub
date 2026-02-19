@@ -86,7 +86,7 @@ it('redirects directly to signed authenticate URL for single-tenant credentials'
     $response->assertRedirect();
 
     $location = (string) $response->headers->get('Location');
-    expect($location)->toContain("/firm/{$tenant->id}/authenticate")
+    expect($location)->toContain(sprintf('/firm/%s/authenticate', $tenant->id))
         ->toContain('nonce=')
         ->toContain('signature=');
 });
@@ -186,7 +186,7 @@ it('creates signed authenticate redirect for valid tenant selection', function (
     $response->assertSessionMissing('multi_tenant_login');
 
     $location = (string) $response->headers->get('Location');
-    expect($location)->toContain("/firm/{$tenant->id}/authenticate")
+    expect($location)->toContain(sprintf('/firm/%s/authenticate', $tenant->id))
         ->toContain('nonce=')
         ->toContain('signature=');
 });
@@ -218,7 +218,7 @@ it('authenticates tenant user from a valid signed URL nonce payload', function (
     ]);
 
     $nonce = (string) Str::uuid();
-    Cache::store('database')->put("login_nonce:{$nonce}", [
+    Cache::store('database')->put('login_nonce:'.$nonce, [
         'type_id' => $userId,
         'type' => LoginUserType::USER->value,
         'remember' => true,
@@ -284,7 +284,7 @@ it('prevents nonce replay on authenticate endpoint', function (): void {
     ]);
 
     $nonce = (string) Str::uuid();
-    Cache::store('database')->put("login_nonce:{$nonce}", [
+    Cache::store('database')->put('login_nonce:'.$nonce, [
         'type_id' => $userId,
         'type' => LoginUserType::USER->value,
         'remember' => false,

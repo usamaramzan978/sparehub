@@ -101,6 +101,7 @@ it('shows users index scoped to current branch', function (): void {
     $response = $this->get(usersTenantRoute('users.index'));
 
     $response->assertSuccessful();
+
     $items = $response->viewData('items');
     expect($items->total())->toBe(2);
 });

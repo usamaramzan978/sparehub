@@ -6,6 +6,7 @@ namespace App\Actions\Auth\Tenant;
 
 use App\Enums\LoginUserType;
 use App\Models\LoginMap;
+use App\Models\Tenant;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -61,12 +62,19 @@ final class LoginAction
         // ✅ Multiple tenants — return picker flag
         return [
             'multiple_tenants' => true,
-            'tenants' => $matchedLogins->map(fn (LoginMap $login) => [
-                'tenant_id' => $login->tenant_id,
-                'tenant_name' => $login->tenant?->name ?? 'Tenant '.$login->tenant_id,
-                'type_id' => $login->type_id,
-                'type' => $login->type,
-            ])->toArray(),
+            'tenants' => $matchedLogins->map(function (LoginMap $login): array {
+                $tenant = $login->tenant;
+                $tenantName = $tenant instanceof Tenant
+                    ? $tenant->name
+                    : 'Tenant '.$login->tenant_id;
+
+                return [
+                    'tenant_id' => $login->tenant_id,
+                    'tenant_name' => $tenantName,
+                    'type_id' => $login->type_id,
+                    'type' => $login->type,
+                ];
+            })->all(),
             'remember' => $remember,
         ];
     }

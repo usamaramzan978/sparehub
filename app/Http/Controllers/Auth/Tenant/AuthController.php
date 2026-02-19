@@ -73,7 +73,7 @@ final class AuthController extends Controller
                 'expires_at' => now()->addMinutes(5),
             ]);
 
-            return redirect()->route('auth.choose-tenant');
+            return to_route('auth.choose-tenant');
         }
 
         // ✅ Single tenant — proceed to authenticate
@@ -90,7 +90,7 @@ final class AuthController extends Controller
         $data = session('multi_tenant_login');
 
         if (! $data || now()->gt($data['expires_at'])) {
-            return redirect()->route('auth.login')
+            return to_route('auth.login')
                 ->withErrors(['email' => 'Session expired. Please login again.']);
         }
 
@@ -104,7 +104,7 @@ final class AuthController extends Controller
         $data = session('multi_tenant_login');
 
         if (! $data || now()->gt($data['expires_at'])) {
-            return redirect()->route('auth.login')
+            return to_route('auth.login')
                 ->withErrors(['email' => 'Session expired. Please login again.']);
         }
 
@@ -114,9 +114,7 @@ final class AuthController extends Controller
         $tenant = collect($data['tenants'])
             ->firstWhere('tenant_id', $selectedTenantId);
 
-        if (! $tenant) {
-            abort(403, 'Unauthorized tenant selection.');
-        }
+        abort_unless($tenant, 403, 'Unauthorized tenant selection.');
 
         session()->forget('multi_tenant_login');
 
@@ -139,8 +137,8 @@ final class AuthController extends Controller
         abort_unless(Str::isUuid($nonce), 403, 'Invalid request.');
 
         $payload = rescue(
-            fn() => Tenancy::central(
-                fn() => Cache::store('database')->pull('login_nonce:' . $nonce)
+            fn () => Tenancy::central(
+                fn () => Cache::store('database')->pull('login_nonce:'.$nonce)
             ),
             null,
             false
@@ -241,7 +239,7 @@ final class AuthController extends Controller
         $nonce = (string) Str::uuid();
 
         Cache::store('database')->put(
-            "login_nonce:{$nonce}",
+            'login_nonce:'.$nonce,
             [
                 'type_id' => $typeId,
                 'type' => $type,

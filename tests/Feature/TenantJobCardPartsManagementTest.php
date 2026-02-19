@@ -173,7 +173,7 @@ it('shows job card parts index for current branch job cards', function (): void 
 
     $response->assertSuccessful();
 
-    $lineTotals = $response->viewData('items')->getCollection()->pluck('line_total')->map(fn ($v) => (float) $v)->all();
+    $lineTotals = $response->viewData('items')->getCollection()->pluck('line_total')->map(fn ($v): float => (float) $v)->all();
     expect($lineTotals)->toContain(50.0);
     expect($lineTotals)->not->toContain(70.0);
 });

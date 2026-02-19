@@ -145,7 +145,7 @@ function authenticateDashboardUser(): void
         'status' => RecordStatus::ACTIVE->value,
     ]);
 
-    $warehouse = Warehouse::query()->withoutGlobalScopes()->create([
+    Warehouse::query()->withoutGlobalScopes()->create([
         'branch_id' => $branch->id,
         'code' => 'DB-WH-1',
         'name' => 'Dashboard Warehouse',
@@ -187,6 +187,7 @@ it('shows dashboard summary and chart data', function (): void {
     expect($summary)->toHaveKeys(['sales_total', 'purchases_total', 'cashflow_net']);
     expect((float) $summary['cashflow_net'])->toBe((float) $summary['sale_payments_total'] - (float) $summary['vendor_payments_total']);
     expect($chartData['trend_labels'])->not->toBeEmpty();
+
     $response->assertSee('Top Stock');
     $response->assertSee('High Stock Product');
     $response->assertSee('20');

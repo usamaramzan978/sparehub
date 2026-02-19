@@ -14,6 +14,7 @@ use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\EmployeeAttendanceController;
 use App\Http\Controllers\Tenant\EmployeeSalaryController;
 use App\Http\Controllers\Tenant\EndOfDayController;
+use App\Http\Controllers\Tenant\ExpenseController;
 use App\Http\Controllers\Tenant\JobCardController;
 use App\Http\Controllers\Tenant\JobCardPartController;
 use App\Http\Controllers\Tenant\JobCardServiceController;
@@ -53,7 +54,7 @@ Route::middleware([
     PreventAccessFromCentralDomains::class,
 ])->prefix('firm/{tenant}')->name('tenant.')->group(function (): void {
 
-    Route::get('authenticate', [TenantAuthController::class, 'authenticateTenant'])
+    Route::get('authenticate', (new TenantAuthController())->authenticateTenant(...))
         ->middleware('throttle:10,1')
         ->name('authenticate');
 
@@ -153,6 +154,7 @@ Route::middleware([
         Route::resource('warehouses', WarehouseController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('taxes', TaxController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('units', UnitController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('expenses', ExpenseController::class)->only(['index', 'store', 'update', 'destroy']);
 
         Route::get('codes', [CodeGeneratorController::class, 'index'])->name('codes.index');
         Route::post('codes', [CodeGeneratorController::class, 'store'])->name('codes.store');

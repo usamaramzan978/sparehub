@@ -132,6 +132,7 @@ it('shows vendor payments index for current branch only', function (): void {
     $response = $this->get(vendorPaymentsTenantRoute('vendor-payments.index'));
 
     $response->assertSuccessful();
+
     expect($response->viewData('items')->total())->toBe(1);
 });
 

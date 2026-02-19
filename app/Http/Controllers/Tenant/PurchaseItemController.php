@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Enums\StockMoveType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\PurchaseItemRequest;
+use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use App\Models\StockMove;
 use App\Models\Tax;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 final class PurchaseItemController extends Controller
 {
@@ -45,6 +49,7 @@ final class PurchaseItemController extends Controller
         $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_cost']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
 
         $item = PurchaseItem::query()->create($payload);
+        $this->syncStockForPurchaseItems(collect([$item]), $payload['branch_id']);
         $this->recalculatePurchaseTotals($item->purchase);
 
         return to_route('tenant.purchase-items.index')->with('status', 'Created.');
@@ -80,7 +85,9 @@ final class PurchaseItemController extends Controller
         $payload['received_qty'] ??= 0;
         $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_cost']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
 
+        $this->syncStockForPurchaseItems(collect([$purchaseItem]), $purchaseItem->branch_id, reverse: true);
         $purchaseItem->update($payload);
+        $this->syncStockForPurchaseItems(collect([$purchaseItem]), $purchaseItem->branch_id);
         $this->recalculatePurchaseTotals($purchaseItem->purchase);
 
         return to_route('tenant.purchase-items.index')->with('status', 'Updated.');
@@ -90,6 +97,7 @@ final class PurchaseItemController extends Controller
     {
         $this->ensurePurchaseItemInCurrentBranch($purchaseItem);
         $purchase = $purchaseItem->purchase;
+        $this->syncStockForPurchaseItems(collect([$purchaseItem]), $purchaseItem->branch_id, reverse: true);
         $purchaseItem->delete();
         $this->recalculatePurchaseTotals($purchase);
 
@@ -123,6 +131,80 @@ final class PurchaseItemController extends Controller
             'paid_total' => $paidTotal,
             'balance_due' => $grandTotal - $paidTotal,
         ]);
+    }
+
+    /**
+     * @param  Collection<int, PurchaseItem>  $purchaseItems
+     */
+    private function syncStockForPurchaseItems(Collection $purchaseItems, string $branchId, bool $reverse = false): void
+    {
+        $qtyByProduct = $purchaseItems
+            ->filter(fn (PurchaseItem $item): bool => $item->product_id !== null)
+            ->groupBy('product_id')
+            ->map(fn (Collection $items): float => (float) $items->sum('qty'));
+
+        if ($qtyByProduct->isEmpty()) {
+            return;
+        }
+
+        $trackedProductIds = Product::query()
+            ->whereIn('id', $qtyByProduct->keys()->all())
+            ->where('track_stock', true)
+            ->pluck('id')
+            ->all();
+
+        if ($trackedProductIds === []) {
+            return;
+        }
+
+        foreach ($trackedProductIds as $productId) {
+            $qty = (float) ($qtyByProduct->get($productId) ?? 0);
+            if ($qty <= 0) {
+                continue;
+            }
+
+            $stockRow = InventoryStock::query()
+                ->where('branch_id', $branchId)
+                ->where('product_id', $productId)
+                ->first();
+
+            if (! $stockRow instanceof InventoryStock) {
+                if ($reverse) {
+                    continue;
+                }
+
+                $stockRow = InventoryStock::query()->create([
+                    'branch_id' => $branchId,
+                    'product_id' => $productId,
+                    'qty_on_hand' => 0,
+                    'qty_reserved' => 0,
+                    'avg_cost' => 0,
+                ]);
+            }
+
+            $adjustedQty = $reverse
+                ? (float) $stockRow->qty_on_hand - $qty
+                : (float) $stockRow->qty_on_hand + $qty;
+
+            $stockRow->update([
+                'qty_on_hand' => $adjustedQty,
+            ]);
+
+            StockMove::query()->create([
+                'product_id' => $productId,
+                'branch_id' => $branchId,
+                'warehouse_id' => null,
+                'created_by' => auth('user')->id(),
+                'move_type' => $reverse ? StockMoveType::PURCHASE_RETURN->value : StockMoveType::PURCHASE->value,
+                'qty' => $qty,
+                'unit_cost' => 0,
+                'total_cost' => 0,
+                'reference_type' => null,
+                'reference_id' => null,
+                'remarks' => $reverse ? 'Stock reversed from purchase item change/delete.' : 'Stock increased from purchase item.',
+                'occurred_at' => now(),
+            ]);
+        }
     }
 
     /**

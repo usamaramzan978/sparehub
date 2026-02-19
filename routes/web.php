@@ -16,10 +16,10 @@ Route::middleware('guest')->group(function (): void {
         ->name('auth.login.submit');
 
     // Tenant picker routes
-    Route::get('choose-tenant', [TenantAuthController::class, 'showChooseTenant'])
+    Route::get('choose-tenant', (new TenantAuthController())->showChooseTenant(...))
         ->name('auth.choose-tenant');
 
-    Route::post('choose-tenant', [TenantAuthController::class, 'chooseTenant'])
+    Route::post('choose-tenant', (new TenantAuthController())->chooseTenant(...))
         ->name('auth.choose-tenant.submit');
 
     Route::get('forgot-password', (new TenantAuthController())->showForgotPassword(...))->name('auth.forgot-password');

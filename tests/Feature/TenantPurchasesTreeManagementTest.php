@@ -135,5 +135,6 @@ it('filters purchases tree by vendor', function (): void {
     ]));
 
     $response->assertSuccessful();
+
     expect($response->viewData('summary')['purchases_count'])->toBe(1);
 });

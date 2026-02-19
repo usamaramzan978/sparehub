@@ -142,6 +142,7 @@ it('shows sale payments index for current branch only', function (): void {
     $response = $this->get(salePaymentsTenantRoute('sale-payments.index'));
 
     $response->assertSuccessful();
+
     expect($response->viewData('items')->total())->toBe(1);
 });
 

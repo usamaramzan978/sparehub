@@ -91,6 +91,7 @@ it('shows attendance index and summary', function (): void {
     $response = $this->get(attendanceTenantRoute('employee-attendances.index'));
 
     $response->assertSuccessful();
+
     $summary = $response->viewData('summary');
 
     expect($summary['employees_count'])->toBe(2);
@@ -115,7 +116,7 @@ it('stores check in attendance action', function (): void {
 
 it('stores check out attendance action and computes total minutes', function (): void {
     $fixture = authenticateAttendanceUser();
-    $attendanceDate = now()->startOfDay()->toDateTimeString();
+    $attendanceDate = today()->toDateTimeString();
 
     $record = EmployeeAttendance::query()->withoutGlobalScopes()->create([
         'branch_id' => $fixture['branch']->id,
@@ -139,7 +140,7 @@ it('stores check out attendance action and computes total minutes', function ():
 
 it('marks employee absent and clears check in and check out times', function (): void {
     $fixture = authenticateAttendanceUser();
-    $attendanceDate = now()->startOfDay()->toDateTimeString();
+    $attendanceDate = today()->toDateTimeString();
 
     $record = EmployeeAttendance::query()->withoutGlobalScopes()->create([
         'branch_id' => $fixture['branch']->id,

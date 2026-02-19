@@ -137,5 +137,6 @@ it('filters sales tree by customer', function (): void {
     ]));
 
     $response->assertSuccessful();
+
     expect($response->viewData('summary')['invoices_count'])->toBe(1);
 });

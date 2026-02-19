@@ -253,7 +253,7 @@ final class SaleController extends Controller
             $stockRow = InventoryStock::query()
                 ->where('branch_id', $branchId)
                 ->where('product_id', $productId)
-                ->orderBy('updated_at')
+                ->oldest('updated_at')
                 ->first();
 
             if (! $stockRow instanceof InventoryStock) {

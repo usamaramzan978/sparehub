@@ -73,6 +73,7 @@ it('shows grouped permissions index', function (): void {
     $response = $this->get(permissionsTenantRoute('permissions.index'));
 
     $response->assertSuccessful();
+
     $groups = $response->viewData('groups');
 
     expect($groups->keys()->all())->toContain('sales');

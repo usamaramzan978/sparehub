@@ -5,19 +5,23 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Tenant;
 
 use App\Enums\PurchaseReturnStatus;
+use App\Enums\StockMoveType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\PurchaseReturnRequest;
+use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\PurchaseReturn;
 use App\Models\PurchaseReturnItem;
+use App\Models\StockMove;
 use App\Models\Tax;
 use App\Models\Vendor;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 final class PurchaseReturnController extends Controller
 {
@@ -118,6 +122,7 @@ final class PurchaseReturnController extends Controller
     public function destroy(PurchaseReturn $purchaseReturn): RedirectResponse
     {
         $this->ensurePurchaseReturnInCurrentBranch($purchaseReturn);
+        $this->syncStockForPurchaseReturnItems($purchaseReturn->items()->get(), $purchaseReturn->branch_id, reverse: true);
         $purchaseReturn->delete();
 
         return to_route('tenant.purchase-returns.index')->with('status', 'Deleted.');
@@ -154,6 +159,8 @@ final class PurchaseReturnController extends Controller
      */
     private function syncPurchaseReturnItems(PurchaseReturn $purchaseReturn, array $items): void
     {
+        $existingItems = $purchaseReturn->items()->get();
+        $this->syncStockForPurchaseReturnItems($existingItems, $purchaseReturn->branch_id, reverse: true);
         $purchaseReturn->items()->delete();
 
         foreach ($items as $item) {
@@ -176,6 +183,7 @@ final class PurchaseReturnController extends Controller
         }
 
         $createdItems = $purchaseReturn->items()->get();
+        $this->syncStockForPurchaseReturnItems($createdItems, $purchaseReturn->branch_id);
         $subTotal = (float) $createdItems->sum(fn (PurchaseReturnItem $item): float => (float) $item->qty * (float) $item->unit_cost);
         $taxTotal = (float) $createdItems->sum(fn (PurchaseReturnItem $item): float => (float) $item->tax_amount);
         $grandTotal = (float) $createdItems->sum(fn (PurchaseReturnItem $item): float => (float) $item->line_total);
@@ -185,5 +193,79 @@ final class PurchaseReturnController extends Controller
             'tax_total' => $taxTotal,
             'grand_total' => $grandTotal,
         ]);
+    }
+
+    /**
+     * @param  Collection<int, PurchaseReturnItem>  $purchaseReturnItems
+     */
+    private function syncStockForPurchaseReturnItems(Collection $purchaseReturnItems, string $branchId, bool $reverse = false): void
+    {
+        $qtyByProduct = $purchaseReturnItems
+            ->filter(fn (PurchaseReturnItem $item): bool => $item->product_id !== null)
+            ->groupBy('product_id')
+            ->map(fn (Collection $items): float => (float) $items->sum('qty'));
+
+        if ($qtyByProduct->isEmpty()) {
+            return;
+        }
+
+        $trackedProductIds = Product::query()
+            ->whereIn('id', $qtyByProduct->keys()->all())
+            ->where('track_stock', true)
+            ->pluck('id')
+            ->all();
+
+        if ($trackedProductIds === []) {
+            return;
+        }
+
+        foreach ($trackedProductIds as $productId) {
+            $qty = (float) ($qtyByProduct->get($productId) ?? 0);
+            if ($qty <= 0) {
+                continue;
+            }
+
+            $stockRow = InventoryStock::query()
+                ->where('branch_id', $branchId)
+                ->where('product_id', $productId)
+                ->first();
+
+            if (! $stockRow instanceof InventoryStock) {
+                if (! $reverse) {
+                    continue;
+                }
+
+                $stockRow = InventoryStock::query()->create([
+                    'branch_id' => $branchId,
+                    'product_id' => $productId,
+                    'qty_on_hand' => 0,
+                    'qty_reserved' => 0,
+                    'avg_cost' => 0,
+                ]);
+            }
+
+            $adjustedQty = $reverse
+                ? (float) $stockRow->qty_on_hand + $qty
+                : (float) $stockRow->qty_on_hand - $qty;
+
+            $stockRow->update([
+                'qty_on_hand' => $adjustedQty,
+            ]);
+
+            StockMove::query()->create([
+                'product_id' => $productId,
+                'branch_id' => $branchId,
+                'warehouse_id' => null,
+                'created_by' => auth('user')->id(),
+                'move_type' => $reverse ? StockMoveType::PURCHASE->value : StockMoveType::PURCHASE_RETURN->value,
+                'qty' => $qty,
+                'unit_cost' => 0,
+                'total_cost' => 0,
+                'reference_type' => null,
+                'reference_id' => null,
+                'remarks' => $reverse ? 'Stock restored from purchase return change/delete.' : 'Stock reduced by purchase return.',
+                'occurred_at' => now(),
+            ]);
+        }
     }
 }

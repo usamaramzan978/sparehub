@@ -76,7 +76,7 @@ function authenticateBranchSwitchUser(): array
     test()->actingAs($user, 'user');
     test()->withSession(['tenant.current_branch_id' => $current->id]);
 
-    return compact('user', 'current', 'target', 'inactive');
+    return ['user' => $user, 'current' => $current, 'target' => $target, 'inactive' => $inactive];
 }
 
 it('switches current branch to selected active branch', function (): void {
@@ -88,6 +88,7 @@ it('switches current branch to selected active branch', function (): void {
 
     $response->assertRedirect();
     $response->assertSessionHas('status', 'Branch switched.');
+
     expect((string) session('tenant.current_branch_id'))->toBe($fixture['target']->id);
 });
 
@@ -100,6 +101,7 @@ it('rejects switching to inactive branch', function (): void {
 
     $response->assertRedirect();
     $response->assertSessionHas('error', 'Selected branch is not active.');
+
     expect((string) session('tenant.current_branch_id'))->toBe($fixture['current']->id);
 });
 

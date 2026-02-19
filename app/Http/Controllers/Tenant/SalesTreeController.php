@@ -52,9 +52,14 @@ final class SalesTreeController extends Controller
             ->groupBy(fn (Sale $sale): string => (string) ($sale->customer_id ?: 'walk-in'))
             ->map(function (Collection $customerSales, string $groupKey): array {
                 $firstSale = $customerSales->first();
+                $customerName = 'Unknown Customer';
+                if ($firstSale instanceof Sale && $firstSale->customer instanceof Customer) {
+                    $customerName = $firstSale->customer->name;
+                }
+
                 $customerName = $groupKey === 'walk-in'
                     ? 'Walk-in / No Customer'
-                    : (string) ($firstSale?->customer?->name ?: 'Unknown Customer');
+                    : $customerName;
 
                 $invoices = $customerSales
                     ->sortByDesc(fn (Sale $sale): string => (string) ($sale->invoice_date?->format('Y-m-d') ?: ''))

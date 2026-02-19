@@ -52,9 +52,14 @@ final class PurchasesTreeController extends Controller
             ->groupBy(fn (Purchase $purchase): string => (string) ($purchase->vendor_id ?: 'no-vendor'))
             ->map(function (Collection $vendorPurchases, string $groupKey): array {
                 $firstPurchase = $vendorPurchases->first();
+                $vendorName = 'Unknown Vendor';
+                if ($firstPurchase instanceof Purchase && $firstPurchase->vendor instanceof Vendor) {
+                    $vendorName = $firstPurchase->vendor->name;
+                }
+
                 $vendorName = $groupKey === 'no-vendor'
                     ? 'No Vendor'
-                    : (string) ($firstPurchase?->vendor?->name ?: 'Unknown Vendor');
+                    : $vendorName;
 
                 $entries = $vendorPurchases
                     ->sortByDesc(fn (Purchase $purchase): string => (string) ($purchase->purchase_date?->format('Y-m-d') ?: ''))

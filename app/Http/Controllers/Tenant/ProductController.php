@@ -65,11 +65,10 @@ final class ProductController extends Controller
         $firstMoveByProduct = StockMove::query()
             ->where('branch_id', $branchId)
             ->whereIn('product_id', $productIds)
-            ->orderBy('occurred_at')
-            ->orderBy('created_at')
+            ->oldest('occurred_at')->oldest()
             ->get(['product_id', 'qty'])
             ->groupBy('product_id')
-            ->map(fn (Collection $moves): float => (float) ((float) $moves->first()?->qty ?: 0.0));
+            ->map(fn (Collection $moves): float => (float) $moves->first()?->qty ?: 0.0);
 
         $products->setCollection(
             $products->getCollection()->map(function (Product $product) use ($firstMoveByProduct, $openingByProduct, $stockByProduct): Product {
@@ -239,7 +238,7 @@ final class ProductController extends Controller
         $stockRows = InventoryStock::query()
             ->where('branch_id', $branchId)
             ->where('product_id', $product->id)
-            ->orderBy('updated_at')
+            ->oldest('updated_at')
             ->get();
 
         $currentTotal = (float) $stockRows->sum(fn (InventoryStock $stock): float => (float) $stock->qty_on_hand);

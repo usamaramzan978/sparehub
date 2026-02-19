@@ -8,6 +8,7 @@ use App\Enums\RecordStatus;
 use App\Http\Controllers\Tenant\PurchaseItemController;
 use App\Models\Branch;
 use App\Models\Category;
+use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
@@ -175,6 +176,7 @@ it('shows purchase items index for current branch only', function (): void {
     $response = $this->get(purchaseItemsTenantRoute('purchase-items.index'));
 
     $response->assertSuccessful();
+
     expect($response->viewData('items')->total())->toBe(1);
 });
 
@@ -210,6 +212,11 @@ it('stores purchase item and recalculates parent purchase totals', function (): 
     expect((float) $fixture['purchase']->tax_total)->toBe(20.0);
     expect((float) $fixture['purchase']->grand_total)->toBe(220.0);
     expect((float) $fixture['purchase']->balance_due)->toBe(220.0);
+    expect((float) InventoryStock::query()
+        ->where('branch_id', $fixture['current']->id)
+        ->where('product_id', $fixture['product']->id)
+        ->value('qty_on_hand'))
+        ->toBe(2.0);
 });
 
 it('validates required purchase and product for purchase item', function (): void {

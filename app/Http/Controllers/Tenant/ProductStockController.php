@@ -29,7 +29,7 @@ final class ProductStockController extends Controller
 
         $products = Product::query()
             ->with(['category:id,name', 'brand:id,name', 'defaultUnit:id,name'])
-            ->when(! $showInactive, fn ($query) => $query->where('status', RecordStatus::ACTIVE->value))
+            ->unless($showInactive, fn ($query) => $query->where('status', RecordStatus::ACTIVE->value))
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($builder) use ($search): void {
                     $builder
@@ -70,39 +70,44 @@ final class ProductStockController extends Controller
             ->get()
             ->keyBy('id');
 
-        $inventoryTree = $products
-            ->groupBy(fn (Product $product): string => (string) ($product->category_id ?: 'uncategorized'))
-            ->map(function (Collection $categoryProducts, string $categoryKey) use ($categoriesById, $pricesByProduct, $stocksByProduct): array {
-                $categoryName = $categoryKey === 'uncategorized'
-                    ? 'Uncategorized'
-                    : (string) ($categoriesById->get($categoryKey)?->name ?? 'Unknown Category');
+        $inventoryTree = collect();
+        $groupedByCategory = $products->groupBy(fn (Product $product): string => (string) ($product->category_id ?: 'uncategorized'));
 
-                $productRows = $categoryProducts
-                    ->sortBy('name')
-                    ->values()
-                    ->map(function (Product $product) use ($pricesByProduct, $stocksByProduct): array {
-                        $latestPrice = $pricesByProduct->get($product->id)?->first();
-                        $stockRows = $stocksByProduct->get($product->id, collect())->values();
-                        $qtyOnHand = (float) $stockRows->sum(fn (InventoryStock $stock): float => (float) $stock->qty_on_hand);
-                        $qtyReserved = (float) $stockRows->sum(fn (InventoryStock $stock): float => (float) $stock->qty_reserved);
+        foreach ($groupedByCategory as $categoryKey => $categoryProducts) {
+            $categoryName = $categoryKey === 'uncategorized'
+                ? 'Uncategorized'
+                : (string) ($categoriesById->get($categoryKey)?->name ?? 'Unknown Category');
 
-                        return [
-                            'product' => $product,
-                            'latest_price' => $latestPrice,
-                            'stock_rows' => $stockRows,
-                            'qty_on_hand' => $qtyOnHand,
-                            'qty_reserved' => $qtyReserved,
-                            'qty_available' => $qtyOnHand - $qtyReserved,
-                        ];
-                    });
+            $productRows = collect();
+            foreach ($categoryProducts->sortBy('name')->values() as $product) {
+                if (! $product instanceof Product) {
+                    continue;
+                }
 
-                return [
-                    'category_key' => $categoryKey,
-                    'category_name' => $categoryName,
-                    'products_count' => $productRows->count(),
-                    'products' => $productRows,
-                ];
-            })
+                $latestPrice = $this->resolveLatestPrice($pricesByProduct->get($product->id));
+                $stockRows = $stocksByProduct->get($product->id, collect())->values();
+                $qtyOnHand = (float) $stockRows->sum(fn (InventoryStock $stock): float => (float) $stock->qty_on_hand);
+                $qtyReserved = (float) $stockRows->sum(fn (InventoryStock $stock): float => (float) $stock->qty_reserved);
+
+                $productRows->push([
+                    'product' => $product,
+                    'latest_price' => $latestPrice,
+                    'stock_rows' => $stockRows,
+                    'qty_on_hand' => $qtyOnHand,
+                    'qty_reserved' => $qtyReserved,
+                    'qty_available' => $qtyOnHand - $qtyReserved,
+                ]);
+            }
+
+            $inventoryTree->push([
+                'category_key' => $categoryKey,
+                'category_name' => $categoryName,
+                'products_count' => $productRows->count(),
+                'products' => $productRows,
+            ]);
+        }
+
+        $inventoryTree = $inventoryTree
             ->sortBy('category_name')
             ->values();
 
@@ -172,6 +177,7 @@ final class ProductStockController extends Controller
                         'qty' => 'Stock out quantity exceeds available stock.',
                     ]);
                 }
+
                 $moveType = StockMoveType::ADJUSTMENT_OUT;
                 $moveQty = $qty;
             } else {
@@ -182,6 +188,7 @@ final class ProductStockController extends Controller
                 } elseif ($delta < 0) {
                     $moveType = StockMoveType::ADJUSTMENT_OUT;
                 }
+
                 $moveQty = abs($delta);
             }
 
@@ -233,11 +240,10 @@ final class ProductStockController extends Controller
         $firstMoveByProduct = StockMove::query()
             ->where('branch_id', $branchId)
             ->whereIn('product_id', $products->pluck('id')->all())
-            ->orderBy('occurred_at')
-            ->orderBy('created_at')
+            ->oldest('occurred_at')->oldest()
             ->get(['product_id', 'qty'])
             ->groupBy('product_id')
-            ->map(fn (Collection $moves): float => (float) ((float) $moves->first()?->qty ?: 0.0));
+            ->map(fn (Collection $moves): float => (float) $moves->first()?->qty ?: 0.0);
 
         $stockByProduct = InventoryStock::query()
             ->where('branch_id', $branchId)
@@ -263,5 +269,15 @@ final class ProductStockController extends Controller
 
             return $product;
         });
+    }
+
+    /**
+     * @param  Collection<int, ProductPrice>|null  $prices
+     */
+    private function resolveLatestPrice(?Collection $prices): ?ProductPrice
+    {
+        $latestPrice = $prices?->first();
+
+        return $latestPrice instanceof ProductPrice ? $latestPrice : null;
     }
 }

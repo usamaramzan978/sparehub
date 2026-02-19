@@ -11,6 +11,7 @@ use App\Enums\UserStatus;
 use App\Models\Branch;
 use App\Models\EmployeeAttendance;
 use App\Models\EmployeeSalary;
+use App\Models\Expense;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\SalePayment;
@@ -132,6 +133,16 @@ function authenticateEndOfDayUser(): array
         'paid_at' => now(),
     ]);
 
+    Expense::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branch->id,
+        'created_by' => $user->id,
+        'title' => 'Workshop Lunch',
+        'category' => 'Food',
+        'amount' => 50,
+        'payment_method' => PaymentMethodType::CASH->value,
+        'expense_date' => now()->toDateString(),
+    ]);
+
     test()->actingAs($user, 'user');
     test()->withSession(['tenant.current_branch_id' => $branch->id]);
 
@@ -149,7 +160,9 @@ it('shows end of day summary for selected date', function (): void {
     expect($summary['sales_count'])->toBe(1);
     expect($summary['purchases_count'])->toBe(1);
     expect($summary['cash_in'])->toBe(400.0);
-    expect($summary['cash_out'])->toBe(100.0);
-    expect($summary['cash_net'])->toBe(300.0);
+    expect($summary['expenses_count'])->toBe(1);
+    expect($summary['expenses_total'])->toBe(50.0);
+    expect($summary['cash_out'])->toBe(150.0);
+    expect($summary['cash_net'])->toBe(250.0);
     expect($summary['payroll_total'])->toBe(1000.0);
 });

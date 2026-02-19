@@ -9,6 +9,7 @@ use App\Enums\RecordStatus;
 use App\Http\Controllers\Tenant\PurchaseReturnItemController;
 use App\Models\Branch;
 use App\Models\Category;
+use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
@@ -205,6 +206,7 @@ it('shows purchase return items index for current branch only', function (): voi
     $response = $this->get(purchaseReturnItemsTenantRoute('purchase-return-items.index'));
 
     $response->assertSuccessful();
+
     expect($response->viewData('items')->total())->toBe(1);
 });
 
@@ -220,6 +222,13 @@ it('clamps purchase return items pagination limits', function (): void {
 
 it('stores purchase return item and recalculates parent return totals', function (): void {
     $fixture = authenticatePurchaseReturnItemsUser();
+    InventoryStock::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'product_id' => $fixture['product']->id,
+        'qty_on_hand' => 10,
+        'qty_reserved' => 0,
+        'avg_cost' => 0,
+    ]);
 
     $response = $this->post(purchaseReturnItemsTenantRoute('purchase-return-items.store'), [
         'purchase_return_id' => $fixture['purchaseReturn']->id,
@@ -237,6 +246,11 @@ it('stores purchase return item and recalculates parent return totals', function
     expect((float) $fixture['purchaseReturn']->sub_total)->toBe(200.0);
     expect((float) $fixture['purchaseReturn']->tax_total)->toBe(20.0);
     expect((float) $fixture['purchaseReturn']->grand_total)->toBe(220.0);
+    expect((float) InventoryStock::query()
+        ->where('branch_id', $fixture['current']->id)
+        ->where('product_id', $fixture['product']->id)
+        ->value('qty_on_hand'))
+        ->toBe(8.0);
 });
 
 it('validates required purchase return and product for return item', function (): void {

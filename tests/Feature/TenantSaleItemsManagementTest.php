@@ -199,6 +199,7 @@ it('shows sale items index for current branch only', function (): void {
     $response = $this->get(saleItemsTenantRoute('sale-items.index'));
 
     $response->assertSuccessful();
+
     expect($response->viewData('items')->total())->toBe(1);
 });
 

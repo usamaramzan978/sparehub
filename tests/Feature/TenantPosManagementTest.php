@@ -123,7 +123,7 @@ function authenticatePosUser(): array
         'effective_from' => now(),
     ]);
 
-    $warehouse = Warehouse::query()->withoutGlobalScopes()->create([
+    Warehouse::query()->withoutGlobalScopes()->create([
         'branch_id' => $currentBranch->id,
         'code' => 'POS-WH-1',
         'name' => 'POS Warehouse',
@@ -195,6 +195,7 @@ it('returns scan list mode for ambiguous query', function (): void {
 
     $response->assertSuccessful();
     $response->assertJsonPath('mode', 'list');
+
     expect($response->json('items'))->toBeArray();
 });
 
@@ -207,6 +208,7 @@ it('returns product catalog by category only', function (): void {
     ]));
 
     $response->assertSuccessful();
+
     expect($response->json('items'))->not->toBeEmpty();
     expect($response->json('items.0.type'))->toBe('product');
 });
@@ -220,6 +222,7 @@ it('returns service catalog scoped to current branch', function (): void {
     ]));
 
     $response->assertSuccessful();
+
     $names = collect($response->json('items'))->pluck('name')->all();
     expect($names)->toContain('Oil Change');
     expect($names)->not->toContain('Alt Service');

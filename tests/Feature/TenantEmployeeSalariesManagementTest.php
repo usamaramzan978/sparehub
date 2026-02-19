@@ -93,6 +93,7 @@ it('shows salary index and summary', function (): void {
     $response = $this->get(salaryTenantRoute('employee-salaries.index'));
 
     $response->assertSuccessful();
+
     $summary = $response->viewData('summary');
 
     expect($summary['employees_count'])->toBe(2);

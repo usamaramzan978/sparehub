@@ -44,6 +44,18 @@
                     <h4>{{ $currency($summary['cash_net']) }}</h4>
                     <div class="small text-muted">{{ __('In') }} {{ $currency($summary['cash_in']) }} |
                         {{ __('Out') }} {{ $currency($summary['cash_out']) }}</div>
+                    <div class="small text-muted">{{ __('Out includes expenses') }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Expenses Today') }}</div>
+                    <h4>{{ $currency($summary['expenses_total']) }}</h4>
+                    <div class="small text-muted">{{ $summary['expenses_count'] }} {{ __('entries') }}</div>
+                    <a href="{{ route('tenant.expenses.index', ['date_from' => $selectedDate, 'date_to' => $selectedDate]) }}"
+                        class="btn btn-outline-primary btn-sm mt-2">{{ __('Open Expenses') }}</a>
                 </div>
             </div>
         </div>

@@ -8,6 +8,7 @@ use App\Enums\JobCardStatus;
 use App\Http\Controllers\Controller;
 use App\Models\EmployeeAttendance;
 use App\Models\EmployeeSalary;
+use App\Models\Expense;
 use App\Models\JobCard;
 use App\Models\Purchase;
 use App\Models\Sale;
@@ -42,6 +43,9 @@ final class EndOfDayController extends Controller
         $vendorPaymentsQuery = VendorPayment::query()
             ->where('branch_id', $branchId)
             ->whereBetween('paid_at', [$dayStart, $dayEnd]);
+        $expensesQuery = Expense::query()
+            ->where('branch_id', $branchId)
+            ->whereDate('expense_date', $selectedDate);
         $attendanceQuery = EmployeeAttendance::query()
             ->where('branch_id', $branchId)
             ->whereDate('attendance_date', $selectedDate);
@@ -50,7 +54,8 @@ final class EndOfDayController extends Controller
             ->whereDate('salary_month', $monthStart->toDateString());
 
         $cashIn = (float) (clone $salePaymentsQuery)->sum('amount');
-        $cashOut = (float) (clone $vendorPaymentsQuery)->sum('amount');
+        $expenseTotal = (float) (clone $expensesQuery)->sum('amount');
+        $cashOut = (float) (clone $vendorPaymentsQuery)->sum('amount') + $expenseTotal;
 
         $checkedInCount = (clone $attendanceQuery)->whereNotNull('check_in_at')->count();
         $checkedOutCount = (clone $attendanceQuery)->whereNotNull('check_out_at')->count();
@@ -65,6 +70,8 @@ final class EndOfDayController extends Controller
                 'cash_in' => $cashIn,
                 'cash_out' => $cashOut,
                 'cash_net' => $cashIn - $cashOut,
+                'expenses_count' => (clone $expensesQuery)->count(),
+                'expenses_total' => $expenseTotal,
                 'open_job_cards' => JobCard::query()
                     ->where('branch_id', $branchId)
                     ->whereNotIn('status', [JobCardStatus::CLOSED->value, JobCardStatus::CANCELLED->value])

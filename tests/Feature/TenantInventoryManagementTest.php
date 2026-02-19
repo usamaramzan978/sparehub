@@ -137,6 +137,7 @@ it('shows inventory dashboard summary', function (): void {
     $response = $this->get(inventoryTenantRoute());
 
     $response->assertSuccessful();
+
     $summary = $response->viewData('summary');
 
     expect($summary['products_count'])->toBe(1);
@@ -150,6 +151,7 @@ it('filters inventory by search query', function (): void {
     $response = $this->get(inventoryTenantRoute(['search' => 'Engine Oil']));
 
     $response->assertSuccessful();
+
     $tree = $response->viewData('inventoryTree');
 
     expect($tree->first()['products_count'])->toBe(1);
