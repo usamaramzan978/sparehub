@@ -7,6 +7,7 @@ SpareHub helps you run an auto spare parts + workshop business in one system:
 - workshop job cards
 - sales/POS
 - purchases and vendor payments
+- daily expenses
 - employee attendance and salaries
 - daily business summary (End Of Day)
 
@@ -33,6 +34,7 @@ Your visible menu depends on your assigned role permissions.
 Inside tenant panel, menu is organized as:
 - Dashboard
 - End Of Day
+- Expenses
 - Master Data
 - Workshop
 - Sales
@@ -73,16 +75,33 @@ Inside tenant panel, menu is organized as:
 - Record supplier payments in `Vendor Payments`.
 - Use returns screens when sending items back to vendor.
 
+Stock behavior for tracked products (`Track Stock` enabled):
+1. Create product with opening stock.
+2. Sales reduce stock.
+3. Purchases increase stock.
+4. Purchase returns reduce stock.
+
+You can review and adjust stock from:
+- `Master Data > Products > Stock`
+- `Master Data > Products > Stock Adjustment`
+
 ### 6.4 Employees
 
 - `Employee Attendances`: mark check-in/check-out/absent.
 - `Employee Salaries`: track month-wise salary and paid status.
+
+### 6.5 Expenses
+
+- Open `Expenses` from sidebar to record daily spending.
+- Common examples: staff lunch, fuel, local transport, office misc.
+- Add date, amount, payment method, and optional reference/notes.
 
 ## 7. End Of Day Page
 
 Use `End Of Day` before closing business each day. It shows:
 - sales and purchase totals
 - cash in / cash out / net cash
+- expenses total and entry count
 - open job cards
 - attendance summary
 - payroll status for selected month
@@ -114,4 +133,3 @@ Switch branch from branch switch option in UI (session-based).
 - Login fails: verify tenant URL and credentials.
 - Missing records: confirm you are on the correct branch.
 - Report mismatch: verify date range and branch context.
-

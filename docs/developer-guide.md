@@ -97,6 +97,7 @@ Central sidebar is in:
 High-level groups from `routes/tenant.php` and tenant sidebar:
 - Dashboard + End of Day
 - Employee (attendance, salaries)
+- Expenses
 - Master Data
 - Workshop
 - Sales
@@ -165,18 +166,40 @@ Seeders ensure a default branch + warehouse exists and linked.
 
 ### 6.7 Inventory
 
-- `inventory_stocks` belongs to `products`, `branches`, `warehouses`
-- Unique key per (`product_id`, `branch_id`, `warehouse_id`)
+- `inventory_stocks` belongs to `products`, `branches`
+- Unique key per (`product_id`, `branch_id`)
 - `stock_moves` belongs to `products`, `branches`, optional `warehouses`, optional creator `users`
 
-### 6.8 Employee module
+#### Stock Movement Flow (`track_stock = true`)
+
+This flow is complete for tracked products:
+1. Product is created with opening stock / stock row.
+2. Sale (`POS`, `Sales`, `Sale Items`) decrements stock.
+3. Purchase (`Purchases`, `Purchase Items`) increments stock.
+4. Purchase Return (`Purchase Returns`, `Purchase Return Items`) decrements stock back.
+
+Notes:
+- Stock is adjusted only when `products.track_stock = true`.
+- Product listing shows current stock against opening stock (for example `17/20`).
+- Opening stock + adjustments are managed from `Products > Stock` and `Products > Stock Adjustment`.
+
+### 6.8 Expense module
+
+- `expenses` belongs to `branches`, optional creator `users`
+- Stores daily operational spend (title/category/amount/method/date/reference/notes)
+- Used by End Of Day to compute:
+  - `expenses_count`
+  - `expenses_total`
+  - `cash_out` (vendor payments + expenses)
+
+### 6.9 Employee module
 
 - `employee_attendances` belongs to `branches` and `users`
 - Unique per (`branch_id`, `user_id`, `attendance_date`)
 - `employee_salaries` belongs to `branches` and `users`
 - Unique per (`branch_id`, `user_id`, `salary_month`)
 
-### 6.9 Access control
+### 6.10 Access control
 
 Per-tenant Spatie permission tables:
 - `permissions`
@@ -222,7 +245,8 @@ This order prevents warehouse FK failures.
 `EndOfDayController` aggregates branch/day stats:
 - sales totals/count
 - purchase totals/count
-- cash in/out/net from payment tables
+- cash in from sale payments
+- cash out from vendor payments + expenses
 - open job cards
 - attendance in/out/missing checkout
 - monthly payroll paid/unpaid totals
@@ -251,4 +275,3 @@ File:
 3. Read `TenantController` + `TenantUserController` + `Auth\Tenant\AuthController` for identity flow.
 4. Read `BranchScopedBySession` + `EnsureBranchSelected` before touching tenant queries.
 5. Run migrations/seeders and inspect one tenant DB to validate FK chain.
-

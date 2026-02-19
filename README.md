@@ -54,3 +54,4 @@ composer run dev
 
 - Tenant bootstrap is automated during tenant creation (database create, migrate, and default seed pipeline).
 - Branch-specific data is session scoped inside tenant routes.
+- Daily expense tracking is available at `tenant.expenses.*` and is included in End-of-Day cash-out metrics.
