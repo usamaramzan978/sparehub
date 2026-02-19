@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('category', 80)->nullable();
             $table->decimal('base_price', 18, 2)->default(0);
             $table->unsignedSmallInteger('duration_minutes')->nullable();
-            $table->boolean('is_taxable')->default(true);
             $table->string('status', 20)->default('active');
             $table->timestamps();
 

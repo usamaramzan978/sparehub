@@ -11,6 +11,10 @@ final class TenantPathGenerator implements PathGenerator
 {
     public function getPath(Media $media): string
     {
+        if ($media->collection_name === 'online_payment_proof') {
+            return $this->tenantId().'/sale-payment-proofs/';
+        }
+
         return $this->tenantId().'/'.$media->id.'/';
     }
 

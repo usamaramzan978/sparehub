@@ -45,7 +45,6 @@
                                 <td>{{ $serviceCatalog->category ?: '-' }}</td>
                                 <td>{{ number_format((float) $serviceCatalog->base_price, 2) }}</td>
                                 <td>{{ $serviceCatalog->duration_minutes ?: '-' }}</td>
-                                <td>{{ $serviceCatalog->is_taxable ? __('Yes') : __('No') }}</td>
                                 <td>
                                     @if ($serviceCatalog->status->value === 'active')
                                         <span class="badge bg-success-transparent">{{ __('Active') }}</span>

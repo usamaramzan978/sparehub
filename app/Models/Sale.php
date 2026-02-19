@@ -14,12 +14,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-final class Sale extends Model
+final class Sale extends Model implements HasMedia
 {
     use BranchScopedBySession;
     use HasFactory;
     use HasUuids;
+    use InteractsWithMedia;
     use SoftDeletes;
     use UsesTenantConnection;
 
@@ -83,5 +86,10 @@ final class Sale extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(SalePayment::class);
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('online_payment_proof')->singleFile();
     }
 }

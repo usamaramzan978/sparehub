@@ -14,6 +14,7 @@
             'hold' => 'bg-warning-transparent',
             default => 'bg-secondary-transparent',
         };
+        $onlinePaymentProofUrl = $sale->getFirstMediaUrl('online_payment_proof');
     @endphp
 
     <x-breadcrumb title="{{ __('Invoice Details') }}" :items="$breadcrumbs">
@@ -105,6 +106,16 @@
                 <div class="border rounded p-3 mt-3">
                     <div class="text-muted small">{{ __('Notes') }}</div>
                     <div class="fw-semibold">{{ $sale->notes }}</div>
+                </div>
+            @endif
+
+            @if ($onlinePaymentProofUrl !== '')
+                <div class="border rounded p-3 mt-3">
+                    <div class="text-muted small mb-2">{{ __('Online Payment Proof') }}</div>
+                    <a href="{{ $onlinePaymentProofUrl }}" target="_blank" rel="noopener">
+                        <img src="{{ $onlinePaymentProofUrl }}" alt="{{ __('Online Payment Proof') }}"
+                            class="img-fluid rounded border" style="max-height: 280px;">
+                    </a>
                 </div>
             @endif
         </div>

@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\ProductPrice;
+use App\Models\Sale;
 use App\Models\ServiceCatalog;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -30,6 +31,12 @@ beforeEach(function (): void {
     Artisan::call('migrate:fresh', [
         '--database' => 'tenant',
         '--path' => database_path('migrations/tenant'),
+        '--realpath' => true,
+        '--force' => true,
+    ]);
+
+    Artisan::call('migrate', [
+        '--path' => database_path('migrations/2026_02_16_034933_create_media_table.php'),
         '--realpath' => true,
         '--force' => true,
     ]);
@@ -95,7 +102,6 @@ function createPosFixture(): array
         'name' => 'Oil Change',
         'category' => 'Workshop',
         'base_price' => 250,
-        'is_taxable' => false,
         'status' => RecordStatus::ACTIVE->value,
     ]);
 
@@ -275,7 +281,17 @@ it('stores online payment proof path for online mode', function (): void {
 
     $payment = DB::connection('tenant')->table('sale_payments')->latest('created_at')->first();
     expect($payment->payment_proof_path)->not->toBeNull();
+    expect((string) $payment->payment_proof_path)->toContain('sale-payment-proofs');
     expect($payment->payment_method)->toBe('bank');
+
+    $sale = DB::connection('tenant')->table('sales')->latest('created_at')->first();
+    $media = DB::table('media')
+        ->where('model_type', Sale::class)
+        ->where('model_id', $sale->id)
+        ->where('collection_name', 'online_payment_proof')
+        ->first();
+
+    expect($media)->not->toBeNull();
 });
 
 it('decrements inventory stock for tracked products when pos sale is stored', function (): void {

@@ -249,6 +249,47 @@ it('validates online payment proof requirement in pos store', function (): void 
     $response->assertSessionHasErrors(['payment_proof']);
 });
 
+it('preserves cart and payment inputs after validation redirect in pos store', function (): void {
+    $fixture = authenticatePosUser();
+
+    $uniqueItemName = 'Persisted Cart Item '.uniqid();
+
+    $response = $this->from(posTenantRoute('pos.index'))
+        ->post(posTenantRoute('pos.store'), [
+            'status' => 'posted',
+            'payment_mode' => 'debit',
+            'cash_received' => 321.5,
+            'discount_type' => 'amount',
+            'discount_value' => 15,
+            'payments' => [
+                [
+                    'method_id' => 'other',
+                    'amount' => 321.5,
+                    'status' => 'paid',
+                ],
+            ],
+            'items' => [[
+                'type' => 'service',
+                'ref_id' => $fixture['service']->id,
+                'qty' => 1,
+                'price' => 250,
+                'name' => $uniqueItemName,
+                'mechanic_enabled' => true,
+                'mechanic_charge' => 0,
+            ]],
+        ]);
+
+    $response->assertRedirect(posTenantRoute('pos.index'));
+    $response->assertSessionHasErrors(['items.0.mechanic_id', 'items.0.mechanic_charge']);
+
+    $page = $this->get(posTenantRoute('pos.index'));
+    $page->assertSuccessful();
+    $page->assertSee($uniqueItemName);
+    $page->assertSee('name="payment_mode" value="debit"', false);
+    $page->assertSee('value="321.5" data-pos-cash-received', false);
+    $page->assertSee('name="payments[0][amount]"', false);
+});
+
 it('stores pos service line with mechanic payable', function (): void {
     $fixture = authenticatePosUser();
 

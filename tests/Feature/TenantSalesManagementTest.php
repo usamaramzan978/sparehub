@@ -199,10 +199,12 @@ it('renders status badges on sales index', function (): void {
     $response = $this->get(salesTenantRoute('sales.index'));
 
     $response->assertSuccessful();
-    $response->assertSee('badge bg-success-transparent', false);
-    $response->assertSee('badge bg-warning-transparent', false);
-    $response->assertSee('badge border border-primary text-primary', false);
-    $response->assertSee('badge border border-info text-info', false);
+    $response->assertSee('INV-BADGE-POSTED');
+    $response->assertSee('INV-BADGE-HOLD');
+    $response->assertSee('Posted');
+    $response->assertSee('Hold');
+    $response->assertSee('Product');
+    $response->assertSee('Service');
 });
 
 it('clamps sales pagination limits', function (): void {

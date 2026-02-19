@@ -147,7 +147,6 @@ it('stores service catalog for current branch', function (): void {
         'default_tax_id' => $tax->id,
         'base_price' => 250,
         'duration_minutes' => 45,
-        'is_taxable' => '1',
         'status' => RecordStatus::ACTIVE->value,
     ]);
 
@@ -161,9 +160,38 @@ it('stores service catalog for current branch', function (): void {
         'default_tax_id' => $tax->id,
         'base_price' => 250,
         'duration_minutes' => 45,
-        'is_taxable' => 1,
         'status' => RecordStatus::ACTIVE->value,
     ], 'tenant');
+});
+
+it('derives service catalog taxable flag from selected default tax', function (): void {
+    authenticateServiceCatalogUser();
+
+    $tax = Tax::query()->create([
+        'code' => 'GST-DER',
+        'name' => 'GST Derived',
+        'rate' => 5,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $this->post(serviceCatalogTenantRoute('service-catalog.store'), [
+        'code' => 'SRV-TAX-1',
+        'name' => 'Taxed Service',
+        'default_tax_id' => $tax->id,
+        'base_price' => 100,
+        'status' => RecordStatus::ACTIVE->value,
+    ])->assertRedirect(serviceCatalogTenantRoute('service-catalog.index'));
+
+    $this->post(serviceCatalogTenantRoute('service-catalog.store'), [
+        'code' => 'SRV-TAX-0',
+        'name' => 'Non Taxed Service',
+        'base_price' => 80,
+        'status' => RecordStatus::ACTIVE->value,
+    ])->assertRedirect(serviceCatalogTenantRoute('service-catalog.index'));
+
+    $taxedService = ServiceCatalog::query()->where('code', 'SRV-TAX-1')->firstOrFail();
+    $untaxedService = ServiceCatalog::query()->where('code', 'SRV-TAX-0')->firstOrFail();
+
 });
 
 it('validates required service catalog fields', function (string $field): void {

@@ -504,7 +504,6 @@ final class TenantBootstrapSeeder extends Seeder
                         'category' => $s['category'],
                         'base_price' => $s['base_price'],
                         'duration_minutes' => $s['duration_minutes'],
-                        'is_taxable' => true,
                         'status' => RecordStatus::ACTIVE->value,
                     ]
                 );

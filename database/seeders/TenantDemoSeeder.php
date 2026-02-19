@@ -160,7 +160,6 @@ final class TenantDemoSeeder extends Seeder
                 'category' => 'Workshop',
                 'base_price' => 800,
                 'duration_minutes' => 45,
-                'is_taxable' => true,
                 'status' => RecordStatus::ACTIVE->value,
             ]
         );

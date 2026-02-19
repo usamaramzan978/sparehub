@@ -159,7 +159,8 @@
 
                         <div class="mb-4">
                             <label class="form-label d-block">Payment Type</label>
-                            <input type="hidden" name="payment_mode" value="cash" data-pos-payment-mode>
+                            <input type="hidden" name="payment_mode" value="{{ old('payment_mode', 'cash') }}"
+                                data-pos-payment-mode>
                             <div class="row g-2">
                                 @php
                                     $paymentTypeLabels = [
@@ -214,7 +215,8 @@
 
                         <div class="row g-3 mb-3 d-none" data-pos-online-proof-row>
                             <div class="col-12">
-                                <label class="form-label" for="payment_proof">{{ __('Online Payment Proof') }}</label>
+                                <label class="form-label" for="payment_proof">{{ __('Online Payment Proof') }} <span
+                                        class="text-danger">*</span></label>
                                 <input type="file" name="payment_proof" id="payment_proof" accept="image/*"
                                     class="form-control @error('payment_proof') is-invalid @enderror"
                                     data-pos-online-proof-input>
@@ -261,7 +263,8 @@
                                         <select name="payments[0][method_id]" id="pos-payment-method-0"
                                             class="form-select singl-select-2">
                                             @foreach ($paymentMethods as $method)
-                                                <option value="{{ $method->value }}">{{ ucfirst($method->value) }}
+                                                <option value="{{ $method->value }}" @selected(old('payments.0.method_id', 'cash') === $method->value)>
+                                                    {{ ucfirst($method->value) }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -270,14 +273,16 @@
                                     <div class="col-md-12" data-payment-amount-row>
                                         <label class="form-label" for="pos-payment-amount-0">Amount</label>
                                         <input type="number" step="0.01" name="payments[0][amount]"
-                                            id="pos-payment-amount-0" class="form-control" value="0">
+                                            id="pos-payment-amount-0" class="form-control"
+                                            value="{{ old('payments.0.amount', 0) }}">
                                     </div>
 
                                     <div class="col-md-3 d-none">
                                         <label class="form-label" for="pos-payment-status-0">Status</label>
                                         <select name="payments[0][status]" id="pos-payment-status-0"
                                             class="form-select singl-select-2">
-                                            <option value="paid" selected>{{ __('Paid') }}</option>
+                                            <option value="paid" @selected(old('payments.0.status', 'paid') === 'paid')>{{ __('Paid') }}
+                                            </option>
                                         </select>
                                     </div>
                                 </div>
@@ -286,7 +291,7 @@
                                 <div class="col-12">
                                     <label class="form-label" for="pos-cash-received">Cash Received</label>
                                     <input type="number" step="0.01" id="pos-cash-received" class="form-control"
-                                        value="0" data-pos-cash-received>
+                                        value="{{ old('cash_received', 0) }}" data-pos-cash-received>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Change Due</label>
@@ -336,8 +341,8 @@
 
         <input type="hidden" name="auto_invoice" value="1">
         <input type="hidden" name="print_receipt" value="0" data-pos-print-flag>
-        <input type="hidden" name="cash_received" value="" data-pos-cash-hidden>
-        <input type="hidden" name="change_due" value="" data-pos-change-hidden>
+        <input type="hidden" name="cash_received" value="{{ old('cash_received', 0) }}" data-pos-cash-hidden>
+        <input type="hidden" name="change_due" value="{{ old('change_due', 0) }}" data-pos-change-hidden>
         <div data-pos-hidden-items></div>
     </form>
 @endsection
@@ -394,13 +399,53 @@
             let currentPaymentMode = paymentModeInput?.value || 'cash';
             let catalogItems = [];
             const mechanics = @json($mechanicOptions);
+            const initialState = {
+                hasOldInput: @json(session()->hasOldInput()),
+                items: @json(old('items', [])),
+                paymentMode: @json(old('payment_mode', 'cash')),
+                status: @json(old('status')),
+                cashReceived: @json(old('cash_received')),
+                paymentAmount: @json(old('payments.0.amount')),
+                paymentMethod: @json(old('payments.0.method_id')),
+                paymentStatus: @json(old('payments.0.status')),
+            };
 
             const cart = [];
 
             const money = (value) => (Number.isFinite(value) ? value.toFixed(2) : '0.00');
             const stockCount = (value) => (Number.isFinite(value) ? Math.round(value).toString() : '0');
 
-            const setPaymentMethod = (mode, methodId) => {
+            const normalizeOldCartItem = (item, index) => {
+                const lineType = item.type === 'service' ? 'service' : 'product';
+                const qty = Math.max(parseFloat(item.qty || '1'), 1);
+                const price = Math.max(parseFloat(item.price || '0'), 0);
+                const taxRate = Math.max(parseFloat(item.tax_rate || '0'), 0);
+                const taxInclusiveRaw = item.tax_inclusive;
+                const mechanicEnabledRaw = item.mechanic_enabled;
+                const mechanicCharge = Math.max(parseFloat(item.mechanic_charge || '0'), 0);
+
+                return {
+                    id: `${lineType}:${item.ref_id ?? index}`,
+                    ref_id: item.ref_id ?? '',
+                    type: lineType,
+                    name: item.name || (lineType === 'service' ? 'Service Item' : 'Product Item'),
+                    sku: item.sku || '',
+                    price,
+                    tax_rate: taxRate,
+                    tax_inclusive: taxInclusiveRaw === true || taxInclusiveRaw === 1 || taxInclusiveRaw === '1',
+                    stock: Number(item.stock || 0),
+                    qty,
+                    mechanic_enabled: mechanicEnabledRaw === true || mechanicEnabledRaw === 1 ||
+                        mechanicEnabledRaw === '1',
+                    mechanic_id: item.mechanic_id || null,
+                    mechanic_charge: mechanicCharge,
+                };
+            };
+
+            const setPaymentMethod = (mode, methodId, options = {}) => {
+                const {
+                    syncStatus = true
+                } = options;
                 currentPaymentMode = mode;
                 if (paymentModeInput) {
                     paymentModeInput.value = mode;
@@ -433,7 +478,7 @@
                     paymentsList?.querySelectorAll('input, select').forEach((el) => {
                         el.disabled = false;
                     });
-                    if (statusSelect) {
+                    if (syncStatus && statusSelect) {
                         statusSelect.value = 'posted';
                     }
                     const firstMethod = paymentsList?.querySelector(
@@ -469,7 +514,7 @@
                     paymentsList?.querySelectorAll('input, select').forEach((el) => {
                         el.disabled = false;
                     });
-                    if (statusSelect) {
+                    if (syncStatus && statusSelect) {
                         statusSelect.value = 'posted';
                     }
 
@@ -506,7 +551,7 @@
                 paymentsList?.querySelectorAll('input, select').forEach((el) => {
                     el.disabled = false;
                 });
-                if (statusSelect) {
+                if (syncStatus && statusSelect) {
                     statusSelect.value = 'hold';
                 }
                 const firstMethod = paymentsList?.querySelector('select[name^="payments"][name$="[method_id]"]');
@@ -665,7 +710,8 @@
                         item.mechanic_id = mechanicSelect.value || null;
                     }
 
-                    const mechanicChargeInput = cartBody.querySelector(`[data-pos-mechanic-charge="${index}"]`);
+                    const mechanicChargeInput = cartBody.querySelector(
+                        `[data-pos-mechanic-charge="${index}"]`);
                     if (mechanicChargeInput instanceof HTMLInputElement) {
                         item.mechanic_charge = Math.max(parseFloat(mechanicChargeInput.value || '0'), 0);
                     }
@@ -685,7 +731,9 @@
                     const isService = item.type === 'service';
                     const mechanicEnabled = Boolean(item.mechanic_enabled);
                     const mechanicOptionsHtml = mechanics
-                        .map((mechanic) => `<option value="${mechanic.id}" ${item.mechanic_id === mechanic.id ? 'selected' : ''}>${mechanic.name}</option>`)
+                        .map((mechanic) =>
+                            `<option value="${mechanic.id}" ${item.mechanic_id === mechanic.id ? 'selected' : ''}>${mechanic.name}</option>`
+                            )
                         .join('');
                     row.innerHTML = `
                         <td>
@@ -700,24 +748,24 @@
                             ${
                                 mechanicEnabled
                                     ? `
-                                        <div class="mt-2 p-2 rounded border bg-light-subtle">
-                                            <div class="small fw-semibold text-muted mb-1">Mechanic Details</div>
-                                            <div class="row g-2">
-                                                <div class="col-12 col-lg-8">
-                                                    <label class="form-label mb-1 small text-muted">Mechanic</label>
-                                                    <select class="form-select form-select-sm singl-select-2" data-pos-mechanic="${index}" required>
-                                                        <option value="">Select Mechanic</option>
-                                                        ${mechanicOptionsHtml}
-                                                    </select>
-                                                </div>
-                                                <div class="col-12 col-lg-4">
-                                                    <label class="form-label mb-1 small text-muted">Payable</label>
-                                                    <input type="number" step="0.01" min="0.01" required class="form-control form-control-sm"
-                                                        value="${item.mechanic_charge ?? 0}" data-pos-mechanic-charge="${index}">
+                                            <div class="mt-2 p-2 rounded border bg-light-subtle">
+                                                <div class="small fw-semibold text-muted mb-1">Mechanic Details</div>
+                                                <div class="row g-2">
+                                                    <div class="col-12 col-lg-8">
+                                                        <label class="form-label mb-1 small text-muted">Mechanic</label>
+                                                        <select class="form-select form-select-sm singl-select-2" data-pos-mechanic="${index}" required>
+                                                            <option value="">Select Mechanic</option>
+                                                            ${mechanicOptionsHtml}
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 col-lg-4">
+                                                        <label class="form-label mb-1 small text-muted">Payable</label>
+                                                        <input type="number" step="0.01" min="0.01" required class="form-control form-control-sm"
+                                                            value="${item.mechanic_charge ?? 0}" data-pos-mechanic-charge="${index}">
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    `
+                                        `
                                     : ''
                             }
                         </td>
@@ -742,7 +790,7 @@
                                 isService
                                     ? '<span class="text-muted small">N/A</span>'
                                     : `<input type="number" step="1" min="1" class="form-control form-control-sm"
-                                                value="${item.qty}" data-pos-qty="${index}">`
+                                                    value="${item.qty}" data-pos-qty="${index}">`
                             }
                         </td>
                         <td>
@@ -1154,9 +1202,19 @@
                 card.addEventListener('click', () => {
                     const mode = card.dataset.paymentMode || 'cash';
                     const methodId = card.dataset.methodId || '';
-                    setPaymentMethod(mode, methodId);
+                    setPaymentMethod(mode, methodId, {
+                        syncStatus: true
+                    });
                 });
             });
+
+            if (Array.isArray(initialState.items) && initialState.items.length > 0) {
+                initialState.items.forEach((item, index) => {
+                    if (item && typeof item === 'object') {
+                        cart.push(normalizeOldCartItem(item, index));
+                    }
+                });
+            }
 
             renderCart();
             if (categoryWrap && catalogItems.length === 0) {
@@ -1167,12 +1225,46 @@
                     loadCategoryVariants(categoryId, type, firstBadge);
                 }
             }
-            const defaultCard = document.querySelector('[data-payment-mode="cash"]') || paymentModeCards[0];
+            const selectedMode = initialState.paymentMode || paymentModeInput?.value || 'cash';
+            const defaultCard = document.querySelector(`[data-payment-mode="${selectedMode}"]`) || paymentModeCards[0];
             if (defaultCard) {
                 const mode = defaultCard.dataset.paymentMode || 'cash';
-                const methodId = defaultCard.dataset.methodId || '';
-                setPaymentMethod(mode, methodId);
+                const methodId = initialState.paymentMethod || defaultCard.dataset.methodId || '';
+                setPaymentMethod(mode, methodId, {
+                    syncStatus: !initialState.hasOldInput
+                });
             }
+
+            if (initialState.hasOldInput) {
+                if (statusSelect && initialState.status) {
+                    statusSelect.value = initialState.status;
+                }
+
+                const firstAmount = paymentsList?.querySelector('input[name^="payments"][name$="[amount]"]');
+                if (firstAmount instanceof HTMLInputElement && initialState.paymentAmount !== null && initialState
+                    .paymentAmount !== '') {
+                    firstAmount.value = initialState.paymentAmount;
+                    paymentTouched = true;
+                }
+
+                const firstMethod = paymentsList?.querySelector('select[name^="payments"][name$="[method_id]"]');
+                if (firstMethod instanceof HTMLSelectElement && initialState.paymentMethod) {
+                    firstMethod.value = initialState.paymentMethod;
+                }
+
+                const firstStatus = paymentsList?.querySelector('select[name^="payments"][name$="[status]"]');
+                if (firstStatus instanceof HTMLSelectElement && initialState.paymentStatus) {
+                    firstStatus.value = initialState.paymentStatus;
+                }
+
+                if (cashInput && initialState.cashReceived !== null && initialState.cashReceived !== '') {
+                    cashInput.value = initialState.cashReceived;
+                    cashTouched = true;
+                }
+
+                calculateTotals();
+            }
+
             if (statusSelect) {
                 statusSelect.dispatchEvent(new Event('change'));
             }

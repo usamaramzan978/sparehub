@@ -40,6 +40,40 @@
     @include('layouts.shared.footer')
     <x-toast />
 
+    <script>
+        // small shared script that appends a red * to any label.form-label[for] whose target field has required.
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('label.form-label[for]').forEach((label) => {
+                const fieldId = label.getAttribute('for');
+                if (!fieldId) {
+                    return;
+                }
+
+                const field = document.getElementById(fieldId);
+                if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement ||
+                        field instanceof HTMLTextAreaElement)) {
+                    return;
+                }
+
+                if (!field.required) {
+                    return;
+                }
+
+                const hasIndicator = Array.from(label.querySelectorAll('span')).some((span) => span
+                    .textContent?.trim() === '*');
+                if (hasIndicator) {
+                    return;
+                }
+
+                const marker = document.createElement('span');
+                marker.className = 'text-danger';
+                marker.setAttribute('data-required-indicator', '1');
+                marker.textContent = ' *';
+                label.appendChild(marker);
+            });
+        });
+    </script>
+
     @yield('scripts')
     @stack('scripts')
 </body>

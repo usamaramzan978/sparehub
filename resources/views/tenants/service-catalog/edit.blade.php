@@ -93,6 +93,7 @@
                         @error('default_tax_id')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
+                        <small class="text-muted">{{ __('Service is taxable when a default tax is selected.') }}</small>
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label" for="status">{{ __('Status') }}</label>
@@ -107,14 +108,6 @@
                         @error('status')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
-                    </div>
-                    <div class="col-md-12 mb-3">
-                        <div class="form-check">
-                            <input type="hidden" name="is_taxable" value="0">
-                            <input class="form-check-input" type="checkbox" value="1" id="is_taxable" name="is_taxable"
-                                @checked((bool) old('is_taxable', $serviceCatalog->is_taxable))>
-                            <label class="form-check-label" for="is_taxable">{{ __('Taxable Service') }}</label>
-                        </div>
                     </div>
                 </div>
 

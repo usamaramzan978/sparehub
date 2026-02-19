@@ -259,7 +259,6 @@ final class PosController extends Controller
 
         $paymentMode = (string) ($validated['payment_mode'] ?? 'cash');
         $cashReceived = (float) ($validated['cash_received'] ?? 0);
-        $paymentProofPath = $request->file('payment_proof')?->store('sale-payment-proofs', 'public');
 
         $paidTotal = $paymentMode === 'cash' || $paymentMode === 'online' ? $grandTotal : min($cashReceived, $grandTotal);
 
@@ -288,8 +287,7 @@ final class PosController extends Controller
             $paidTotal,
             $balanceDue,
             $linePayload,
-            $paymentMode,
-            $paymentProofPath
+            $paymentMode
         ): Sale {
             $sale = Sale::query()->create([
                 'branch_id' => $branchId,
@@ -338,7 +336,7 @@ final class PosController extends Controller
                     'payment_method' => $paymentMode === 'online' ? PaymentMethodType::BANK->value : PaymentMethodType::CASH->value,
                     'amount' => $paidTotal,
                     'reference_no' => null,
-                    'payment_proof_path' => $paymentMode === 'online' ? $paymentProofPath : null,
+                    'payment_proof_path' => null,
                     'paid_at' => now(),
                     'notes' => 'POS payment',
                 ]);
@@ -346,6 +344,19 @@ final class PosController extends Controller
 
             return $sale;
         });
+
+        if ($paymentMode === 'online' && $request->hasFile('payment_proof')) {
+            $media = $sale->addMediaFromRequest('payment_proof')
+                ->toMediaCollection('online_payment_proof');
+
+            $sale->payments()
+                ->where('payment_method', PaymentMethodType::BANK->value)
+                ->latest('created_at')
+                ->limit(1)
+                ->update([
+                    'payment_proof_path' => $media->getPathRelativeToRoot(),
+                ]);
+        }
 
         $tenantRouteKey = (string) (request()->route('tenant') ?? tenant('id'));
 

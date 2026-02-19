@@ -37,7 +37,6 @@ final class ServiceCatalogRequest extends FormRequest
             'default_tax_id' => ['nullable', 'uuid', Rule::exists('taxes', 'id')],
             'base_price' => ['required', 'numeric', 'min:0'],
             'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:65535'],
-            'is_taxable' => ['sometimes', 'boolean'],
             'status' => ['required', Rule::enum(RecordStatus::class)],
         ];
     }

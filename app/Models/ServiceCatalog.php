@@ -29,14 +29,12 @@ final class ServiceCatalog extends Model
         'category',
         'base_price',
         'duration_minutes',
-        'is_taxable',
         'status',
     ];
 
     protected $casts = [
         'base_price' => 'decimal:2',
         'duration_minutes' => 'int',
-        'is_taxable' => 'bool',
         'status' => RecordStatus::class,
     ];
 
@@ -48,5 +46,10 @@ final class ServiceCatalog extends Model
     public function defaultTax(): BelongsTo
     {
         return $this->belongsTo(Tax::class, 'default_tax_id');
+    }
+
+    public function getIsTaxableAttribute(): bool
+    {
+        return $this->default_tax_id !== null;
     }
 }

@@ -16,7 +16,6 @@
             ['label' => __('Category'), 'value' => $serviceCatalog->category ?: null],
             ['label' => __('Branch'), 'value' => $serviceCatalog->branch?->name],
             ['label' => __('Duration (Min)'), 'value' => $serviceCatalog->duration_minutes],
-            ['label' => __('Taxable'), 'value' => $serviceCatalog->is_taxable ? __('Yes') : __('No')],
             [
                 'label' => __('Tax Rule'),
                 'value' => $serviceCatalog->defaultTax

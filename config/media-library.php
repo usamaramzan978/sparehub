@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Models\Media as TenantMedia;
 use App\Support\MediaLibrary\TenantAwareUrlGenerator;
+use App\Support\MediaLibrary\TenantPathGenerator;
 use Spatie\ImageOptimizer\Optimizers\Avifenc;
 use Spatie\ImageOptimizer\Optimizers\Cwebp;
 use Spatie\ImageOptimizer\Optimizers\Gifsicle;
@@ -25,7 +27,6 @@ use Spatie\MediaLibrary\ResponsiveImages\TinyPlaceholderGenerator\Blurred;
 use Spatie\MediaLibrary\ResponsiveImages\WidthCalculator\FileSizeOptimizedWidthCalculator;
 use Spatie\MediaLibrary\Support\FileNamer\DefaultFileNamer;
 use Spatie\MediaLibrary\Support\FileRemover\DefaultFileRemover;
-use Spatie\MediaLibrary\Support\PathGenerator\DefaultPathGenerator;
 
 return [
 
@@ -66,7 +67,7 @@ return [
     /*
      * The fully qualified class name of the media model.
      */
-    'media_model' => Media::class,
+    'media_model' => TenantMedia::class,
 
     /*
      * The fully qualified class name of the media observer.
@@ -110,7 +111,7 @@ return [
     /*
      * The class that contains the strategy for determining a media file's path.
      */
-    'path_generator' => DefaultPathGenerator::class,
+    'path_generator' => TenantPathGenerator::class,
 
     /*
      * The class that contains the strategy for determining how to remove files.

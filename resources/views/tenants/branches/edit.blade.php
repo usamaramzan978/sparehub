@@ -32,7 +32,7 @@
                 @method('PUT')
                 <div class="row">
                     <div class="col-md-4 mb-3">
-                        <label class="form-label" for="code">{{ __('Code') }}</label>
+                        <label class="form-label" for="code">{{ __('Code') }} <span class="text-danger">*</span></label>
                         <input type="text" name="code" id="code"
                             class="form-control @error('code') is-invalid @enderror"
                             value="{{ old('code', $branch->code) }}" required>
@@ -41,7 +41,7 @@
                         @enderror
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label" for="name">{{ __('Name') }}</label>
+                        <label class="form-label" for="name">{{ __('Name') }} <span class="text-danger">*</span></label>
                         <input type="text" name="name" id="name"
                             class="form-control @error('name') is-invalid @enderror"
                             value="{{ old('name', $branch->name) }}" required>
@@ -65,7 +65,7 @@
                         @enderror
                     </div>
                     <div class="col-md-2 mb-3">
-                        <label class="form-label" for="status">{{ __('Status') }}</label>
+                        <label class="form-label" for="status">{{ __('Status') }} <span class="text-danger">*</span></label>
                         <select name="status" id="status"
                             class="form-select singl-select-2 @error('status') is-invalid @enderror" required>
                             @foreach ($statuses as $status)
