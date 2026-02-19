@@ -173,6 +173,38 @@ it('shows sales index for current branch only', function (): void {
     expect($response->viewData('items')->items()[0]->invoice_no)->toBe('INV-MAIN-1');
 });
 
+it('renders status badges on sales index', function (): void {
+    $fixture = authenticateSalesUser();
+
+    Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-BADGE-POSTED',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+    ]);
+
+    Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-BADGE-HOLD',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::HOLD->value,
+        'invoice_type' => InvoiceType::SERVICE->value,
+    ]);
+
+    $response = $this->get(salesTenantRoute('sales.index'));
+
+    $response->assertSuccessful();
+    $response->assertSee('badge bg-success-transparent', false);
+    $response->assertSee('badge bg-warning-transparent', false);
+    $response->assertSee('badge border border-primary text-primary', false);
+    $response->assertSee('badge border border-info text-info', false);
+});
+
 it('clamps sales pagination limits', function (): void {
     authenticateSalesUser();
 

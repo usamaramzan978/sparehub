@@ -118,7 +118,7 @@
         </div>
     </div>
 
-    <div class="row g-3 mt-1">
+    <div class="row g-3 mt-1 mb-3">
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-body">

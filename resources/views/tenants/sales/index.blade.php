@@ -41,12 +41,35 @@
                     </thead>
                     <tbody>
                         @forelse ($items as $sale)
+                            @php
+                                $statusValue = $sale->status->value;
+                                $statusClass = match ($statusValue) {
+                                    'posted', 'completed' => 'bg-success',
+                                    'hold' => 'bg-warning',
+                                    'cancelled' => 'bg-danger',
+                                    'returned' => 'bg-info',
+                                    default => 'bg-secondary',
+                                };
+                                $invoiceTypeValue = $sale->invoice_type->value;
+                                $invoiceTypeBadgeClass = match ($invoiceTypeValue) {
+                                    'product' => 'badge bg-primary-transparent',
+                                    'service' => 'badge bg-info-transparent',
+                                    'mixed' => 'badge bg-dark-transparent',
+                                    default => 'border border-secondary text-secondary',
+                                };
+                            @endphp
                             <tr>
                                 <td>{{ $sale->invoice_no }}</td>
                                 <td>{{ $sale->invoice_date?->format('Y-m-d') }}</td>
                                 <td>{{ $sale->customer?->name ?? '-' }}</td>
-                                <td>{{ ucfirst($sale->invoice_type->value) }}</td>
-                                <td>{{ ucfirst(str_replace('_', ' ', $sale->status->value)) }}</td>
+                                <td>
+                                    <span
+                                        class="badge {{ $invoiceTypeBadgeClass }}">{{ ucfirst($invoiceTypeValue) }}</span>
+                                </td>
+                                <td>
+                                    <span
+                                        class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $statusValue)) }}</span>
+                                </td>
                                 <td>{{ number_format((float) $sale->grand_total, 2) }}</td>
                                 <td>{{ number_format((float) $sale->balance_due, 2) }}</td>
                                 <td class="text-end">
