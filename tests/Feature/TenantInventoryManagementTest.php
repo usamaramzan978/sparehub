@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
+use App\Enums\StockMoveType;
 use App\Enums\UserStatus;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\ProductPrice;
+use App\Models\StockMove;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Support\Facades\Artisan;
@@ -45,11 +47,21 @@ beforeEach(function (): void {
 
 function inventoryTenantRoute(array $parameters = []): string
 {
-    return route('tenant.inventory.index', ['tenant' => 'test-tenant-id', ...$parameters]);
+    return route('tenant.products.stock.index', ['tenant' => 'test-tenant-id', ...$parameters]);
+}
+
+function inventoryAdjustmentTenantRoute(): string
+{
+    return route('tenant.products.stock.adjustments.store', ['tenant' => 'test-tenant-id']);
+}
+
+function inventoryAdjustmentPageTenantRoute(): string
+{
+    return route('tenant.products.stock.adjustments', ['tenant' => 'test-tenant-id']);
 }
 
 /**
- * @return array{branch: Branch, product: Product, inactive: Product}
+ * @return array{branch: Branch, product: Product, inactive: Product, warehouse: Warehouse}
  */
 function authenticateInventoryModuleUser(): array
 {
@@ -108,7 +120,6 @@ function authenticateInventoryModuleUser(): array
 
     InventoryStock::query()->create([
         'branch_id' => $branch->id,
-        'warehouse_id' => $warehouse->id,
         'product_id' => $product->id,
         'qty_on_hand' => 30,
         'qty_reserved' => 5,
@@ -117,7 +128,7 @@ function authenticateInventoryModuleUser(): array
     test()->actingAs($user, 'user');
     test()->withSession(['tenant.current_branch_id' => $branch->id]);
 
-    return ['branch' => $branch, 'product' => $product, 'inactive' => $inactive];
+    return ['branch' => $branch, 'product' => $product, 'inactive' => $inactive, 'warehouse' => $warehouse];
 }
 
 it('shows inventory dashboard summary', function (): void {
@@ -155,4 +166,59 @@ it('shows inactive products only when requested', function (): void {
 
     expect($defaultSummary['products_count'])->toBe(1);
     expect($withInactiveSummary['products_count'])->toBe(2);
+});
+
+it('shows stock adjustment page', function (): void {
+    authenticateInventoryModuleUser();
+
+    $response = $this->get(inventoryAdjustmentPageTenantRoute());
+
+    $response->assertSuccessful();
+    $response->assertSee('Stock Adjustment');
+    $response->assertSee('Apply Adjustment');
+    $response->assertSee('Engine Oil (INV-P-1)');
+});
+
+it('allows stock adjustment from inventory page', function (): void {
+    $context = authenticateInventoryModuleUser();
+
+    $response = $this->post(inventoryAdjustmentTenantRoute(), [
+        'product_id' => $context['product']->id,
+        'action' => 'in',
+        'qty' => 5,
+        'remarks' => 'Manual correction',
+    ]);
+
+    $response->assertRedirect(inventoryAdjustmentPageTenantRoute());
+    $response->assertSessionHas('status', 'Stock adjusted.');
+
+    $stock = InventoryStock::query()
+        ->where('product_id', $context['product']->id)
+        ->where('branch_id', $context['branch']->id)
+        ->firstOrFail();
+
+    expect((float) $stock->qty_on_hand)->toBe(35.0);
+
+    $move = StockMove::query()
+        ->where('product_id', $context['product']->id)
+        ->where('branch_id', $context['branch']->id)
+        ->latest('created_at')
+        ->firstOrFail();
+
+    expect($move->move_type)->toBe(StockMoveType::ADJUSTMENT_IN);
+    expect((float) $move->qty)->toBe(5.0);
+});
+
+it('prevents stock out greater than available stock', function (): void {
+    $context = authenticateInventoryModuleUser();
+
+    $response = $this->from(inventoryTenantRoute())
+        ->post(inventoryAdjustmentTenantRoute(), [
+            'product_id' => $context['product']->id,
+            'action' => 'out',
+            'qty' => 100,
+        ]);
+
+    $response->assertRedirect(inventoryTenantRoute());
+    $response->assertSessionHasErrors(['qty' => 'Stock out quantity exceeds available stock.']);
 });

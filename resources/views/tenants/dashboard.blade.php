@@ -207,6 +207,46 @@
         <div class="col-12 col-lg-4">
             <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-header d-flex align-items-center justify-content-between">
+                    <h6 class="card-title mb-0">{{ __('Top Stock') }}</h6>
+                    <span class="badge bg-info-transparent">{{ __('By Quantity') }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Product') }}</th>
+                                    <th class="text-end">{{ __('On Hand') }}</th>
+                                    <th class="text-end">{{ __('Reserved') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($topStockItems as $stock)
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">{{ $stock->product?->name ?? __('Unknown') }}</div>
+                                            <small class="text-muted">{{ $stock->product?->sku ?: __('No SKU') }}</small>
+                                        </td>
+                                        <td class="text-end fw-semibold">
+                                            {{ number_format((float) $stock->qty_on_hand, 0) }}</td>
+                                        <td class="text-end">{{ number_format((float) $stock->qty_reserved, 0) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted py-4">
+                                            {{ __('No stock records.') }}</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
                     <h6 class="card-title mb-0">{{ __('Stock Alerts') }}</h6>
                     <span class="badge bg-danger-transparent">{{ __('Low Stock') }}</span>
                 </div>
@@ -228,8 +268,8 @@
                                             <small class="text-muted">{{ $stock->product?->sku ?: __('No SKU') }}</small>
                                         </td>
                                         <td class="text-end text-danger">
-                                            {{ number_format((float) $stock->qty_on_hand, 3) }}</td>
-                                        <td class="text-end">{{ number_format((float) $stock->qty_reserved, 3) }}</td>
+                                            {{ number_format((float) $stock->qty_on_hand, 0) }}</td>
+                                        <td class="text-end">{{ number_format((float) $stock->qty_reserved, 0) }}</td>
                                     </tr>
                                 @empty
                                     <tr>

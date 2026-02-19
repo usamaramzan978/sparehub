@@ -7,13 +7,13 @@ use App\Http\Controllers\Tenant\BranchController;
 use App\Http\Controllers\Tenant\BranchSwitchController;
 use App\Http\Controllers\Tenant\BrandController;
 use App\Http\Controllers\Tenant\CategoryController;
+use App\Http\Controllers\Tenant\CodeGeneratorController;
 use App\Http\Controllers\Tenant\CustomerController;
 use App\Http\Controllers\Tenant\CustomerVehicleController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\EmployeeAttendanceController;
 use App\Http\Controllers\Tenant\EmployeeSalaryController;
 use App\Http\Controllers\Tenant\EndOfDayController;
-use App\Http\Controllers\Tenant\InventoryController;
 use App\Http\Controllers\Tenant\JobCardController;
 use App\Http\Controllers\Tenant\JobCardPartController;
 use App\Http\Controllers\Tenant\JobCardServiceController;
@@ -21,6 +21,7 @@ use App\Http\Controllers\Tenant\PermissionController;
 use App\Http\Controllers\Tenant\PosController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductPriceController;
+use App\Http\Controllers\Tenant\ProductStockController;
 use App\Http\Controllers\Tenant\ProfileController;
 use App\Http\Controllers\Tenant\PurchaseController;
 use App\Http\Controllers\Tenant\PurchaseItemController;
@@ -70,7 +71,9 @@ Route::middleware([
     Route::middleware(['auth:user', 'tenant.branch'])->group(function (): void {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
         Route::get('end-of-day', EndOfDayController::class)->name('end-of-day');
-        Route::get('inventory', InventoryController::class)->name('inventory.index');
+        Route::get('products/stock', [ProductStockController::class, 'index'])->name('products.stock.index');
+        Route::get('products/stock/adjustments', [ProductStockController::class, 'adjustments'])->name('products.stock.adjustments');
+        Route::post('products/stock/adjustments', [ProductStockController::class, 'storeAdjustment'])->name('products.stock.adjustments.store');
         Route::get('sales-tree', SalesTreeController::class)->name('sales-tree.index');
         Route::get('purchases-tree', PurchasesTreeController::class)->name('purchases-tree.index');
 
@@ -150,5 +153,16 @@ Route::middleware([
         Route::resource('warehouses', WarehouseController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('taxes', TaxController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('units', UnitController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        Route::get('codes', [CodeGeneratorController::class, 'index'])->name('codes.index');
+        Route::post('codes', [CodeGeneratorController::class, 'store'])->name('codes.store');
+        Route::delete('codes/item', [CodeGeneratorController::class, 'destroy'])->name('codes.destroy');
+        Route::get('codes/render', [CodeGeneratorController::class, 'render'])->name('codes.render');
+        Route::get('codes/print', [CodeGeneratorController::class, 'print'])->name('codes.print');
+
+        Route::put('products/{product}/barcode', [CodeGeneratorController::class, 'updateBarcode'])->name('products.barcode.update');
+        Route::delete('products/{product}/barcode', [CodeGeneratorController::class, 'deleteBarcode'])->name('products.barcode.delete');
+        Route::put('products/{product}/qrcode', [CodeGeneratorController::class, 'updateQr'])->name('products.qrcode.update');
+        Route::delete('products/{product}/qrcode', [CodeGeneratorController::class, 'deleteQr'])->name('products.qrcode.delete');
     });
 });

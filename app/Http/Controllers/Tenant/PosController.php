@@ -124,7 +124,6 @@ final class PosController extends Controller
         $products = Product::query()
             ->with(['defaultTax'])
             ->where('status', RecordStatus::ACTIVE->value)
-            ->where('is_service_item', false)
             ->where('category_id', $category)
             ->orderBy('name')
             ->limit($limit)
@@ -302,6 +301,8 @@ final class PosController extends Controller
                 ]);
             }
 
+            $this->decrementTrackedStock($branchId, $linePayload);
+
             if ($paidTotal > 0) {
                 SalePayment::query()->create([
                     'sale_id' => $sale->id,
@@ -334,6 +335,52 @@ final class PosController extends Controller
     }
 
     /**
+     * @param  Collection<int, array<string, mixed>>  $linePayload
+     */
+    private function decrementTrackedStock(string $branchId, Collection $linePayload): void
+    {
+        $productQtyById = $linePayload
+            ->where('type', 'product')
+            ->groupBy('ref_id')
+            ->map(fn (Collection $lines): float => (float) $lines->sum('qty'));
+
+        if ($productQtyById->isEmpty()) {
+            return;
+        }
+
+        $trackedProductIds = Product::query()
+            ->whereIn('id', $productQtyById->keys()->all())
+            ->where('track_stock', true)
+            ->pluck('id')
+            ->all();
+
+        if ($trackedProductIds === []) {
+            return;
+        }
+
+        foreach ($trackedProductIds as $productId) {
+            $qty = (float) ($productQtyById->get($productId) ?? 0);
+            if ($qty <= 0) {
+                continue;
+            }
+
+            $stockRow = InventoryStock::query()
+                ->where('branch_id', $branchId)
+                ->where('product_id', $productId)
+                ->orderBy('updated_at')
+                ->first();
+
+            if (! $stockRow instanceof InventoryStock) {
+                continue;
+            }
+
+            $stockRow->update([
+                'qty_on_hand' => (float) $stockRow->qty_on_hand - $qty,
+            ]);
+        }
+    }
+
+    /**
      * @return Collection<int, array<string, mixed>>
      */
     private function searchItems(string $query, int $limit): Collection
@@ -343,7 +390,6 @@ final class PosController extends Controller
         $products = Product::query()
             ->with('defaultTax')
             ->where('status', RecordStatus::ACTIVE->value)
-            ->where('is_service_item', false)
             ->where(function ($builder) use ($query): void {
                 $builder
                     ->where('name', 'like', sprintf('%%%s%%', $query))

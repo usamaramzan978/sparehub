@@ -130,11 +130,11 @@
                     <hr>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">{{ __('On Hand') }}</span>
-                        <span class="fw-semibold">{{ number_format($stockOnHand, 2) }}</span>
+                        <span class="fw-semibold">{{ number_format($stockOnHand, 0) }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">{{ __('Reserved') }}</span>
-                        <span class="fw-semibold">{{ number_format($stockReserved, 2) }}</span>
+                        <span class="fw-semibold">{{ number_format($stockReserved, 0) }}</span>
                     </div>
                     <div class="text-muted small">{{ __('Stock Source') }}</div>
                     <div class="fw-semibold">{{ $warehouseLabel }}</div>
@@ -165,7 +165,7 @@
                             <tr>
                                 <td class="fw-semibold">{{ $priceRow['name'] }}</td>
                                 <td>{{ $priceRow['sku'] }}</td>
-                                <td class="text-end">{{ number_format($priceRow['on_hand'], 2) }}</td>
+                                <td class="text-end">{{ number_format($priceRow['on_hand'], 0) }}</td>
                                 <td class="text-end">{{ number_format($priceRow['cost'], 2) }}</td>
                                 <td class="text-end">{{ number_format($priceRow['sale'], 2) }}</td>
                                 <td>
@@ -180,7 +180,7 @@
                             <tr>
                                 <td class="fw-semibold">{{ $product->name }}</td>
                                 <td>{{ $product->sku ?? '-' }}</td>
-                                <td class="text-end">{{ number_format($stockOnHand, 2) }}</td>
+                                <td class="text-end">{{ number_format($stockOnHand, 0) }}</td>
                                 <td class="text-end">{{ number_format((float) ($latestPrice?->cost ?? 0), 2) }}</td>
                                 <td class="text-end">{{ number_format((float) ($latestPrice?->retail_price ?? 0), 2) }}
                                 </td>

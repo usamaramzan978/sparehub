@@ -21,7 +21,6 @@ final class InventoryStock extends Model
     protected $fillable = [
         'product_id',
         'branch_id',
-        'warehouse_id',
         'qty_on_hand',
         'qty_reserved',
         'avg_cost',
@@ -41,10 +40,5 @@ final class InventoryStock extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
-    }
-
-    public function warehouse(): BelongsTo
-    {
-        return $this->belongsTo(Warehouse::class);
     }
 }

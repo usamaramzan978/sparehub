@@ -52,8 +52,9 @@ final class ProductRequest extends FormRequest
             ],
             'part_number' => ['nullable', 'string', 'max:60', Rule::unique('products', 'part_number')->ignore($productId)],
             'barcode' => ['nullable', 'string', 'max:80', Rule::unique('products', 'barcode')->ignore($productId)],
+            'qrcode' => ['nullable', 'string', 'max:80', Rule::unique('products', 'qrcode')->ignore($productId)],
             'track_stock' => ['sometimes', 'boolean'],
-            'is_service_item' => ['sometimes', 'boolean'],
+            'opening_stock' => ['nullable', 'numeric', 'min:0'],
             'status' => ['required', Rule::enum(RecordStatus::class)],
             'description' => ['nullable', 'string'],
         ];
@@ -70,6 +71,7 @@ final class ProductRequest extends FormRequest
             'sku.unique' => 'This SKU already exists.',
             'part_number.unique' => 'This part number already exists.',
             'barcode.unique' => 'This barcode already exists.',
+            'qrcode.unique' => 'This QR code already exists.',
             'status.required' => 'Please select a product status.',
         ];
     }

@@ -131,7 +131,6 @@ final class TenantDemoSeeder extends Seeder
                 'name' => 'Bike Chain Set',
                 'description' => 'Demo spare part for POS testing',
                 'track_stock' => true,
-                'is_service_item' => false,
                 'status' => RecordStatus::ACTIVE->value,
             ]
         );

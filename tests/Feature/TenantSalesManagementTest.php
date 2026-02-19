@@ -11,11 +11,13 @@ use App\Http\Controllers\Tenant\SaleController;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Customer;
+use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\ServiceCatalog;
 use App\Models\Tax;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
@@ -54,7 +56,7 @@ function salesTenantRoute(string $name, array $parameters = []): string
 }
 
 /**
- * @return array{current: Branch, secondary: Branch, user: User, customer: Customer, product: Product, service: ServiceCatalog}
+ * @return array{current: Branch, secondary: Branch, warehouse: Warehouse, user: User, customer: Customer, product: Product, service: ServiceCatalog}
  */
 function authenticateSalesUser(): array
 {
@@ -69,6 +71,15 @@ function authenticateSalesUser(): array
         'name' => 'Alt Branch',
         'status' => BranchStatus::ACTIVE->value,
     ]);
+
+    $warehouse = Warehouse::query()->create([
+        'branch_id' => $currentBranch->id,
+        'code' => 'MAIN-WH',
+        'name' => 'Main Warehouse',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $currentBranch->update(['warehouse_id' => $warehouse->id]);
 
     $user = User::query()->create([
         'branch_id' => $currentBranch->id,
@@ -124,6 +135,7 @@ function authenticateSalesUser(): array
     return [
         'current' => $currentBranch,
         'secondary' => $secondaryBranch,
+        'warehouse' => $warehouse,
         'user' => $user,
         'customer' => $customer,
         'product' => $product,
@@ -173,6 +185,14 @@ it('clamps sales pagination limits', function (): void {
 it('stores sale and syncs totals from items', function (): void {
     $fixture = authenticateSalesUser();
 
+    InventoryStock::query()->create([
+        'product_id' => $fixture['product']->id,
+        'branch_id' => $fixture['current']->id,
+        'qty_on_hand' => 10,
+        'qty_reserved' => 0,
+        'avg_cost' => 0,
+    ]);
+
     $response = $this->post(salesTenantRoute('sales.store'), [
         'customer_id' => $fixture['customer']->id,
         'invoice_no' => 'INV-STORE-1',
@@ -210,6 +230,51 @@ it('stores sale and syncs totals from items', function (): void {
     expect((float) $sale->grand_total)->toBe(415.0);
     expect((float) $sale->balance_due)->toBe(415.0);
     expect($sale->items()->count())->toBe(2);
+
+    $stock = InventoryStock::query()
+        ->where('branch_id', $fixture['current']->id)
+        ->where('product_id', $fixture['product']->id)
+        ->firstOrFail();
+
+    expect((float) $stock->qty_on_hand)->toBe(8.0);
+});
+
+it('does not decrement stock for non tracked products in sales flow', function (): void {
+    $fixture = authenticateSalesUser();
+    $fixture['product']->update(['track_stock' => false]);
+
+    InventoryStock::query()->create([
+        'product_id' => $fixture['product']->id,
+        'branch_id' => $fixture['current']->id,
+        'qty_on_hand' => 10,
+        'qty_reserved' => 0,
+        'avg_cost' => 0,
+    ]);
+
+    $response = $this->post(salesTenantRoute('sales.store'), [
+        'customer_id' => $fixture['customer']->id,
+        'invoice_no' => 'INV-NONTRACK-1',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+        'items' => [
+            [
+                'line_type' => SaleLineType::PRODUCT->value,
+                'product_id' => $fixture['product']->id,
+                'qty' => 2,
+                'unit_price' => 100,
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect(salesTenantRoute('sales.index'));
+
+    $stock = InventoryStock::query()
+        ->where('branch_id', $fixture['current']->id)
+        ->where('product_id', $fixture['product']->id)
+        ->firstOrFail();
+
+    expect((float) $stock->qty_on_hand)->toBe(10.0);
 });
 
 it('validates required service id for service line type', function (): void {

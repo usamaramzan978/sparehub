@@ -90,7 +90,6 @@
                                     $isPurchaseReturns = request()->routeIs('tenant.purchase-returns.*');
                                     $isPurchaseReturnItems = request()->routeIs('tenant.purchase-return-items.*');
                                     $isVendorPayments = request()->routeIs('tenant.vendor-payments.*');
-                                    $isInventory = request()->routeIs('tenant.inventory.*');
 
                                     $isAccessControl = request()->routeIs(
                                         'tenant.users.*',
@@ -196,6 +195,16 @@
                                                         class="slide {{ request()->routeIs('tenant.products.create') ? 'active' : '' }}">
                                                         <a href="{{ route('tenant.products.create') }}"
                                                             class="side-menu__item {{ request()->routeIs('tenant.products.create') ? 'active' : '' }}">{{ __('Create') }}</a>
+                                                    </li>
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.products.stock.index') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.products.stock.index') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.products.stock.index') ? 'active' : '' }}">{{ __('Stock') }}</a>
+                                                    </li>
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.products.stock.adjustments') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.products.stock.adjustments') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.products.stock.adjustments') ? 'active' : '' }}">{{ __('Stock Adjustment') }}</a>
                                                     </li>
                                                 </ul>
                                             </li>
@@ -497,21 +506,6 @@
                                                             class="side-menu__item {{ request()->routeIs('tenant.vendor-payments.create') ? 'active' : '' }}">{{ __('Create') }}</a>
                                                     </li>
                                                 </ul>
-                                            </li>
-                                        </ul>
-                                    </li>
-
-                                    <li class="slide has-sub {{ $isInventory ? 'active open' : '' }}">
-                                        <a href="javascript:void(0);"
-                                            class="side-menu__item {{ $isInventory ? 'active' : '' }}">
-                                            <i class="ri-stack-line side-menu__icon"></i>
-                                            <span class="side-menu__label">{{ __('Inventory') }}</span>
-                                            <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                        </a>
-                                        <ul class="slide-menu child1 {{ $isInventory ? 'open' : '' }}">
-                                            <li class="slide {{ request()->routeIs('tenant.inventory.index') ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.inventory.index') }}"
-                                                    class="side-menu__item {{ request()->routeIs('tenant.inventory.index') ? 'active' : '' }}">{{ __('Inventory Stocks') }}</a>
                                             </li>
                                         </ul>
                                     </li>

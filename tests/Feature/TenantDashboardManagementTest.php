@@ -137,6 +137,14 @@ function authenticateDashboardUser(): void
         'status' => RecordStatus::ACTIVE->value,
     ]);
 
+    $topStockProduct = Product::query()->create([
+        'category_id' => $category->id,
+        'sku' => 'DB-PROD-2',
+        'name' => 'High Stock Product',
+        'track_stock' => true,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
     $warehouse = Warehouse::query()->withoutGlobalScopes()->create([
         'branch_id' => $branch->id,
         'code' => 'DB-WH-1',
@@ -146,10 +154,16 @@ function authenticateDashboardUser(): void
 
     InventoryStock::query()->create([
         'branch_id' => $branch->id,
-        'warehouse_id' => $warehouse->id,
         'product_id' => $product->id,
         'qty_on_hand' => 3,
         'qty_reserved' => 0,
+    ]);
+
+    InventoryStock::query()->create([
+        'branch_id' => $branch->id,
+        'product_id' => $topStockProduct->id,
+        'qty_on_hand' => 20,
+        'qty_reserved' => 1,
     ]);
 
     test()->actingAs($user, 'user');
@@ -173,6 +187,9 @@ it('shows dashboard summary and chart data', function (): void {
     expect($summary)->toHaveKeys(['sales_total', 'purchases_total', 'cashflow_net']);
     expect((float) $summary['cashflow_net'])->toBe((float) $summary['sale_payments_total'] - (float) $summary['vendor_payments_total']);
     expect($chartData['trend_labels'])->not->toBeEmpty();
+    $response->assertSee('Top Stock');
+    $response->assertSee('High Stock Product');
+    $response->assertSee('20');
 });
 
 it('accepts date range filter parsing', function (): void {

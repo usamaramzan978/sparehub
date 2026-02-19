@@ -44,6 +44,7 @@
                     <thead>
                         <tr>
                             <th>{{ __('Name') }}</th>
+                            <th>{{ __('Products') }}</th>
                             <th>{{ __('Status') }}</th>
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
@@ -52,6 +53,11 @@
                         @forelse ($items as $brand)
                             <tr>
                                 <td>{{ $brand->name }}</td>
+                                <td>
+                                    <span class="badge bg-info-transparent">
+                                        {{ (int) $brand->products_count }} {{ __('Products') }}
+                                    </span>
+                                </td>
                                 <td>
                                     @if ($brand->status->value === 'active')
                                         <span class="badge bg-success-transparent">
@@ -100,7 +106,7 @@
                             ])
                         @empty
                             <tr>
-                                <td colspan="3" class="text-center text-muted">{{ __('No brands found.') }}</td>
+                                <td colspan="4" class="text-center text-muted">{{ __('No brands found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -6,10 +6,12 @@ use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
 use App\Models\Branch;
 use App\Models\Category;
+use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\ProductPrice;
 use App\Models\ServiceCatalog;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
@@ -36,7 +38,7 @@ beforeEach(function (): void {
 });
 
 /**
- * @return array{branch:Branch,user:User,product:Product,service:ServiceCatalog}
+ * @return array{branch:Branch,user:User,warehouse:Warehouse,product:Product,service:ServiceCatalog}
  */
 function createPosFixture(): array
 {
@@ -45,6 +47,15 @@ function createPosFixture(): array
         'name' => 'Main Branch',
         'status' => BranchStatus::ACTIVE->value,
     ]);
+
+    $warehouse = Warehouse::query()->create([
+        'branch_id' => $branch->id,
+        'code' => 'MAIN-WH',
+        'name' => 'Main Warehouse',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $branch->update(['warehouse_id' => $warehouse->id]);
 
     $user = User::query()->create([
         'branch_id' => $branch->id,
@@ -65,7 +76,6 @@ function createPosFixture(): array
         'sku' => 'ENG-001',
         'name' => 'Engine Oil',
         'track_stock' => true,
-        'is_service_item' => false,
         'status' => RecordStatus::ACTIVE->value,
     ]);
 
@@ -92,6 +102,7 @@ function createPosFixture(): array
     return [
         'branch' => $branch,
         'user' => $user,
+        'warehouse' => $warehouse,
         'product' => $product,
         'service' => $service,
     ];
@@ -265,4 +276,86 @@ it('stores online payment proof path for online mode', function (): void {
     $payment = DB::connection('tenant')->table('sale_payments')->latest('created_at')->first();
     expect($payment->payment_proof_path)->not->toBeNull();
     expect($payment->payment_method)->toBe('bank');
+});
+
+it('decrements inventory stock for tracked products when pos sale is stored', function (): void {
+    $fixture = createPosFixture();
+    $tenantId = 'test-tenant-id';
+
+    InventoryStock::query()->create([
+        'product_id' => $fixture['product']->id,
+        'branch_id' => $fixture['branch']->id,
+        'qty_on_hand' => 10,
+        'qty_reserved' => 0,
+        'avg_cost' => 0,
+    ]);
+
+    $this->actingAs($fixture['user'], 'user');
+    $this->withSession(['tenant.current_branch_id' => $fixture['branch']->id]);
+
+    $response = $this->post(route('tenant.pos.store', ['tenant' => $tenantId]), [
+        'status' => 'posted',
+        'discount_type' => 'amount',
+        'discount_value' => 0,
+        'payment_mode' => 'cash',
+        'items' => [[
+            'type' => 'product',
+            'ref_id' => $fixture['product']->id,
+            'qty' => 3,
+            'price' => 150,
+            'tax_rate' => 0,
+            'tax_inclusive' => false,
+        ]],
+    ]);
+
+    $response->assertRedirect(route('tenant.pos.index', ['tenant' => $tenantId]));
+
+    $stock = InventoryStock::query()
+        ->where('branch_id', $fixture['branch']->id)
+        ->where('product_id', $fixture['product']->id)
+        ->firstOrFail();
+
+    expect((float) $stock->qty_on_hand)->toBe(7.0);
+});
+
+it('does not decrement inventory stock for non tracked products', function (): void {
+    $fixture = createPosFixture();
+    $tenantId = 'test-tenant-id';
+
+    $fixture['product']->update(['track_stock' => false]);
+
+    InventoryStock::query()->create([
+        'product_id' => $fixture['product']->id,
+        'branch_id' => $fixture['branch']->id,
+        'qty_on_hand' => 10,
+        'qty_reserved' => 0,
+        'avg_cost' => 0,
+    ]);
+
+    $this->actingAs($fixture['user'], 'user');
+    $this->withSession(['tenant.current_branch_id' => $fixture['branch']->id]);
+
+    $response = $this->post(route('tenant.pos.store', ['tenant' => $tenantId]), [
+        'status' => 'posted',
+        'discount_type' => 'amount',
+        'discount_value' => 0,
+        'payment_mode' => 'cash',
+        'items' => [[
+            'type' => 'product',
+            'ref_id' => $fixture['product']->id,
+            'qty' => 3,
+            'price' => 150,
+            'tax_rate' => 0,
+            'tax_inclusive' => false,
+        ]],
+    ]);
+
+    $response->assertRedirect(route('tenant.pos.index', ['tenant' => $tenantId]));
+
+    $stock = InventoryStock::query()
+        ->where('branch_id', $fixture['branch']->id)
+        ->where('product_id', $fixture['product']->id)
+        ->firstOrFail();
+
+    expect((float) $stock->qty_on_hand)->toBe(10.0);
 });

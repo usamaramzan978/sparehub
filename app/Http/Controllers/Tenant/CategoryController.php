@@ -23,9 +23,10 @@ final class CategoryController extends Controller
 
         $categories = Category::query()
             ->with('parent')
+            ->withCount('products')
             ->when(
                 $search !== '',
-                fn(Builder $query) => $query->where('name', 'like', sprintf('%%%s%%', $search))
+                fn (Builder $query) => $query->where('name', 'like', sprintf('%%%s%%', $search))
             )
             ->latest()
             ->paginate($perPage)
@@ -90,7 +91,7 @@ final class CategoryController extends Controller
     {
         return Category::query()
             ->where('slug', $slug)
-            ->when($ignoreCategoryId !== null, fn(Builder $query) => $query->whereKeyNot($ignoreCategoryId))
+            ->when($ignoreCategoryId !== null, fn (Builder $query) => $query->whereKeyNot($ignoreCategoryId))
             ->exists();
     }
 }

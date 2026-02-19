@@ -78,6 +78,14 @@
                         @enderror
                     </div>
                     <div class="col-md-4 mb-3">
+                        <label class="form-label" for="qrcode">{{ __('QR Code') }}</label>
+                        <input type="text" name="qrcode" id="qrcode"
+                            class="form-control @error('qrcode') is-invalid @enderror" value="{{ old('qrcode') }}">
+                        @error('qrcode')
+                            <span class="invalid-feedback d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="col-md-4 mb-3">
                         <label class="form-label" for="default_unit_id">{{ __('Default Unit') }}</label>
                         <select name="default_unit_id" id="default_unit_id"
                             class="form-select singl-select-2 @error('default_unit_id') is-invalid @enderror">
@@ -146,13 +154,13 @@
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3 form-check">
-                        <input type="hidden" name="is_service_item" value="0">
-                        <input type="checkbox" name="is_service_item" id="is_service_item"
-                            class="form-check-input @error('is_service_item') is-invalid @enderror" value="1"
-                            @checked(old('is_service_item', false))>
-                        <label class="form-check-label" for="is_service_item">{{ __('Service Item') }}</label>
-                        @error('is_service_item')
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label" for="opening_stock">{{ __('Opening Stock') }}</label>
+                        <input type="number" name="opening_stock" id="opening_stock"
+                            class="form-control @error('opening_stock') is-invalid @enderror" min="0"
+                            step="0.001" value="{{ old('opening_stock', 0) }}">
+                        <small class="text-muted">{{ __('Sets initial stock quantity for this product.') }}</small>
+                        @error('opening_stock')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>

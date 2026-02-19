@@ -104,7 +104,7 @@
         </div>
     </div>
 
-    <div class="card mt-4">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-header">
             <h6 class="mb-0">{{ __('Purchase Items') }}</h6>
         </div>
@@ -148,7 +148,7 @@
         </div>
     </div>
 
-    <div class="card mt-4">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-header">
             <h6 class="mb-0">{{ __('Vendor Payments') }}</h6>
         </div>
@@ -191,7 +191,7 @@
         </div>
     </div>
 
-    <div class="card mt-4">
+    <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-header">
             <h6 class="mb-0">{{ __('Purchase Returns') }}</h6>
         </div>

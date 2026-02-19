@@ -45,6 +45,7 @@
                     <thead>
                         <tr>
                             <th>{{ __('Name') }}</th>
+                            <th>{{ __('Products') }}</th>
                             <th>{{ __('Parent') }}</th>
                             <th>{{ __('Status') }}</th>
                             <th class="text-end">{{ __('Actions') }}</th>
@@ -54,6 +55,11 @@
                         @forelse ($items as $category)
                             <tr>
                                 <td>{{ $category->name }}</td>
+                                <td>
+                                    <span class="badge bg-primary-transparent">
+                                        {{ (int) $category->products_count }} {{ __('Products') }}
+                                    </span>
+                                </td>
                                 <td>{{ $category->parent?->name ?? '-' }}</td>
                                 <td>
                                     @if ($category->status->value === 'active')
@@ -106,7 +112,7 @@
                             ])
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center text-muted">{{ __('No categories found.') }}</td>
+                                <td colspan="5" class="text-center text-muted">{{ __('No categories found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

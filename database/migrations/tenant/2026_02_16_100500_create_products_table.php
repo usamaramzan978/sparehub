@@ -24,7 +24,6 @@ return new class extends Migration
             $table->string('name', 180);
             $table->text('description')->nullable();
             $table->boolean('track_stock')->default(true);
-            $table->boolean('is_service_item')->default(false);
             $table->string('status', 20)->default('active');
             $table->timestamps();
             $table->softDeletes();

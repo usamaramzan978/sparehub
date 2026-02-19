@@ -457,7 +457,6 @@ final class TenantBootstrapSeeder extends Seeder
                         'name' => $p['name'],
                         'description' => $p['description'],
                         'track_stock' => true,
-                        'is_service_item' => false,
                         'status' => RecordStatus::ACTIVE->value,
                     ]
                 );

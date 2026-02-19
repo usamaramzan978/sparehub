@@ -21,9 +21,10 @@ final class BrandController extends Controller
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
 
         $brands = Brand::query()
+            ->withCount('products')
             ->when(
                 mb_trim($request->string('search')->toString()) !== '',
-                fn(Builder $query) => $query->where('name', 'like', '%' . mb_trim($request->string('search')->toString()) . '%')
+                fn (Builder $query) => $query->where('name', 'like', '%'.mb_trim($request->string('search')->toString()).'%')
             )
             ->latest()
             ->paginate($perPage)
@@ -87,7 +88,7 @@ final class BrandController extends Controller
     {
         return Brand::query()
             ->where('slug', $slug)
-            ->when($ignoreBrandId !== null, fn(Builder $query) => $query->whereKeyNot($ignoreBrandId))
+            ->when($ignoreBrandId !== null, fn (Builder $query) => $query->whereKeyNot($ignoreBrandId))
             ->exists();
     }
 }

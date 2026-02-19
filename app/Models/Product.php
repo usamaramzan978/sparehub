@@ -32,13 +32,11 @@ final class Product extends Model
         'name',
         'description',
         'track_stock',
-        'is_service_item',
         'status',
     ];
 
     protected $casts = [
         'track_stock' => 'bool',
-        'is_service_item' => 'bool',
         'status' => RecordStatus::class,
     ];
 

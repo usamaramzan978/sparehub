@@ -192,6 +192,17 @@ final class DashboardController extends Controller
             ->filter(fn (InventoryStock $stock): bool => $stock->product instanceof Product && (bool) $stock->product->track_stock)
             ->values();
 
+        $topStockItems = InventoryStock::query()
+            ->with(['product:id,name,sku,track_stock'])
+            ->where('branch_id', $branchId)
+            ->selectRaw('product_id, SUM(qty_on_hand) as qty_on_hand, SUM(qty_reserved) as qty_reserved')
+            ->groupBy('product_id')
+            ->orderByDesc('qty_on_hand')
+            ->limit(8)
+            ->get()
+            ->filter(fn (InventoryStock $stock): bool => $stock->product instanceof Product && (bool) $stock->product->track_stock)
+            ->values();
+
         $recentSales = Sale::query()
             ->with(['customer:id,name'])
             ->where('branch_id', $branchId)
@@ -218,6 +229,7 @@ final class DashboardController extends Controller
             'topCustomers' => $topCustomers,
             'topVendors' => $topVendors,
             'lowStockItems' => $lowStockItems,
+            'topStockItems' => $topStockItems,
             'recentSales' => $recentSales,
             'recentPurchases' => $recentPurchases,
             'chartData' => [

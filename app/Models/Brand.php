@@ -9,6 +9,7 @@ use App\Models\Concerns\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class Brand extends Model
 {
@@ -21,6 +22,11 @@ final class Brand extends Model
         'slug',
         'status',
     ];
+
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
 
     protected function casts(): array
     {

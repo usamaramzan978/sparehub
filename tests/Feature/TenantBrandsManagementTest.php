@@ -6,6 +6,7 @@ use App\Enums\BranchStatus;
 use App\Enums\BrandStatus;
 use App\Models\Branch;
 use App\Models\Brand;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
@@ -77,6 +78,35 @@ it('shows brands index', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Brands');
     $response->assertSee('Bosch');
+});
+
+it('shows products count per brand on index', function (): void {
+    authenticateBrandUser();
+
+    $brand = Brand::query()->create([
+        'name' => 'Yamaha',
+        'slug' => 'yamaha',
+        'status' => BrandStatus::ACTIVE->value,
+    ]);
+
+    Product::query()->create([
+        'brand_id' => $brand->id,
+        'sku' => 'YMH-CHAIN-001',
+        'name' => 'Yamaha Chain',
+        'status' => 'active',
+    ]);
+
+    Product::query()->create([
+        'brand_id' => $brand->id,
+        'sku' => 'YMH-BRAKE-002',
+        'name' => 'Yamaha Brake Pad',
+        'status' => 'active',
+    ]);
+
+    $response = $this->get(brandsTenantRoute('brands.index'));
+
+    $response->assertSuccessful();
+    $response->assertSee('2 Products');
 });
 
 it('filters brands by search text', function (): void {

@@ -6,6 +6,7 @@ use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
 use App\Models\Branch;
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
@@ -67,9 +68,16 @@ function authenticateCategoryUser(): void
 it('shows categories index', function (): void {
     authenticateCategoryUser();
 
-    Category::query()->create([
+    $category = Category::query()->create([
         'name' => 'Engine',
         'slug' => 'engine',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    Product::query()->create([
+        'category_id' => $category->id,
+        'sku' => 'CAT-PROD-1',
+        'name' => 'Category Product',
         'status' => RecordStatus::ACTIVE->value,
     ]);
 
@@ -78,6 +86,7 @@ it('shows categories index', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Categories');
     $response->assertSee('Engine');
+    $response->assertSee('1 Products');
 });
 
 it('filters categories by search', function (): void {

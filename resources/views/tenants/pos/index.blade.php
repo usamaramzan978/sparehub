@@ -391,6 +391,7 @@
             const cart = [];
 
             const money = (value) => (Number.isFinite(value) ? value.toFixed(2) : '0.00');
+            const stockCount = (value) => (Number.isFinite(value) ? Math.round(value).toString() : '0');
 
             const setPaymentMethod = (mode, methodId) => {
                 currentPaymentMode = mode;
@@ -660,7 +661,7 @@
                             ${
                                 isService
                                     ? '<span class="text-muted small">N/A</span>'
-                                    : `<span class="badge bg-info">${money(item.stock)}</span>`
+                                    : `<span class="badge bg-info">${stockCount(item.stock)}</span>`
                             }
                         </td>
                         <td>
@@ -751,7 +752,7 @@
                                     ${
                                         isService
                                             ? '<span class="badge bg-secondary">Service</span>'
-                                            : `<span class="badge bg-info">${money(Number(item.stock || 0))}</span>`
+                                            : `<span class="badge bg-info">${stockCount(Number(item.stock || 0))}</span>`
                                     }
                                 </div>
                                 <div class="mt-2 text-muted small">${item.sku ?? ''}</div>

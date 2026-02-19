@@ -82,6 +82,15 @@
                         @enderror
                     </div>
                     <div class="col-md-4 mb-3">
+                        <label class="form-label" for="qrcode">{{ __('QR Code') }}</label>
+                        <input type="text" name="qrcode" id="qrcode"
+                            class="form-control @error('qrcode') is-invalid @enderror"
+                            value="{{ old('qrcode', $product->qrcode) }}">
+                        @error('qrcode')
+                            <span class="invalid-feedback d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="col-md-4 mb-3">
                         <label class="form-label" for="default_unit_id">{{ __('Default Unit') }}</label>
                         <select name="default_unit_id" id="default_unit_id"
                             class="form-select singl-select-2 @error('default_unit_id') is-invalid @enderror">
@@ -150,13 +159,13 @@
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3 form-check">
-                        <input type="hidden" name="is_service_item" value="0">
-                        <input type="checkbox" name="is_service_item" id="is_service_item"
-                            class="form-check-input @error('is_service_item') is-invalid @enderror" value="1"
-                            @checked(old('is_service_item', $product->is_service_item))>
-                        <label class="form-check-label" for="is_service_item">{{ __('Service Item') }}</label>
-                        @error('is_service_item')
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label" for="opening_stock">{{ __('Current Stock') }}</label>
+                        <input type="number" name="opening_stock" id="opening_stock"
+                            class="form-control @error('opening_stock') is-invalid @enderror" min="0"
+                            step="0.001" value="{{ old('opening_stock', $stockOnHand) }}">
+                        <small class="text-muted">{{ __('Set the total stock quantity for this product.') }}</small>
+                        @error('opening_stock')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>
@@ -172,6 +181,172 @@
                 </div>
                 <button type="submit" class="btn btn-primary">{{ __('Update') }}</button>
             </form>
+        </div>
+    </div>
+
+    @php
+        $tenantKey = request()->route('tenant') ?? (function_exists('tenant') ? tenant()?->getTenantKey() : null);
+        $barcodeValue = old('barcode', $product->barcode);
+        $qrValue = old('qrcode', $product->qrcode);
+        $barcodeLabel = $barcodeValue;
+        $qrLabel = $qrValue;
+        $barcodeRenderUrl = $barcodeValue
+            ? route('tenant.codes.render', [
+                'tenant' => $tenantKey,
+                'type' => 'barcode',
+                'product_id' => $product->id,
+                'value' => $barcodeValue,
+                'label' => $barcodeLabel,
+                'format' => 'C128',
+                'scale' => 2,
+                'height' => 80,
+                'qty' => 1,
+            ])
+            : null;
+        $barcodePrintUrl = $barcodeValue
+            ? route('tenant.codes.print', [
+                'tenant' => $tenantKey,
+                'type' => 'barcode',
+                'product_id' => $product->id,
+                'value' => $barcodeValue,
+                'label' => $barcodeLabel,
+                'format' => 'C128',
+                'scale' => 2,
+                'height' => 80,
+                'qty' => 1,
+            ])
+            : null;
+        $qrRenderUrl = $qrValue
+            ? route('tenant.codes.render', [
+                'tenant' => $tenantKey,
+                'type' => 'qr',
+                'product_id' => $product->id,
+                'value' => $qrValue,
+                'label' => $qrLabel,
+                'size' => 240,
+                'margin' => 10,
+                'qty' => 1,
+            ])
+            : null;
+        $qrPrintUrl = $qrValue
+            ? route('tenant.codes.print', [
+                'tenant' => $tenantKey,
+                'type' => 'qr',
+                'product_id' => $product->id,
+                'value' => $qrValue,
+                'label' => $qrLabel,
+                'size' => 240,
+                'margin' => 10,
+                'qty' => 1,
+            ])
+            : null;
+    @endphp
+
+    <div class="card custom-card border-0 shadow-sm h-100">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Codes Preview</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-12 col-md-6">
+                    <div class="p-3 rounded border h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h6 class="mb-0 fw-semibold">Barcode</h6>
+                            <div class="d-flex gap-2">
+                                @if ($barcodePrintUrl)
+                                    <a class="btn btn-sm btn-outline-primary" href="{{ $barcodePrintUrl }}"
+                                        target="_blank" rel="noopener">
+                                        <i class="ri-printer-line me-1"></i> Print
+                                    </a>
+                                @endif
+                                @if ($barcodeValue)
+                                    <form method="POST"
+                                        action="{{ route('tenant.products.barcode.delete', ['product' => $product]) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                        @if ($barcodeRenderUrl)
+                            <div class="text-center">
+                                <img src="{{ $barcodeRenderUrl }}" alt="Barcode" class="img-fluid mb-2">
+                                <div class="text-muted">{{ $barcodeLabel }}</div>
+                            </div>
+                        @else
+                            <p class="text-muted mb-0">No barcode set for this product.</p>
+                        @endif
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="p-3 rounded border h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h6 class="mb-0 fw-semibold">QR Code</h6>
+                            <div class="d-flex gap-2">
+                                @if ($qrPrintUrl)
+                                    <a class="btn btn-sm btn-outline-primary" href="{{ $qrPrintUrl }}" target="_blank"
+                                        rel="noopener">
+                                        <i class="ri-printer-line me-1"></i> Print
+                                    </a>
+                                @endif
+                                @if ($qrValue)
+                                    <form method="POST"
+                                        action="{{ route('tenant.products.qrcode.delete', ['product' => $product]) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                        @if ($qrRenderUrl)
+                            <div class="text-center">
+                                <img src="{{ $qrRenderUrl }}" alt="QR Code" class="img-fluid mb-2">
+                                <div class="text-muted">{{ $qrLabel }}</div>
+                            </div>
+                        @else
+                            <p class="text-muted mb-0">No QR code set for this product.</p>
+                        @endif
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="p-3 rounded border h-100">
+                        <h6 class="mb-3 fw-semibold">Barcode Settings</h6>
+                        <form method="POST" action="{{ route('tenant.products.barcode.update', ['product' => $product]) }}"
+                            class="row g-3">
+                            @csrf
+                            @method('PUT')
+                            <div class="col-12">
+                                <label class="form-label" for="barcode_value_edit">Value</label>
+                                <input type="text" name="value" id="barcode_value_edit" class="form-control"
+                                    value="{{ $barcodeValue }}">
+                            </div>
+                            <div class="col-12 d-flex flex-wrap gap-2">
+                                <button type="submit" class="btn btn-outline-primary">Update</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="p-3 rounded border h-100">
+                        <h6 class="mb-3 fw-semibold">QR Settings</h6>
+                        <form method="POST" action="{{ route('tenant.products.qrcode.update', ['product' => $product]) }}"
+                            class="row g-3">
+                            @csrf
+                            @method('PUT')
+                            <div class="col-12">
+                                <label class="form-label" for="qrcode_value_edit">Value</label>
+                                <input type="text" name="value" id="qrcode_value_edit" class="form-control"
+                                    value="{{ $qrValue }}">
+                            </div>
+                            <div class="col-12 d-flex flex-wrap gap-2">
+                                <button type="submit" class="btn btn-outline-primary">Update</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 @endsection

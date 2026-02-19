@@ -2,17 +2,21 @@
 
 @section('content')
     @php
-        $breadcrumbs = [['label' => __('Catalog')], ['label' => __('Inventory')]];
+        $breadcrumbs = [
+            ['label' => __('Catalog')],
+            ['label' => __('Products')],
+            ['label' => __('Stock')],
+        ];
         $formatNumber = fn(float $value, int $decimals = 2): string => number_format($value, $decimals);
     @endphp
 
-    <x-breadcrumb title="{{ __('Inventory') }}" :items="$breadcrumbs" />
+    <x-breadcrumb title="{{ __('Product Stock') }}" :items="$breadcrumbs" />
 
     <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="text-muted small">{{ __('Categories') }}</div>
+                    <div class="text-muted small">{{ __('Product Categories') }}</div>
                     <div class="fs-4 fw-semibold">{{ $summary['categories_count'] }}</div>
                 </div>
             </div>
@@ -20,7 +24,7 @@
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="text-muted small">{{ __('Products') }}</div>
+                    <div class="text-muted small">{{ __('Tracked Products') }}</div>
                     <div class="fs-4 fw-semibold">{{ $summary['products_count'] }}</div>
                 </div>
             </div>
@@ -28,16 +32,16 @@
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="text-muted small">{{ __('Total On Hand') }}</div>
-                    <div class="fs-4 fw-semibold">{{ $formatNumber($summary['qty_on_hand_total'], 3) }}</div>
+                    <div class="text-muted small">{{ __('Current Stock (On Hand)') }}</div>
+                    <div class="fs-4 fw-semibold">{{ $formatNumber($summary['qty_on_hand_total'], 0) }}</div>
                 </div>
             </div>
         </div>
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="text-muted small">{{ __('Total Available') }}</div>
-                    <div class="fs-4 fw-semibold">{{ $formatNumber($summary['qty_available_total'], 3) }}</div>
+                    <div class="text-muted small">{{ __('Total Reserved') }}</div>
+                    <div class="fs-4 fw-semibold">{{ $formatNumber($summary['qty_reserved_total'], 0) }}</div>
                 </div>
             </div>
         </div>
@@ -45,7 +49,7 @@
 
     <div class="card mb-3">
         <div class="card-body">
-            <form method="GET" action="{{ route('tenant.inventory.index') }}" class="row g-2">
+            <form method="GET" action="{{ route('tenant.products.stock.index') }}" class="row g-2">
                 <div class="col-md-9">
                     <label class="form-label" for="search">{{ __('Search') }}</label>
                     <input type="text" class="form-control" id="search" name="search" value="{{ $search }}"
@@ -63,7 +67,7 @@
                 </div>
                 <div class="col-12 d-flex gap-2 justify-content-end">
                     <button class="btn btn-primary" type="submit">{{ __('Filter') }}</button>
-                    <a href="{{ route('tenant.inventory.index') }}"
+                    <a href="{{ route('tenant.products.stock.index') }}"
                         class="btn btn-outline-secondary">{{ __('Reset') }}</a>
                 </div>
             </form>
@@ -105,7 +109,6 @@
                                                 <th class="text-end">{{ __('On Hand') }}</th>
                                                 <th class="text-end">{{ __('Reserved') }}</th>
                                                 <th class="text-end">{{ __('Available') }}</th>
-                                                <th>{{ __('Warehouse Split') }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -138,28 +141,13 @@
                                                     <td class="text-end">
                                                         {{ $price ? $formatNumber((float) $price->wholesale_price) : '-' }}
                                                     </td>
-                                                    <td class="text-end">{{ $formatNumber($row['qty_on_hand'], 3) }}</td>
-                                                    <td class="text-end">{{ $formatNumber($row['qty_reserved'], 3) }}</td>
-                                                    <td class="text-end">{{ $formatNumber($row['qty_available'], 3) }}</td>
-                                                    <td>
-                                                        @if ($row['stock_rows']->isEmpty())
-                                                            <span class="text-muted">{{ __('No stock rows') }}</span>
-                                                        @else
-                                                            @foreach ($row['stock_rows'] as $stock)
-                                                                <div class="small">
-                                                                    <span
-                                                                        class="fw-semibold">{{ $stock->warehouse?->code ?: '-' }}</span>
-                                                                    ({{ $stock->warehouse?->name ?: '-' }})
-                                                                    :
-                                                                    {{ $formatNumber((float) $stock->qty_on_hand, 3) }}
-                                                                </div>
-                                                            @endforeach
-                                                        @endif
-                                                    </td>
+                                                    <td class="text-end">{{ $formatNumber($row['qty_on_hand'], 0) }}</td>
+                                                    <td class="text-end">{{ $formatNumber($row['qty_reserved'], 0) }}</td>
+                                                    <td class="text-end">{{ $formatNumber($row['qty_available'], 0) }}</td>
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="9" class="text-center text-muted py-4">
+                                                    <td colspan="8" class="text-center text-muted py-4">
                                                         {{ __('No products in this category.') }}</td>
                                                 </tr>
                                             @endforelse
@@ -175,5 +163,4 @@
             @endforelse
         </div>
     </div>
-
 @endsection

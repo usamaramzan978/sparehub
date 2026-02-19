@@ -11,12 +11,14 @@ use App\Http\Controllers\Tenant\SaleItemController;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Customer;
+use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\ServiceCatalog;
 use App\Models\Tax;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
@@ -55,7 +57,7 @@ function saleItemsTenantRoute(string $name, array $parameters = []): string
 }
 
 /**
- * @return array{current: Branch, secondary: Branch, sale: Sale, product: Product, service: ServiceCatalog, user: User}
+ * @return array{current: Branch, secondary: Branch, warehouse: Warehouse, sale: Sale, product: Product, service: ServiceCatalog, user: User}
  */
 function authenticateSaleItemsUser(): array
 {
@@ -70,6 +72,15 @@ function authenticateSaleItemsUser(): array
         'name' => 'Alt Branch',
         'status' => BranchStatus::ACTIVE->value,
     ]);
+
+    $warehouse = Warehouse::query()->create([
+        'branch_id' => $currentBranch->id,
+        'code' => 'MAIN-WH',
+        'name' => 'Main Warehouse',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $currentBranch->update(['warehouse_id' => $warehouse->id]);
 
     $user = User::query()->create([
         'branch_id' => $currentBranch->id,
@@ -141,6 +152,7 @@ function authenticateSaleItemsUser(): array
     return [
         'current' => $currentBranch,
         'secondary' => $secondaryBranch,
+        'warehouse' => $warehouse,
         'sale' => $sale,
         'product' => $product,
         'service' => $service,
@@ -203,6 +215,14 @@ it('clamps sale items pagination limits', function (): void {
 it('stores sale item and recalculates parent sale totals', function (): void {
     $fixture = authenticateSaleItemsUser();
 
+    InventoryStock::query()->create([
+        'product_id' => $fixture['product']->id,
+        'branch_id' => $fixture['current']->id,
+        'qty_on_hand' => 10,
+        'qty_reserved' => 0,
+        'avg_cost' => 0,
+    ]);
+
     $response = $this->post(saleItemsTenantRoute('sale-items.store'), [
         'sale_id' => $fixture['sale']->id,
         'line_type' => SaleLineType::PRODUCT->value,
@@ -221,6 +241,13 @@ it('stores sale item and recalculates parent sale totals', function (): void {
     expect((float) $fixture['sale']->tax_total)->toBe(20.0);
     expect((float) $fixture['sale']->grand_total)->toBe(210.0);
     expect((float) $fixture['sale']->balance_due)->toBe(210.0);
+
+    $stock = InventoryStock::query()
+        ->where('branch_id', $fixture['current']->id)
+        ->where('product_id', $fixture['product']->id)
+        ->firstOrFail();
+
+    expect((float) $stock->qty_on_hand)->toBe(8.0);
 });
 
 it('validates required sale id for sale item creation', function (): void {
@@ -239,6 +266,14 @@ it('validates required sale id for sale item creation', function (): void {
 
 it('deletes sale item and recalculates parent sale totals', function (): void {
     $fixture = authenticateSaleItemsUser();
+
+    InventoryStock::query()->create([
+        'product_id' => $fixture['product']->id,
+        'branch_id' => $fixture['current']->id,
+        'qty_on_hand' => 8,
+        'qty_reserved' => 0,
+        'avg_cost' => 0,
+    ]);
 
     $item = SaleItem::query()->withoutGlobalScopes()->create([
         'sale_id' => $fixture['sale']->id,
@@ -271,6 +306,43 @@ it('deletes sale item and recalculates parent sale totals', function (): void {
     expect((float) $fixture['sale']->sub_total)->toBe(0.0);
     expect((float) $fixture['sale']->grand_total)->toBe(0.0);
     expect((float) $fixture['sale']->balance_due)->toBe(0.0);
+
+    $stock = InventoryStock::query()
+        ->where('branch_id', $fixture['current']->id)
+        ->where('product_id', $fixture['product']->id)
+        ->firstOrFail();
+
+    expect((float) $stock->qty_on_hand)->toBe(10.0);
+});
+
+it('does not adjust inventory for non tracked product sale items', function (): void {
+    $fixture = authenticateSaleItemsUser();
+    $fixture['product']->update(['track_stock' => false]);
+
+    InventoryStock::query()->create([
+        'product_id' => $fixture['product']->id,
+        'branch_id' => $fixture['current']->id,
+        'qty_on_hand' => 10,
+        'qty_reserved' => 0,
+        'avg_cost' => 0,
+    ]);
+
+    $response = $this->post(saleItemsTenantRoute('sale-items.store'), [
+        'sale_id' => $fixture['sale']->id,
+        'line_type' => SaleLineType::PRODUCT->value,
+        'product_id' => $fixture['product']->id,
+        'qty' => 2,
+        'unit_price' => 100,
+    ]);
+
+    $response->assertRedirect(saleItemsTenantRoute('sale-items.index'));
+
+    $stock = InventoryStock::query()
+        ->where('branch_id', $fixture['current']->id)
+        ->where('product_id', $fixture['product']->id)
+        ->firstOrFail();
+
+    expect((float) $stock->qty_on_hand)->toBe(10.0);
 });
 
 it('throws not found when showing sale item outside current branch', function (): void {

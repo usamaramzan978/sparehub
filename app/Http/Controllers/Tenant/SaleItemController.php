@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Enums\SaleLineType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\SaleItemRequest;
+use App\Models\InventoryStock;
 use App\Models\JobCardService;
 use App\Models\Product;
 use App\Models\Sale;
@@ -15,6 +16,7 @@ use App\Models\ServiceCatalog;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 final class SaleItemController extends Controller
 {
@@ -46,6 +48,7 @@ final class SaleItemController extends Controller
         $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_price']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
 
         $saleItem = SaleItem::query()->create($payload);
+        $this->syncStockForSaleItems(collect([$saleItem]), $payload['branch_id']);
         $this->recalculateSaleTotals($saleItem->sale);
 
         return to_route('tenant.sale-items.index')->with('status', 'Created.');
@@ -80,7 +83,10 @@ final class SaleItemController extends Controller
         $payload['branch_id'] = $this->currentBranchId();
         $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_price']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
 
+        $originalItem = clone $saleItem;
+        $this->syncStockForSaleItems(collect([$originalItem]), $payload['branch_id'], reverse: true);
         $saleItem->update($payload);
+        $this->syncStockForSaleItems(collect([$saleItem]), $payload['branch_id']);
         $this->recalculateSaleTotals($saleItem->sale);
 
         return to_route('tenant.sale-items.index')->with('status', 'Updated.');
@@ -90,6 +96,7 @@ final class SaleItemController extends Controller
     {
         $this->ensureSaleItemInCurrentBranch($saleItem);
         $sale = $saleItem->sale;
+        $this->syncStockForSaleItems(collect([$saleItem]), $saleItem->branch_id, reverse: true);
         $saleItem->delete();
         $this->recalculateSaleTotals($sale);
 
@@ -122,6 +129,56 @@ final class SaleItemController extends Controller
             'paid_total' => $paidTotal,
             'balance_due' => $grandTotal - $paidTotal,
         ]);
+    }
+
+    /**
+     * @param  Collection<int, SaleItem>  $saleItems
+     */
+    private function syncStockForSaleItems(Collection $saleItems, string $branchId, bool $reverse = false): void
+    {
+        $qtyByProduct = $saleItems
+            ->filter(fn (SaleItem $item): bool => $item->product_id !== null)
+            ->groupBy('product_id')
+            ->map(fn (Collection $items): float => (float) $items->sum('qty'));
+
+        if ($qtyByProduct->isEmpty()) {
+            return;
+        }
+
+        $trackedProductIds = Product::query()
+            ->whereIn('id', $qtyByProduct->keys()->all())
+            ->where('track_stock', true)
+            ->pluck('id')
+            ->all();
+
+        if ($trackedProductIds === []) {
+            return;
+        }
+
+        foreach ($trackedProductIds as $productId) {
+            $qty = (float) ($qtyByProduct->get($productId) ?? 0);
+            if ($qty <= 0) {
+                continue;
+            }
+
+            $stockRow = InventoryStock::query()
+                ->where('branch_id', $branchId)
+                ->where('product_id', $productId)
+                ->orderBy('updated_at')
+                ->first();
+
+            if (! $stockRow instanceof InventoryStock) {
+                continue;
+            }
+
+            $adjustedQty = $reverse
+                ? (float) $stockRow->qty_on_hand + $qty
+                : (float) $stockRow->qty_on_hand - $qty;
+
+            $stockRow->update([
+                'qty_on_hand' => $adjustedQty,
+            ]);
+        }
     }
 
     /**

@@ -10,12 +10,12 @@ use App\Http\Controllers\System\TenantController;
 use App\Http\Controllers\System\TenantUserController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('guest:user')->group(function (): void {
+Route::middleware('guest')->group(function (): void {
     Route::get('/', (new TenantAuthController())->showLogin(...))->name('auth.login');
     Route::post('/', (new TenantAuthController())->login(...))->middleware(['throttle:6,1'])
         ->name('auth.login.submit');
 
-    // ✅ Tenant picker routes
+    // Tenant picker routes
     Route::get('choose-tenant', [TenantAuthController::class, 'showChooseTenant'])
         ->name('auth.choose-tenant');
 
@@ -30,7 +30,6 @@ Route::middleware('guest:user')->group(function (): void {
 });
 
 Route::prefix('system')->name('system.')->group(function (): void {
-    Route::get('/', fn () => to_route('system.dashboard'))->middleware('auth:system');
 
     Route::middleware('guest:system')->group(function (): void {
         Route::view('login', 'auth.system.login')->name('login');
@@ -43,6 +42,7 @@ Route::prefix('system')->name('system.')->group(function (): void {
     });
 
     Route::middleware('auth:system')->group(function (): void {
+        Route::get('/', fn () => to_route('system.dashboard'));
         Route::get('dashboard', SystemDashboardController::class)->name('dashboard');
         Route::resource('plans', PlanController::class)->except(['show']);
         Route::resource('tenants', TenantController::class)->except(['show', 'destroy']);

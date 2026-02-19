@@ -132,7 +132,6 @@ function authenticatePosUser(): array
 
     InventoryStock::query()->create([
         'branch_id' => $currentBranch->id,
-        'warehouse_id' => $warehouse->id,
         'product_id' => $product->id,
         'qty_on_hand' => 25,
         'qty_reserved' => 0,

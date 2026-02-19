@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
+use App\Enums\StockMoveType;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Models\Branch;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\InventoryStock;
 use App\Models\Product;
+use App\Models\StockMove;
 use App\Models\Tax;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
@@ -71,12 +75,27 @@ function authenticateProductUser(): Branch
 }
 
 it('shows products index', function (): void {
-    authenticateProductUser();
+    $branch = authenticateProductUser();
 
-    Product::query()->create([
+    $product = Product::query()->create([
         'sku' => 'PROD-001',
         'name' => 'Engine Oil',
         'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $warehouse = Warehouse::query()->create([
+        'branch_id' => $branch->id,
+        'code' => 'WH-1',
+        'name' => 'Main Warehouse',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    InventoryStock::query()->create([
+        'product_id' => $product->id,
+        'branch_id' => $branch->id,
+        'qty_on_hand' => 20,
+        'qty_reserved' => 0,
+        'avg_cost' => 0,
     ]);
 
     $response = $this->get(productsTenantRoute('products.index'));
@@ -84,6 +103,7 @@ it('shows products index', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Products');
     $response->assertSee('Engine Oil');
+    $response->assertSee('20 /');
 });
 
 it('filters products by search', function (): void {
@@ -149,7 +169,7 @@ it('shows create product page with active taxes and units', function (): void {
 });
 
 it('stores product with relations and flags', function (): void {
-    authenticateProductUser();
+    $branch = authenticateProductUser();
 
     $category = Category::query()->create([
         'name' => 'Engine',
@@ -186,7 +206,7 @@ it('stores product with relations and flags', function (): void {
         'part_number' => 'PN-AIR-1',
         'barcode' => 'BC-AIR-1',
         'track_stock' => '1',
-        'is_service_item' => '0',
+        'opening_stock' => '20',
         'status' => RecordStatus::ACTIVE->value,
         'description' => 'Air filter description',
     ]);
@@ -205,6 +225,23 @@ it('stores product with relations and flags', function (): void {
         'barcode' => 'BC-AIR-1',
         'status' => RecordStatus::ACTIVE->value,
     ], 'tenant');
+
+    $product = Product::query()->where('sku', 'SKU-AIR-1')->firstOrFail();
+
+    $stock = InventoryStock::query()
+        ->where('branch_id', $branch->id)
+        ->where('product_id', $product->id)
+        ->firstOrFail();
+
+    expect((float) $stock->qty_on_hand)->toBe(20.0);
+
+    $move = StockMove::query()
+        ->where('branch_id', $branch->id)
+        ->where('product_id', $product->id)
+        ->firstOrFail();
+
+    expect($move->move_type)->toBe(StockMoveType::OPENING);
+    expect((float) $move->qty)->toBe(20.0);
 });
 
 it('validates required product fields', function (string $field): void {
@@ -285,7 +322,7 @@ it('allows multiple products when nullable unique fields are omitted', function 
     $this->assertDatabaseHas('products', ['sku' => 'SKU-NUL-2'], 'tenant');
 });
 
-it('applies default stock and service flags when omitted', function (): void {
+it('applies default stock flag when omitted', function (): void {
     authenticateProductUser();
 
     $response = $this->post(productsTenantRoute('products.store'), [
@@ -298,7 +335,6 @@ it('applies default stock and service flags when omitted', function (): void {
 
     $product = Product::query()->where('sku', 'SKU-DFLT-1')->firstOrFail();
     expect($product->track_stock)->toBeTrue();
-    expect($product->is_service_item)->toBeFalse();
 });
 
 it('validates product status and relation id formats', function (): void {

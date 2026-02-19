@@ -33,6 +33,7 @@
                             <th>{{ __('SKU') }}</th>
                             <th>{{ __('Category') }}</th>
                             <th>{{ __('Brand') }}</th>
+                            <th class="text-end">{{ __('Stock') }}</th>
                             <th>{{ __('Status') }}</th>
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
@@ -44,6 +45,10 @@
                                 <td>{{ $product->sku }}</td>
                                 <td>{{ $product->category?->name ?? '-' }}</td>
                                 <td>{{ $product->brand?->name ?? '-' }}</td>
+                                <td class="text-end">
+                                    {{ number_format((float) $product->qty_on_hand, 0) }} /
+                                    {{ number_format((float) $product->opening_stock, 0) }}
+                                </td>
                                 <td>
                                     @if ($product->status->value === 'active')
                                         <span class="badge bg-success-transparent">{{ __('Active') }}</span>
@@ -80,7 +85,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted">{{ __('No products found.') }}</td>
+                                <td colspan="7" class="text-center text-muted">{{ __('No products found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>
