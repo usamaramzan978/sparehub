@@ -25,6 +25,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -32,8 +33,15 @@ use Stancl\Tenancy\Facades\Tenancy;
 
 final class AuthController extends Controller
 {
-    public function showLogin(): View
+    public function showLogin(): View|RedirectResponse
     {
+        // ✅ If user has tenant in session, redirect them there
+        $userTenantId = session('user_tenant_id');
+
+        if ($userTenantId) {
+            return redirect()->route('tenant.dashboard', ['tenant' => $userTenantId]);
+        }
+
         return view('auth.tenant.login');
     }
 
@@ -137,8 +145,8 @@ final class AuthController extends Controller
         abort_unless(Str::isUuid($nonce), 403, 'Invalid request.');
 
         $payload = rescue(
-            fn () => Tenancy::central(
-                fn () => Cache::store('database')->pull('login_nonce:'.$nonce)
+            fn() => Tenancy::central(
+                fn() => Cache::store('database')->pull('login_nonce:' . $nonce)
             ),
             null,
             false
@@ -182,6 +190,9 @@ final class AuthController extends Controller
         Auth::guard('user')->login($user, (bool) $payload['remember']);
         $request->session()->regenerate();
 
+        // ✅ Store tenant in session for later redirect detection
+        session(['user_tenant_id' => $tenantId]);
+
         return to_route('tenant.dashboard', ['tenant' => $tenantId]);
     }
 
@@ -191,6 +202,9 @@ final class AuthController extends Controller
 
         request()->session()->invalidate();
         request()->session()->regenerateToken();
+
+        // ✅ Clear tenant ID from session
+        session()->forget('user_tenant_id');
 
         return to_route('auth.login');
         // return redirect()->route('tenant.login', [
@@ -239,7 +253,7 @@ final class AuthController extends Controller
         $nonce = (string) Str::uuid();
 
         Cache::store('database')->put(
-            'login_nonce:'.$nonce,
+            'login_nonce:' . $nonce,
             [
                 'type_id' => $typeId,
                 'type' => $type,
