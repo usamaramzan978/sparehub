@@ -34,7 +34,7 @@ final class TaxController extends Controller
     {
         $validated = $request->validated();
         $validated['is_inclusive'] = $request->boolean('is_inclusive');
-        Tax::query()->create();
+        Tax::query()->create($validated);
 
         return to_route('tenant.taxes.index')
             ->with('status', 'Created.');

@@ -1,0 +1,258 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Enums\BranchStatus;
+use App\Enums\PurchaseStatus;
+use App\Enums\RecordStatus;
+use App\Http\Controllers\Tenant\PurchaseController;
+use App\Models\Branch;
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Purchase;
+use App\Models\Tax;
+use App\Models\User;
+use App\Models\Vendor;
+use App\Models\Warehouse;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\URL;
+use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
+use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+
+beforeEach(function (): void {
+    Config::set('database.connections.tenant', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+    ]);
+    Config::set('database.default', 'tenant');
+
+    Artisan::call('migrate:fresh', [
+        '--database' => 'tenant',
+        '--path' => database_path('migrations/tenant'),
+        '--realpath' => true,
+        '--force' => true,
+    ]);
+
+    $this->withoutMiddleware([
+        InitializeTenancyByPath::class,
+        PreventAccessFromCentralDomains::class,
+    ]);
+
+    URL::defaults(['tenant' => 'test-tenant-id']);
+});
+
+function purchasesTenantRoute(string $name, array $parameters = []): string
+{
+    return route('tenant.'.$name, ['tenant' => 'test-tenant-id', ...$parameters]);
+}
+
+/**
+ * @return array{current: Branch, secondary: Branch, user: User, vendor: Vendor, warehouse: Warehouse, product: Product, tax: Tax}
+ */
+function authenticatePurchasesUser(): array
+{
+    $currentBranch = Branch::query()->create([
+        'code' => 'MAIN',
+        'name' => 'Main Branch',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    $secondaryBranch = Branch::query()->create([
+        'code' => 'ALT',
+        'name' => 'Alt Branch',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    $user = User::query()->create([
+        'branch_id' => $currentBranch->id,
+        'name' => 'Purchase User',
+        'email' => 'purchase.user+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => 'active',
+    ]);
+
+    $vendor = Vendor::query()->withoutGlobalScopes()->create([
+        'branch_id' => $currentBranch->id,
+        'code' => 'VEN-P-1',
+        'name' => 'Purchase Vendor',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $warehouse = Warehouse::query()->withoutGlobalScopes()->create([
+        'branch_id' => $currentBranch->id,
+        'code' => 'WH-P-1',
+        'name' => 'Purchase Warehouse',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $tax = Tax::query()->create([
+        'code' => 'GST',
+        'name' => 'GST',
+        'rate' => 17,
+        'is_inclusive' => false,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $category = Category::query()->create([
+        'name' => 'Parts',
+        'slug' => 'parts',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $product = Product::query()->create([
+        'category_id' => $category->id,
+        'default_tax_id' => $tax->id,
+        'sku' => 'PUR-P-1',
+        'name' => 'Brake Pad',
+        'track_stock' => true,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    test()->actingAs($user, 'user');
+    test()->withSession(['tenant.current_branch_id' => $currentBranch->id]);
+
+    return [
+        'current' => $currentBranch,
+        'secondary' => $secondaryBranch,
+        'user' => $user,
+        'vendor' => $vendor,
+        'warehouse' => $warehouse,
+        'product' => $product,
+        'tax' => $tax,
+    ];
+}
+
+it('shows purchases index for current branch only', function (): void {
+    $fixture = authenticatePurchasesUser();
+
+    Purchase::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'created_by' => $fixture['user']->id,
+        'purchase_no' => 'PUR-MAIN-1',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+    ]);
+
+    Purchase::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['secondary']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'created_by' => $fixture['user']->id,
+        'purchase_no' => 'PUR-ALT-1',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+    ]);
+
+    $response = $this->get(purchasesTenantRoute('purchases.index'));
+
+    $response->assertSuccessful();
+    expect($response->viewData('items')->total())->toBe(1);
+});
+
+it('clamps purchases pagination limits', function (): void {
+    authenticatePurchasesUser();
+
+    $minResponse = $this->get(purchasesTenantRoute('purchases.index', ['per_page' => 1]));
+    $maxResponse = $this->get(purchasesTenantRoute('purchases.index', ['per_page' => 999]));
+
+    expect($minResponse->viewData('items')->perPage())->toBe(5);
+    expect($maxResponse->viewData('items')->perPage())->toBe(100);
+});
+
+it('stores purchase and syncs totals from items', function (): void {
+    $fixture = authenticatePurchasesUser();
+
+    $response = $this->post(purchasesTenantRoute('purchases.store'), [
+        'warehouse_id' => $fixture['warehouse']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_no' => 'PUR-STORE-1',
+        'vendor_invoice_no' => 'V-1',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+        'shipping_total' => 30,
+        'items' => [
+            [
+                'product_id' => $fixture['product']->id,
+                'tax_id' => $fixture['tax']->id,
+                'qty' => 2,
+                'unit_cost' => 100,
+                'discount_amount' => 10,
+                'tax_amount' => 20,
+            ],
+            [
+                'product_id' => $fixture['product']->id,
+                'tax_id' => $fixture['tax']->id,
+                'qty' => 1,
+                'unit_cost' => 200,
+                'discount_amount' => 5,
+                'tax_amount' => 10,
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect(purchasesTenantRoute('purchases.index'));
+
+    $purchase = Purchase::query()->where('purchase_no', 'PUR-STORE-1')->firstOrFail();
+
+    expect((float) $purchase->sub_total)->toBe(400.0);
+    expect((float) $purchase->discount_total)->toBe(15.0);
+    expect((float) $purchase->tax_total)->toBe(30.0);
+    expect((float) $purchase->grand_total)->toBe(445.0);
+    expect((float) $purchase->balance_due)->toBe(445.0);
+    expect($purchase->items()->count())->toBe(2);
+});
+
+it('validates required vendor and items when storing purchase', function (): void {
+    authenticatePurchasesUser();
+
+    $response = $this->from(purchasesTenantRoute('purchases.create'))
+        ->post(purchasesTenantRoute('purchases.store'), [
+            'purchase_no' => 'PUR-INVALID-1',
+            'purchase_date' => now()->toDateString(),
+            'status' => PurchaseStatus::DRAFT->value,
+        ]);
+
+    $response->assertRedirect(purchasesTenantRoute('purchases.create'));
+    $response->assertSessionHasErrors(['vendor_id', 'items']);
+});
+
+it('deletes purchase', function (): void {
+    $fixture = authenticatePurchasesUser();
+
+    $purchase = Purchase::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'created_by' => $fixture['user']->id,
+        'purchase_no' => 'PUR-DEL-1',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::DRAFT->value,
+    ]);
+
+    session()->put('tenant.current_branch_id', $fixture['current']->id);
+    $response = (new PurchaseController())->destroy($purchase);
+
+    expect($response->getTargetUrl())->toBe(purchasesTenantRoute('purchases.index'));
+    expect($response->getSession()->get('status'))->toBe('Deleted.');
+    $this->assertSoftDeleted('purchases', ['id' => $purchase->id], 'tenant');
+});
+
+it('throws not found when showing purchase outside current branch', function (): void {
+    $fixture = authenticatePurchasesUser();
+
+    $foreignPurchase = Purchase::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['secondary']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'created_by' => $fixture['user']->id,
+        'purchase_no' => 'PUR-ALT-404',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+    ]);
+
+    $this->expectException(NotFoundHttpException::class);
+    (new PurchaseController())->show($foreignPurchase);
+});

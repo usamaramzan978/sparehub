@@ -28,6 +28,7 @@ final class Product extends Model
         'sku',
         'part_number',
         'barcode',
+        'qrcode',
         'name',
         'description',
         'track_stock',

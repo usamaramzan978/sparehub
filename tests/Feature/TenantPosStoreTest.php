@@ -10,10 +10,12 @@ use App\Models\Product;
 use App\Models\ProductPrice;
 use App\Models\ServiceCatalog;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
     Config::set('database.connections.tenant', [
@@ -175,3 +177,92 @@ it('stores pos sale for product, service, and mixed carts', function (string $ca
     $salePaymentsCount = DB::connection('tenant')->table('sale_payments')->where('sale_id', $sale->id)->count();
     expect($salePaymentsCount)->toBe(1);
 })->with('pos_invoice_type_cases');
+
+it('caps percent discount at subtotal in pos store', function (): void {
+    $fixture = createPosFixture();
+    $tenantId = 'test-tenant-id';
+
+    $this->actingAs($fixture['user'], 'user');
+    $this->withSession(['tenant.current_branch_id' => $fixture['branch']->id]);
+
+    $response = $this->post(route('tenant.pos.store', ['tenant' => $tenantId]), [
+        'status' => 'posted',
+        'discount_type' => 'percent',
+        'discount_value' => 200,
+        'payment_mode' => 'cash',
+        'items' => [[
+            'type' => 'product',
+            'ref_id' => $fixture['product']->id,
+            'qty' => 1,
+            'price' => 150,
+            'tax_rate' => 0,
+            'tax_inclusive' => false,
+        ]],
+    ]);
+
+    $response->assertRedirect(route('tenant.pos.index', ['tenant' => $tenantId]));
+
+    $sale = DB::connection('tenant')->table('sales')->latest('created_at')->first();
+    expect((float) $sale->discount_total)->toBe(150.0);
+    expect((float) $sale->grand_total)->toBe(0.0);
+    expect((float) $sale->paid_total)->toBe(0.0);
+});
+
+it('uses min of cash received and grand total for debit payments', function (): void {
+    $fixture = createPosFixture();
+    $tenantId = 'test-tenant-id';
+
+    $this->actingAs($fixture['user'], 'user');
+    $this->withSession(['tenant.current_branch_id' => $fixture['branch']->id]);
+
+    $response = $this->post(route('tenant.pos.store', ['tenant' => $tenantId]), [
+        'status' => 'posted',
+        'payment_mode' => 'debit',
+        'cash_received' => 20,
+        'items' => [[
+            'type' => 'service',
+            'ref_id' => $fixture['service']->id,
+            'qty' => 1,
+            'price' => 250,
+            'tax_rate' => 0,
+            'tax_inclusive' => false,
+        ]],
+    ]);
+
+    $response->assertRedirect(route('tenant.pos.index', ['tenant' => $tenantId]));
+
+    $sale = DB::connection('tenant')->table('sales')->latest('created_at')->first();
+    expect((float) $sale->grand_total)->toBe(250.0);
+    expect((float) $sale->paid_total)->toBe(20.0);
+    expect((float) $sale->balance_due)->toBe(230.0);
+});
+
+it('stores online payment proof path for online mode', function (): void {
+    Storage::fake('public');
+
+    $fixture = createPosFixture();
+    $tenantId = 'test-tenant-id';
+
+    $this->actingAs($fixture['user'], 'user');
+    $this->withSession(['tenant.current_branch_id' => $fixture['branch']->id]);
+
+    $response = $this->post(route('tenant.pos.store', ['tenant' => $tenantId]), [
+        'status' => 'posted',
+        'payment_mode' => 'online',
+        'payment_proof' => UploadedFile::fake()->image('proof.png'),
+        'items' => [[
+            'type' => 'service',
+            'ref_id' => $fixture['service']->id,
+            'qty' => 1,
+            'price' => 250,
+            'tax_rate' => 0,
+            'tax_inclusive' => false,
+        ]],
+    ]);
+
+    $response->assertRedirect(route('tenant.pos.index', ['tenant' => $tenantId]));
+
+    $payment = DB::connection('tenant')->table('sale_payments')->latest('created_at')->first();
+    expect($payment->payment_proof_path)->not->toBeNull();
+    expect($payment->payment_method)->toBe('bank');
+});

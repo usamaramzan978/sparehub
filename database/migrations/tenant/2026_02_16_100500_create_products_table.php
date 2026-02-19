@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('sku', 60)->unique();
             $table->string('part_number', 60)->nullable();
             $table->string('barcode', 80)->nullable();
+            $table->string('qrcode', 80)->nullable();
             $table->string('name', 180);
             $table->text('description')->nullable();
             $table->boolean('track_stock')->default(true);
@@ -30,6 +31,7 @@ return new class extends Migration
 
             $table->unique('part_number');
             $table->unique('barcode');
+            $table->unique('qrcode');
             $table->index(['category_id', 'status']);
             $table->index(['brand_id', 'status']);
             $table->index('name');
