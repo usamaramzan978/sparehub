@@ -18,6 +18,7 @@ use App\Http\Controllers\Tenant\ExpenseController;
 use App\Http\Controllers\Tenant\JobCardController;
 use App\Http\Controllers\Tenant\JobCardPartController;
 use App\Http\Controllers\Tenant\JobCardServiceController;
+use App\Http\Controllers\Tenant\MechanicPayableController;
 use App\Http\Controllers\Tenant\PermissionController;
 use App\Http\Controllers\Tenant\PosController;
 use App\Http\Controllers\Tenant\ProductController;
@@ -82,6 +83,7 @@ Route::middleware([
         Route::post('employee-attendances', [EmployeeAttendanceController::class, 'store'])->name('employee-attendances.store');
         Route::get('employee-salaries', [EmployeeSalaryController::class, 'index'])->name('employee-salaries.index');
         Route::post('employee-salaries', [EmployeeSalaryController::class, 'store'])->name('employee-salaries.store');
+        Route::get('mechanic-payables', [MechanicPayableController::class, 'index'])->name('mechanic-payables.index');
 
         Route::controller(TenantAuthController::class)->group(function (): void {
             Route::get('two-step', 'showTwoStep')->name('two-step');

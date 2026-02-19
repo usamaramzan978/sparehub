@@ -10,6 +10,8 @@ use App\Models\Customer;
 use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\ProductPrice;
+use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\ServiceCatalog;
 use App\Models\Tax;
 use App\Models\User;
@@ -245,4 +247,101 @@ it('validates online payment proof requirement in pos store', function (): void 
 
     $response->assertRedirect(posTenantRoute('pos.index'));
     $response->assertSessionHasErrors(['payment_proof']);
+});
+
+it('stores pos service line with mechanic payable', function (): void {
+    $fixture = authenticatePosUser();
+
+    $mechanic = User::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'name' => 'POS Mechanic',
+        'email' => 'pos.mechanic+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => 'active',
+    ]);
+
+    $response = $this->post(posTenantRoute('pos.store'), [
+        'status' => 'posted',
+        'payment_mode' => 'cash',
+        'items' => [[
+            'type' => 'service',
+            'ref_id' => $fixture['service']->id,
+            'qty' => 1,
+            'price' => 250,
+            'name' => 'Oil Change',
+            'mechanic_enabled' => true,
+            'mechanic_id' => $mechanic->id,
+            'mechanic_charge' => 120,
+        ]],
+    ]);
+
+    $response->assertRedirect(posTenantRoute('pos.index'));
+
+    $sale = Sale::query()->latest('created_at')->firstOrFail();
+    $item = SaleItem::query()->where('sale_id', $sale->id)->firstOrFail();
+
+    expect($item->line_type->value)->toBe('service');
+    expect((string) $item->mechanic_id)->toBe($mechanic->id);
+    expect((float) $item->mechanic_charge)->toBe(120.0);
+});
+
+it('stores pos product line with mechanic payable', function (): void {
+    $fixture = authenticatePosUser();
+
+    $mechanic = User::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'name' => 'POS Product Mechanic',
+        'email' => 'pos.product.mechanic+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => 'active',
+    ]);
+
+    $response = $this->post(posTenantRoute('pos.store'), [
+        'status' => 'posted',
+        'payment_mode' => 'cash',
+        'items' => [[
+            'type' => 'product',
+            'ref_id' => $fixture['product']->id,
+            'qty' => 1,
+            'price' => 130,
+            'name' => 'Engine Oil',
+            'mechanic_enabled' => true,
+            'mechanic_id' => $mechanic->id,
+            'mechanic_charge' => 60,
+        ]],
+    ]);
+
+    $response->assertRedirect(posTenantRoute('pos.index'));
+
+    $sale = Sale::query()->latest('created_at')->firstOrFail();
+    $item = SaleItem::query()->where('sale_id', $sale->id)->firstOrFail();
+
+    expect($item->line_type->value)->toBe('product');
+    expect((string) $item->mechanic_id)->toBe($mechanic->id);
+    expect((float) $item->mechanic_charge)->toBe(60.0);
+});
+
+it('validates mechanic details when add mechanic is enabled', function (): void {
+    $fixture = authenticatePosUser();
+
+    $response = $this->from(posTenantRoute('pos.index'))
+        ->post(posTenantRoute('pos.store'), [
+            'status' => 'posted',
+            'payment_mode' => 'cash',
+            'items' => [[
+                'type' => 'service',
+                'ref_id' => $fixture['service']->id,
+                'qty' => 1,
+                'price' => 250,
+                'name' => 'Oil Change',
+                'mechanic_enabled' => true,
+                'mechanic_charge' => 0,
+            ]],
+        ]);
+
+    $response->assertRedirect(posTenantRoute('pos.index'));
+    $response->assertSessionHasErrors([
+        'items.0.mechanic_id',
+        'items.0.mechanic_charge',
+    ]);
 });

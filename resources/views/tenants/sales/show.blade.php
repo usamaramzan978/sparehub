@@ -125,6 +125,8 @@
                             <th class="text-end">{{ __('Unit Price') }}</th>
                             <th class="text-end">{{ __('Discount') }}</th>
                             <th class="text-end">{{ __('Tax') }}</th>
+                            <th>{{ __('Mechanic') }}</th>
+                            <th class="text-end">{{ __('Mechanic Payable') }}</th>
                             <th class="text-end">{{ __('Line Total') }}</th>
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
@@ -139,6 +141,8 @@
                                 <td class="text-end">{{ number_format((float) $saleItem->unit_price, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) $saleItem->discount_amount, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) $saleItem->tax_amount, 2) }}</td>
+                                <td>{{ $saleItem->mechanic?->name ?? '-' }}</td>
+                                <td class="text-end">{{ number_format((float) $saleItem->mechanic_charge, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) $saleItem->line_total, 2) }}</td>
                                 <td class="text-end">
                                     <a href="{{ route('tenant.sale-items.show', $saleItem) }}"
@@ -150,7 +154,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted">{{ __('No sale items found.') }}</td>
+                                <td colspan="10" class="text-center text-muted">{{ __('No sale items found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

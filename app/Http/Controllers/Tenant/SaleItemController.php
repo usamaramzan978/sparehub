@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\ServiceCatalog;
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +27,7 @@ final class SaleItemController extends Controller
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
 
         $items = SaleItem::query()
-            ->with(['sale', 'product', 'serviceCatalog', 'jobCardService'])
+            ->with(['sale', 'product', 'serviceCatalog', 'jobCardService', 'mechanic'])
             ->where('branch_id', $branchId)
             ->latest()
             ->paginate($perPage);
@@ -45,6 +46,11 @@ final class SaleItemController extends Controller
     {
         $payload = $request->validated();
         $payload['branch_id'] = $this->currentBranchId();
+        if (($payload['line_type'] ?? null) !== SaleLineType::SERVICE->value) {
+            $payload['mechanic_id'] = null;
+            $payload['mechanic_charge'] = 0;
+        }
+        $payload['mechanic_charge'] = (float) ($payload['mechanic_charge'] ?? 0);
         $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_price']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
 
         $saleItem = SaleItem::query()->create($payload);
@@ -59,6 +65,7 @@ final class SaleItemController extends Controller
         $this->ensureSaleItemInCurrentBranch($saleItem);
 
         $saleItem->load(['sale.customer', 'product', 'serviceCatalog', 'jobCardService']);
+        $saleItem->load('mechanic');
 
         return view('tenants.sale-items.show', [
             'saleItem' => $saleItem,
@@ -81,6 +88,11 @@ final class SaleItemController extends Controller
 
         $payload = $request->validated();
         $payload['branch_id'] = $this->currentBranchId();
+        if (($payload['line_type'] ?? null) !== SaleLineType::SERVICE->value) {
+            $payload['mechanic_id'] = null;
+            $payload['mechanic_charge'] = 0;
+        }
+        $payload['mechanic_charge'] = (float) ($payload['mechanic_charge'] ?? 0);
         $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_price']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
 
         $originalItem = clone $saleItem;
@@ -193,6 +205,7 @@ final class SaleItemController extends Controller
             'products' => Product::query()->orderBy('name')->get(),
             'serviceCatalogs' => ServiceCatalog::query()->where('branch_id', $branchId)->orderBy('name')->get(),
             'jobCardServices' => JobCardService::query()->whereHas('jobCard', fn ($q) => $q->where('branch_id', $branchId))->get(),
+            'mechanics' => User::query()->where('branch_id', $branchId)->active()->orderBy('name')->get(['id', 'name']),
             'lineTypes' => SaleLineType::cases(),
         ];
     }

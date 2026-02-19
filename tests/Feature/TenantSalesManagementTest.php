@@ -213,6 +213,8 @@ it('stores sale and syncs totals from items', function (): void {
             [
                 'line_type' => SaleLineType::SERVICE->value,
                 'service_catalog_id' => $fixture['service']->id,
+                'mechanic_id' => $fixture['user']->id,
+                'mechanic_charge' => 100,
                 'qty' => 1,
                 'unit_price' => 200,
                 'discount_amount' => 0,
@@ -231,6 +233,8 @@ it('stores sale and syncs totals from items', function (): void {
     expect((float) $sale->grand_total)->toBe(415.0);
     expect((float) $sale->balance_due)->toBe(415.0);
     expect($sale->items()->count())->toBe(2);
+    expect((float) $sale->items()->where('line_type', SaleLineType::SERVICE->value)->value('mechanic_charge'))->toBe(100.0);
+    expect((string) $sale->items()->where('line_type', SaleLineType::SERVICE->value)->value('mechanic_id'))->toBe($fixture['user']->id);
 
     $stock = InventoryStock::query()
         ->where('branch_id', $fixture['current']->id)

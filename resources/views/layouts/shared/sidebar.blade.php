@@ -100,9 +100,11 @@
                                     $isEmployees = request()->routeIs(
                                         'tenant.employee-attendances.*',
                                         'tenant.employee-salaries.*',
+                                        'tenant.mechanic-payables.*',
                                     );
                                     $isEmployeeAttendances = request()->routeIs('tenant.employee-attendances.*');
                                     $isEmployeeSalaries = request()->routeIs('tenant.employee-salaries.*');
+                                    $isMechanicPayables = request()->routeIs('tenant.mechanic-payables.*');
                                     $isUsers = request()->routeIs('tenant.users.*');
                                     $isRoles = request()->routeIs('tenant.roles.*');
                                     $isPermissions = request()->routeIs('tenant.permissions.*');
@@ -579,6 +581,12 @@
                                                 <a href="{{ route('tenant.employee-salaries.index') }}"
                                                     class="side-menu__item {{ $isEmployeeSalaries ? 'active' : '' }}">
                                                     {{ __('Salaries') }}
+                                                </a>
+                                            </li>
+                                            <li class="slide {{ $isMechanicPayables ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.mechanic-payables.index') }}"
+                                                    class="side-menu__item {{ $isMechanicPayables ? 'active' : '' }}">
+                                                    {{ __('Mechanic Payables') }}
                                                 </a>
                                             </li>
                                         </ul>

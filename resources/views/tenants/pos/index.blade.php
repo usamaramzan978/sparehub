@@ -3,6 +3,10 @@
 @section('content')
     @php
         $breadcrumbs = [['label' => 'Sales'], ['label' => 'POS']];
+        $mechanicOptions = $mechanics
+            ->map(fn($mechanic): array => ['id' => $mechanic->id, 'name' => $mechanic->name])
+            ->values()
+            ->all();
     @endphp
 
     <x-breadcrumb title="POS Screen" :items="$breadcrumbs">
@@ -110,6 +114,7 @@
                                 <thead>
                                     <tr class="text-muted">
                                         <th>Item</th>
+                                        <th style="width: 40px;"></th>
                                         <th style="width: 120px;">Stock</th>
                                         <th style="width: 120px;">Qty</th>
                                         <th style="width: 140px;">Price</th>
@@ -119,7 +124,7 @@
                                 </thead>
                                 <tbody data-pos-cart-body>
                                     <tr data-empty>
-                                        <td colspan="6" class="text-center text-muted py-4">
+                                        <td colspan="7" class="text-center text-muted py-4">
                                             Scan a barcode or search to add items.
                                         </td>
                                     </tr>
@@ -358,6 +363,7 @@
             const holdBtn = document.querySelector('[data-pos-hold]');
             const printBtn = document.querySelector('[data-pos-print]');
             const submitBtn = document.querySelector('[data-pos-submit]');
+            const posForm = document.getElementById('pos-form');
             const printFlag = document.querySelector('[data-pos-print-flag]');
             const cashInput = document.querySelector('[data-pos-cash-received]');
             const changeEl = document.querySelector('[data-pos-change]');
@@ -387,6 +393,7 @@
             let cashTouched = false;
             let currentPaymentMode = paymentModeInput?.value || 'cash';
             let catalogItems = [];
+            const mechanics = @json($mechanicOptions);
 
             const cart = [];
 
@@ -516,6 +523,9 @@
             const buildHiddenInputs = () => {
                 hiddenItems.innerHTML = '';
                 cart.forEach((item, index) => {
+                    const mechanicEnabled = item.mechanic_enabled ? 1 : 0;
+                    const mechanicId = item.mechanic_enabled ? (item.mechanic_id ?? '') : '';
+                    const mechanicCharge = item.mechanic_enabled ? (item.mechanic_charge ?? 0) : 0;
                     hiddenItems.insertAdjacentHTML('beforeend', `
                         <input type="hidden" name="items[${index}][type]" value="${item.type}">
                         <input type="hidden" name="items[${index}][ref_id]" value="${item.ref_id}">
@@ -524,6 +534,9 @@
                         <input type="hidden" name="items[${index}][tax_rate]" value="${item.tax_rate}">
                         <input type="hidden" name="items[${index}][tax_inclusive]" value="${item.tax_inclusive ? 1 : 0}">
                         <input type="hidden" name="items[${index}][name]" value="${item.name}">
+                        <input type="hidden" name="items[${index}][mechanic_enabled]" value="${mechanicEnabled}">
+                        <input type="hidden" name="items[${index}][mechanic_id]" value="${mechanicId}">
+                        <input type="hidden" name="items[${index}][mechanic_charge]" value="${mechanicCharge}">
                     `);
                 });
             };
@@ -635,6 +648,30 @@
                 updatePaymentsTotal();
             };
 
+            const syncMechanicFromDom = () => {
+                if (!cartBody) {
+                    return;
+                }
+
+                cart.forEach((item, index) => {
+                    if (!item.mechanic_enabled) {
+                        item.mechanic_id = null;
+                        item.mechanic_charge = 0;
+                        return;
+                    }
+
+                    const mechanicSelect = cartBody.querySelector(`[data-pos-mechanic="${index}"]`);
+                    if (mechanicSelect instanceof HTMLSelectElement) {
+                        item.mechanic_id = mechanicSelect.value || null;
+                    }
+
+                    const mechanicChargeInput = cartBody.querySelector(`[data-pos-mechanic-charge="${index}"]`);
+                    if (mechanicChargeInput instanceof HTMLInputElement) {
+                        item.mechanic_charge = Math.max(parseFloat(mechanicChargeInput.value || '0'), 0);
+                    }
+                });
+            };
+
             const renderCart = () => {
                 cartBody.innerHTML = '';
                 if (cart.length === 0) {
@@ -646,6 +683,10 @@
                 cart.forEach((item, index) => {
                     const row = document.createElement('tr');
                     const isService = item.type === 'service';
+                    const mechanicEnabled = Boolean(item.mechanic_enabled);
+                    const mechanicOptionsHtml = mechanics
+                        .map((mechanic) => `<option value="${mechanic.id}" ${item.mechanic_id === mechanic.id ? 'selected' : ''}>${mechanic.name}</option>`)
+                        .join('');
                     row.innerHTML = `
                         <td>
                             <div class="fw-semibold">${item.name}
@@ -655,6 +696,38 @@
                             </div>
                             <div class="text-muted small d-flex align-items-center gap-2">
                                 <span>${item.sku ?? ''}</span>
+                            </div>
+                            ${
+                                mechanicEnabled
+                                    ? `
+                                        <div class="mt-2 p-2 rounded border bg-light-subtle">
+                                            <div class="small fw-semibold text-muted mb-1">Mechanic Details</div>
+                                            <div class="row g-2">
+                                                <div class="col-12 col-lg-8">
+                                                    <label class="form-label mb-1 small text-muted">Mechanic</label>
+                                                    <select class="form-select form-select-sm singl-select-2" data-pos-mechanic="${index}" required>
+                                                        <option value="">Select Mechanic</option>
+                                                        ${mechanicOptionsHtml}
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 col-lg-4">
+                                                    <label class="form-label mb-1 small text-muted">Payable</label>
+                                                    <input type="number" step="0.01" min="0.01" required class="form-control form-control-sm"
+                                                        value="${item.mechanic_charge ?? 0}" data-pos-mechanic-charge="${index}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `
+                                    : ''
+                            }
+                        </td>
+                        <td>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="pos-mechanic-toggle-${index}"
+                                    data-pos-mechanic-toggle="${index}" ${mechanicEnabled ? 'checked' : ''}>
+                                <label class="form-check-label small fw-semibold" for="pos-mechanic-toggle-${index}">
+                                    Add Mechanic
+                                </label>
                             </div>
                         </td>
                         <td>
@@ -686,6 +759,7 @@
                     cartBody.appendChild(row);
                 });
 
+                initSelect2(cartBody);
                 calculateTotals();
             };
 
@@ -707,6 +781,9 @@
                         tax_inclusive: Boolean(item.tax_inclusive),
                         stock: Number(item.stock || 0),
                         qty: 1,
+                        mechanic_enabled: false,
+                        mechanic_id: null,
+                        mechanic_charge: 0,
                     });
                 }
                 renderCart();
@@ -893,15 +970,45 @@
             cartBody?.addEventListener('input', (event) => {
                 const qtyIndex = event.target.getAttribute('data-pos-qty');
                 const priceIndex = event.target.getAttribute('data-pos-price');
+                const mechanicChargeIndex = event.target.getAttribute('data-pos-mechanic-charge');
+                let shouldRender = false;
                 if (qtyIndex !== null) {
                     const idx = Number(qtyIndex);
                     cart[idx].qty = Math.max(parseFloat(event.target.value || '1'), 1);
+                    shouldRender = true;
                 }
                 if (priceIndex !== null) {
                     const idx = Number(priceIndex);
                     cart[idx].price = Math.max(parseFloat(event.target.value || '0'), 0);
+                    shouldRender = true;
                 }
-                renderCart();
+                if (mechanicChargeIndex !== null) {
+                    const idx = Number(mechanicChargeIndex);
+                    cart[idx].mechanic_charge = Math.max(parseFloat(event.target.value || '0'), 0);
+                    shouldRender = true;
+                }
+                if (shouldRender) {
+                    renderCart();
+                }
+            });
+
+            cartBody?.addEventListener('change', (event) => {
+                const mechanicIndex = event.target.getAttribute('data-pos-mechanic');
+                const mechanicToggleIndex = event.target.getAttribute('data-pos-mechanic-toggle');
+                if (mechanicIndex !== null) {
+                    const idx = Number(mechanicIndex);
+                    cart[idx].mechanic_id = event.target.value || null;
+                    buildHiddenInputs();
+                }
+                if (mechanicToggleIndex !== null) {
+                    const idx = Number(mechanicToggleIndex);
+                    cart[idx].mechanic_enabled = Boolean(event.target.checked);
+                    if (!cart[idx].mechanic_enabled) {
+                        cart[idx].mechanic_id = null;
+                        cart[idx].mechanic_charge = 0;
+                    }
+                    renderCart();
+                }
             });
 
             cartBody?.addEventListener('click', (event) => {
@@ -988,6 +1095,11 @@
                 const hint = document.getElementById('credit-customer-hint');
                 if (!hint) return;
                 hint.classList.toggle('d-none', statusSelect.value !== 'hold');
+            });
+
+            posForm?.addEventListener('submit', () => {
+                syncMechanicFromDom();
+                buildHiddenInputs();
             });
 
             const loadCategoryVariants = async (categoryId, type, btn = null) => {

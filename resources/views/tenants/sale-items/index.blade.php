@@ -22,6 +22,8 @@
                             <th>{{ __('Description') }}</th>
                             <th>{{ __('Qty') }}</th>
                             <th>{{ __('Unit Price') }}</th>
+                            <th>{{ __('Mechanic') }}</th>
+                            <th>{{ __('Mechanic Payable') }}</th>
                             <th>{{ __('Line Total') }}</th>
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
@@ -35,6 +37,8 @@
                                 </td>
                                 <td>{{ number_format((float) $item->qty, 3) }}</td>
                                 <td>{{ number_format((float) $item->unit_price, 2) }}</td>
+                                <td>{{ $item->mechanic?->name ?? '-' }}</td>
+                                <td>{{ number_format((float) $item->mechanic_charge, 2) }}</td>
                                 <td>{{ number_format((float) $item->line_total, 2) }}</td>
                                 <td class="text-end">
                                     <div class="btn-list">
@@ -60,7 +64,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted">{{ __('No sale items found.') }}</td>
+                                <td colspan="9" class="text-center text-muted">{{ __('No sale items found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

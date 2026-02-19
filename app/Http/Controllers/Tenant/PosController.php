@@ -22,6 +22,7 @@ use App\Models\SalePayment;
 use App\Models\ServiceCatalog;
 use App\Models\Tax;
 use App\Models\TenantSetting;
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -53,6 +54,11 @@ final class PosController extends Controller
             SaleStatus::HOLD,
         ];
         $paymentMethods = PaymentMethodType::cases();
+        $mechanics = User::query()
+            ->where('branch_id', $branchId)
+            ->active()
+            ->orderBy('name')
+            ->get(['id', 'name']);
         $tenantSettings = TenantSetting::query()->first();
 
         return view('tenants.pos.index', [
@@ -60,6 +66,7 @@ final class PosController extends Controller
             'categories' => $categories,
             'serviceCategories' => $serviceCategories,
             'paymentMethods' => $paymentMethods,
+            'mechanics' => $mechanics,
             'statuses' => $statuses,
             'tenantSettings' => $tenantSettings,
         ]);
@@ -170,6 +177,8 @@ final class PosController extends Controller
             'tax_rate' => (float) ($item['tax_rate'] ?? 0),
             'tax_inclusive' => (bool) ($item['tax_inclusive'] ?? false),
             'name' => (string) ($item['name'] ?? ''),
+            'mechanic_id' => $item['mechanic_id'] ?? null,
+            'mechanic_charge' => (float) ($item['mechanic_charge'] ?? 0),
         ]);
 
         $productIds = $items->where('type', 'product')->pluck('ref_id')->all();
@@ -181,6 +190,16 @@ final class PosController extends Controller
             ->whereIn('id', $serviceIds)
             ->pluck('id')
             ->all();
+        $mechanicIds = $items
+            ->pluck('mechanic_id')
+            ->filter(fn ($value): bool => is_string($value) && $value !== '')
+            ->values()
+            ->all();
+        $existingMechanics = User::query()
+            ->where('branch_id', $branchId)
+            ->whereIn('id', $mechanicIds)
+            ->pluck('id')
+            ->all();
 
         foreach ($items as $item) {
             if ($item['type'] === 'product' && ! in_array($item['ref_id'], $existingProducts, true)) {
@@ -189,6 +208,10 @@ final class PosController extends Controller
 
             if ($item['type'] === 'service' && ! in_array($item['ref_id'], $existingServices, true)) {
                 return back()->withErrors(['items' => 'One or more selected services are invalid.'])->withInput();
+            }
+
+            if (is_string($item['mechanic_id']) && $item['mechanic_id'] !== '' && ! in_array($item['mechanic_id'], $existingMechanics, true)) {
+                return back()->withErrors(['items' => 'One or more selected mechanics are invalid.'])->withInput();
             }
         }
 
@@ -227,6 +250,8 @@ final class PosController extends Controller
                 'unit_price' => $item['price'],
                 'discount_amount' => $lineDiscount,
                 'tax_amount' => $lineTax,
+                'mechanic_id' => $item['mechanic_id'],
+                'mechanic_charge' => $item['mechanic_charge'],
                 'line_total' => $lineTotal,
                 'description' => $item['name'] !== '' ? $item['name'] : null,
             ];
@@ -291,12 +316,14 @@ final class PosController extends Controller
                     'product_id' => $line['type'] === 'product' ? $line['ref_id'] : null,
                     'service_catalog_id' => $line['type'] === 'service' ? $line['ref_id'] : null,
                     'job_card_service_id' => null,
+                    'mechanic_id' => $line['mechanic_id'],
                     'line_type' => $line['type'] === 'product' ? SaleLineType::PRODUCT->value : SaleLineType::SERVICE->value,
                     'description' => $line['description'],
                     'qty' => $line['qty'],
                     'unit_price' => $line['unit_price'],
                     'discount_amount' => $line['discount_amount'],
                     'tax_amount' => $line['tax_amount'],
+                    'mechanic_charge' => $line['mechanic_charge'],
                     'line_total' => $line['line_total'],
                 ]);
             }

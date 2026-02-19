@@ -62,6 +62,17 @@
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-body">
+                    <div class="text-muted small">{{ __('Mechanic Payable Today') }}</div>
+                    <h4>{{ $currency($summary['mechanic_payable_total']) }}</h4>
+                    <div class="small text-muted">{{ $summary['mechanic_payable_count'] }} {{ __('service entries') }}</div>
+                    <a href="{{ route('tenant.mechanic-payables.index', ['date_from' => $selectedDate, 'date_to' => $selectedDate]) }}"
+                        class="btn btn-outline-primary btn-sm mt-2">{{ __('Open Mechanic Payables') }}</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
                     <div class="text-muted small">{{ __('Open Job Cards') }}</div>
                     <h4>{{ $summary['open_job_cards'] }}</h4>
                     <div class="small text-muted">{{ __('Need follow-up') }}</div>

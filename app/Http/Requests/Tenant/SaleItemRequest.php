@@ -25,6 +25,7 @@ final class SaleItemRequest extends FormRequest
         $saleExists = Rule::exists('sales', 'id');
         $serviceCatalogExists = Rule::exists('service_catalog', 'id');
         $jobCardServiceExists = Rule::exists('job_card_services', 'id');
+        $mechanicExists = Rule::exists('users', 'id');
 
         if (is_string($branchId) && $branchId !== '') {
             $saleExists = $saleExists->where(fn ($query) => $query->where('branch_id', $branchId));
@@ -33,6 +34,7 @@ final class SaleItemRequest extends FormRequest
                 'job_card_id',
                 JobCard::query()->where('branch_id', $branchId)->select('id')
             ));
+            $mechanicExists = $mechanicExists->where(fn ($query) => $query->where('branch_id', $branchId));
         }
 
         return [
@@ -40,12 +42,14 @@ final class SaleItemRequest extends FormRequest
             'product_id' => ['nullable', 'uuid', Rule::exists('products', 'id')],
             'service_catalog_id' => ['nullable', 'uuid', $serviceCatalogExists],
             'job_card_service_id' => ['nullable', 'uuid', $jobCardServiceExists],
+            'mechanic_id' => ['nullable', 'uuid', $mechanicExists],
             'line_type' => ['required', Rule::enum(SaleLineType::class)],
             'description' => ['nullable', 'string', 'max:200'],
             'qty' => ['required', 'numeric', 'gt:0'],
             'unit_price' => ['required', 'numeric', 'min:0'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
+            'mechanic_charge' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 

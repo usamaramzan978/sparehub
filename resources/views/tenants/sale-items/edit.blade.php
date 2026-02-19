@@ -120,6 +120,22 @@
                         @enderror
                     </div>
 
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="mechanic_id">{{ __('Mechanic') }}</label>
+                        <select name="mechanic_id" id="mechanic_id"
+                            class="form-select singl-select-2 @error('mechanic_id') is-invalid @enderror">
+                            <option value="">{{ __('None') }}</option>
+                            @foreach ($mechanics as $mechanic)
+                                <option value="{{ $mechanic->id }}" @selected(old('mechanic_id', $saleItem->mechanic_id) === $mechanic->id)>
+                                    {{ $mechanic->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('mechanic_id')
+                            <span class="invalid-feedback d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
+
                     <div class="col-md-2 mb-3">
                         <label class="form-label" for="qty">{{ __('Qty') }}</label>
                         <input type="number" step="0.001" min="0.001" name="qty" id="qty"
@@ -156,6 +172,15 @@
                             class="form-control @error('tax_amount') is-invalid @enderror"
                             value="{{ old('tax_amount', (string) $saleItem->tax_amount) }}">
                         @error('tax_amount')
+                            <span class="invalid-feedback d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label" for="mechanic_charge">{{ __('Mechanic Payable') }}</label>
+                        <input type="number" step="0.01" min="0" name="mechanic_charge" id="mechanic_charge"
+                            class="form-control @error('mechanic_charge') is-invalid @enderror"
+                            value="{{ old('mechanic_charge', (string) $saleItem->mechanic_charge) }}">
+                        @error('mechanic_charge')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>

@@ -36,11 +36,11 @@ final class AuthController extends Controller
     public function showLogin(): View|RedirectResponse
     {
         // ✅ If user has tenant in session, redirect them there
-        $userTenantId = session('user_tenant_id');
+        // $userTenantId = session('user_tenant_id');
 
-        if ($userTenantId) {
-            return redirect()->route('tenant.dashboard', ['tenant' => $userTenantId]);
-        }
+        // if ($userTenantId) {
+        //     return redirect()->route('tenant.dashboard', ['tenant' => $userTenantId]);
+        // }
 
         return view('auth.tenant.login');
     }
@@ -145,8 +145,8 @@ final class AuthController extends Controller
         abort_unless(Str::isUuid($nonce), 403, 'Invalid request.');
 
         $payload = rescue(
-            fn() => Tenancy::central(
-                fn() => Cache::store('database')->pull('login_nonce:' . $nonce)
+            fn () => Tenancy::central(
+                fn () => Cache::store('database')->pull('login_nonce:'.$nonce)
             ),
             null,
             false
@@ -253,7 +253,7 @@ final class AuthController extends Controller
         $nonce = (string) Str::uuid();
 
         Cache::store('database')->put(
-            'login_nonce:' . $nonce,
+            'login_nonce:'.$nonce,
             [
                 'type_id' => $typeId,
                 'type' => $type,

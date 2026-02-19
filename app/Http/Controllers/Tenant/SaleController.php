@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\ServiceCatalog;
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -82,6 +83,7 @@ final class SaleController extends Controller
             'items.product',
             'items.serviceCatalog',
             'items.jobCardService',
+            'items.mechanic',
             'payments.receiver',
         ]);
 
@@ -163,6 +165,7 @@ final class SaleController extends Controller
             'jobCards' => JobCard::query()->where('branch_id', $branchId)->latest('job_date')->get(),
             'products' => Product::query()->orderBy('name')->get(),
             'serviceCatalogs' => ServiceCatalog::query()->where('branch_id', $branchId)->orderBy('name')->get(),
+            'mechanics' => User::query()->where('branch_id', $branchId)->active()->orderBy('name')->get(['id', 'name']),
             'statuses' => SaleStatus::cases(),
             'invoiceTypes' => InvoiceType::cases(),
         ];
@@ -187,6 +190,8 @@ final class SaleController extends Controller
             $lineType = (string) $item['line_type'];
             $productId = $lineType === 'product' ? $item['product_id'] : null;
             $serviceCatalogId = $lineType === 'service' ? $item['service_catalog_id'] : null;
+            $mechanicId = $lineType === 'service' ? ($item['mechanic_id'] ?? null) : null;
+            $mechanicCharge = $lineType === 'service' ? (float) ($item['mechanic_charge'] ?? 0) : 0.0;
 
             SaleItem::query()->create([
                 'sale_id' => $sale->id,
@@ -194,12 +199,14 @@ final class SaleController extends Controller
                 'product_id' => $productId,
                 'service_catalog_id' => $serviceCatalogId,
                 'job_card_service_id' => null,
+                'mechanic_id' => $mechanicId,
                 'line_type' => $lineType,
                 'description' => $item['description'] ?? null,
                 'qty' => $qty,
                 'unit_price' => $unitPrice,
                 'discount_amount' => $discountAmount,
                 'tax_amount' => $taxAmount,
+                'mechanic_charge' => $mechanicCharge,
                 'line_total' => $lineTotal,
             ]);
         }

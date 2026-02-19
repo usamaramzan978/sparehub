@@ -59,6 +59,12 @@
                 </div>
                 <div class="col-12 col-md-6 col-xl-2">
                     <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">{{ __('Mechanic Payable') }}</div>
+                        <div class="fw-semibold">{{ number_format((float) $saleItem->mechanic_charge, 2) }}</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-2">
+                    <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Line Total') }}</div>
                         <div class="fw-semibold">{{ number_format((float) $saleItem->line_total, 2) }}</div>
                     </div>
@@ -80,6 +86,12 @@
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Job Card Service') }}</div>
                         <div class="fw-semibold">{{ $saleItem->jobCardService?->name ?? '-' }}</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">{{ __('Mechanic') }}</div>
+                        <div class="fw-semibold">{{ $saleItem->mechanic?->name ?? '-' }}</div>
                     </div>
                 </div>
             </div>

@@ -251,6 +251,32 @@ it('stores sale item and recalculates parent sale totals', function (): void {
     expect((float) $stock->qty_on_hand)->toBe(8.0);
 });
 
+it('stores service sale item with mechanic payable', function (): void {
+    $fixture = authenticateSaleItemsUser();
+
+    $response = $this->post(saleItemsTenantRoute('sale-items.store'), [
+        'sale_id' => $fixture['sale']->id,
+        'line_type' => SaleLineType::SERVICE->value,
+        'service_catalog_id' => $fixture['service']->id,
+        'mechanic_id' => $fixture['user']->id,
+        'mechanic_charge' => 75,
+        'qty' => 1,
+        'unit_price' => 200,
+        'discount_amount' => 0,
+        'tax_amount' => 20,
+    ]);
+
+    $response->assertRedirect(saleItemsTenantRoute('sale-items.index'));
+
+    $item = SaleItem::query()
+        ->where('sale_id', $fixture['sale']->id)
+        ->where('line_type', SaleLineType::SERVICE->value)
+        ->firstOrFail();
+
+    expect((string) $item->mechanic_id)->toBe($fixture['user']->id);
+    expect((float) $item->mechanic_charge)->toBe(75.0);
+});
+
 it('validates required sale id for sale item creation', function (): void {
     authenticateSaleItemsUser();
 
