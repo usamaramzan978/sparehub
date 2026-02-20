@@ -75,6 +75,14 @@ Inside tenant panel, menu is organized as:
 - Record supplier payments in `Vendor Payments`.
 - Use returns screens when sending items back to vendor.
 
+Practical purchase example:
+1. Vendor `City Auto Supplier` sends invoice `PI-1004`.
+2. You purchase:
+   - `Brake Pad Set` qty `20` at cost `25.00`
+   - `Engine Oil 1L` qty `48` at cost `6.50`
+3. Save purchase and later record partial payment in `Vendor Payments`.
+4. Tracked stock increases for those products automatically.
+
 Stock behavior for tracked products (`Track Stock` enabled):
 1. Create product with opening stock.
 2. Sales reduce stock.
@@ -85,12 +93,42 @@ You can review and adjust stock from:
 - `Master Data > Products > Stock`
 - `Master Data > Products > Stock Adjustment`
 
-### 6.4 Employees
+### 6.6 Units and Fractional (Important)
+
+Units explain quantity meaning for products.
+
+Practical examples:
+- Unit `Piece` (`is_fractional = No`): Spark Plug, Oil Filter, Brake Disc.
+- Unit `Bottle` (`is_fractional = No`): Engine Oil 1L Bottle.
+- Unit `Liter` (`is_fractional = Yes`): Bulk coolant.
+- Unit `Kg` (`is_fractional = Yes`): Grease or packed material by weight.
+
+Why this helps:
+- Invoice clarity: `5 Piece`, `2 Bottle`, `1.5 Liter`.
+- Staff clarity: no confusion about what quantity means.
+- Better future control: whole-only vs decimal quantity policies.
+
+Current behavior note:
+- In current system, unit is mainly product context/label.
+- Fractional flag exists but strict decimal/integer enforcement is not yet applied in all transactions.
+
+### 6.7 Warehouses (When to use)
+
+Warehouse is useful when a branch stores stock in multiple physical locations.
+
+Practical examples:
+- `Main Warehouse`: regular stock receiving from vendors.
+- `Front Counter Store`: fast-moving items for retail.
+- `Service Room`: workshop reserved stock.
+
+If your branch has only one physical store, you can still keep one default warehouse and operate simply.
+
+### 6.8 Employees
 
 - `Employee Attendances`: mark check-in/check-out/absent.
 - `Employee Salaries`: track month-wise salary and paid status.
 
-### 6.5 Expenses
+### 6.9 Expenses
 
 - Open `Expenses` from sidebar to record daily spending.
 - Common examples: staff lunch, fuel, local transport, office misc.
@@ -107,6 +145,18 @@ Use `End Of Day` before closing business each day. It shows:
 - payroll status for selected month
 
 This helps owner/manager quickly review health of the day.
+
+Practical end-of-day example:
+- Sales today: `120,000`
+- Purchase today: `35,000`
+- Sale payments (cash in): `85,000`
+- Vendor payments + expenses (cash out): `40,000`
+- Net cash movement: `+45,000`
+- Open job cards: `6`
+
+Manager can immediately decide:
+- whether cash is enough for tomorrow purchase
+- whether pending job cards need extra mechanics
 
 ## 8. Multi-User in Same Tenant
 
@@ -133,3 +183,120 @@ Switch branch from branch switch option in UI (session-based).
 - Login fails: verify tenant URL and credentials.
 - Missing records: confirm you are on the correct branch.
 - Report mismatch: verify date range and branch context.
+
+## 12. Real-World Examples By Module
+
+### 12.1 Dashboard
+
+Example:
+- At 9:00 AM, owner opens Dashboard and checks:
+  - yesterday sales trend
+  - top sold items
+  - low stock warnings
+- Based on this, owner decides to restock engine oil and brake pads.
+
+### 12.2 Master Data
+
+Example:
+- Admin creates:
+  - Unit: `Piece`
+  - Tax: `VAT 18%`
+  - Category: `Brakes`
+  - Brand: `Bosch`
+  - Product: `Brake Pad Set`, Track Stock = Yes
+- This product is now ready for purchase and sale entries.
+
+### 12.3 Workshop
+
+Example:
+- Customer arrives with `Toyota Corolla` for brake noise.
+- Service advisor creates Job Card:
+  - Service: `Brake Inspection`
+  - Part: `Brake Pad Set` qty `1`
+- Technician completes work and cashier converts job to invoice.
+
+### 12.4 Sales / POS
+
+Example:
+- Cashier scans barcodes for:
+  - `Oil Filter` x2
+  - `Engine Oil 1L` x3
+- System calculates totals/tax.
+- Customer pays part cash today and remaining later.
+- Cashier records immediate payment in `Sale Payments`.
+
+### 12.5 Purchases
+
+Example:
+- Store manager receives vendor bill from `City Auto Supplier`.
+- Creates purchase:
+  - `Spark Plug` x50
+  - `Coolant` x20
+- Saves purchase and records `30%` payment.
+- Remaining amount appears in payable until fully paid.
+
+### 12.6 Inventory / Stock
+
+Example:
+- Physical count shows system says `40` spark plugs but shelf has `38`.
+- Storekeeper opens `Stock Adjustment` and adjusts `-2`.
+- Stock is corrected and movement is logged.
+
+### 12.7 Expenses
+
+Example:
+- Daily expenses recorded:
+  - Delivery fuel: `2,500`
+  - Workshop cleaning: `1,200`
+  - Tea/snacks: `600`
+- End Of Day includes these in cash-out automatically.
+
+### 12.8 Employees
+
+Example:
+- Morning: HR marks attendance (present/absent/late).
+- Month-end: HR creates salary entries and marks paid/unpaid.
+- Owner sees payroll pending in End Of Day summary.
+
+### 12.9 Reports
+
+Example:
+- Manager opens:
+  - `Reports > Sales` to review invoice performance
+  - `Reports > Purchases` to review supplier buying
+  - `Reports > Receivables` to follow up pending customer dues
+- Exports each page as its own PDF for accountant.
+
+### 12.10 Access Control
+
+Example:
+- Owner creates roles:
+  - `Cashier`: access only POS + sale payments
+  - `Store Manager`: purchases + inventory
+  - `Workshop Advisor`: job cards only
+- Each user sees only allowed menus and actions.
+
+### 12.11 End Of Day
+
+Example:
+- Before closing, manager checks:
+  - sales: `120,000`
+  - purchases: `35,000`
+  - cash in: `85,000`
+  - cash out: `40,000`
+  - net movement: `+45,000`
+- Manager shares this summary with owner on WhatsApp/email.
+
+### 12.12 Profile & Settings
+
+Example:
+- User updates personal phone and password in `Profile`.
+- Owner updates business logo and company details in `Settings`.
+- New invoice printouts and UI reflect updated business identity.
+
+### 12.13 Branch Switching
+
+Example:
+- Company has `Lahore Branch` and `Islamabad Branch`.
+- Manager switches branch from header switcher.
+- All lists/reports now show only selected branch data.

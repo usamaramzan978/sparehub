@@ -133,6 +133,14 @@ Seeders ensure a default branch + warehouse exists and linked.
 - `service_catalog` references `branches` and optional default `taxes`
 - `warehouses` belongs to `branches`
 
+Practical example:
+- Product `Engine Oil 1L`:
+  - `default_unit_id` -> `Bottle`
+  - `default_tax_id` -> `VAT 18%`
+  - `brand_id` -> `Castrol`
+  - `category_id` -> `Lubricants`
+  - `track_stock` -> `true`
+
 ### 6.3 CRM entities
 
 - `customers` belongs to `branches`
@@ -164,6 +172,13 @@ Seeders ensure a default branch + warehouse exists and linked.
 - `purchase_return_items` belongs to `purchase_returns`, optional `purchase_items`, required `products`, optional `taxes`
 - `vendor_payments` belongs to `branches`, `vendors`, optional `purchases`, optional creator `users`
 
+Practical flow example:
+1. Create purchase `PI-1004` for vendor `City Auto Supplier`.
+2. Add `purchase_items` for products and tax amounts.
+3. `syncStockForPurchaseItems()` increments `inventory_stocks` for tracked products.
+4. `vendor_payments` entries reduce outstanding payable.
+5. Purchase return reverses stock and payable as needed.
+
 ### 6.7 Inventory
 
 - `inventory_stocks` belongs to `products`, `branches`
@@ -182,6 +197,38 @@ Notes:
 - Stock is adjusted only when `products.track_stock = true`.
 - Product listing shows current stock against opening stock (for example `17/20`).
 - Opening stock + adjustments are managed from `Products > Stock` and `Products > Stock Adjustment`.
+
+Important current implementation detail:
+- `inventory_stocks` is branch-level only (no `warehouse_id` column).
+- `stock_moves` supports `warehouse_id`, but most current stock writes set it to `null`.
+- Result: warehouse is present in domain model and UI, but quantitative stock control is still branch-centric.
+
+### 6.11 Units and Fractional Quantities
+
+`units` table has:
+- `code`
+- `name`
+- `is_fractional`
+- `status`
+
+Current usage:
+- `products.default_unit_id` references units.
+- Units are loaded in product create/edit/show flows.
+
+Current limitation:
+- `is_fractional` is not yet used to enforce quantity rules in sales/purchase validation.
+- Quantity fields in `SaleRequest` and `PurchaseRequest` are generic numeric rules.
+
+Practical examples:
+- `Piece` (`is_fractional=false`): Spark plug, brake pad set.
+- `Bottle` (`is_fractional=false`): Engine Oil 1L bottle.
+- `Liter` (`is_fractional=true`): Bulk coolant.
+- `Kg` (`is_fractional=true`): Grease by weight.
+
+Suggested future enforcement:
+- If unit is non-fractional, quantity must be integer.
+- If unit is fractional, decimal quantity is allowed.
+- Apply consistently in sales, purchases, returns, and stock adjustments.
 
 ### 6.8 Expense module
 
@@ -254,6 +301,13 @@ This order prevents warehouse FK failures.
 File:
 - `app/Http/Controllers/Tenant/EndOfDayController.php`
 
+Practical scenario:
+- Day totals: sales `120,000`, purchases `35,000`, expenses `5,000`, vendor payments `20,000`.
+- Cash-in from sale payments `85,000`.
+- Cash-out = `25,000`.
+- Net cash movement = `+60,000`.
+- Used by manager for same-day working capital decisions.
+
 ## 9. Practical Dev Rules for This Codebase
 
 - Use `tenant()->run(...)` when creating/updating tenant DB data from central context.
@@ -275,3 +329,22 @@ File:
 3. Read `TenantController` + `TenantUserController` + `Auth\Tenant\AuthController` for identity flow.
 4. Read `BranchScopedBySession` + `EnsureBranchSelected` before touching tenant queries.
 5. Run migrations/seeders and inspect one tenant DB to validate FK chain.
+
+## 12. Module-Wise Practical Scenarios
+
+- Dashboard:
+  Verify KPI cards and trend chart data against seeded tenant transactions.
+- Master Data:
+  Create category/brand/unit/tax, then create product and confirm default links resolve in listing.
+- Sales:
+  Create sale with 2 lines (product + service), post payment, assert stock decrement for tracked product.
+- Purchases:
+  Create purchase with warehouse/vendor and assert stock increment + payable creation.
+- Workshop:
+  Create job card, attach service and part lines, then verify billing linkage to sale.
+- Inventory:
+  Perform stock adjustment and verify `stock_moves` entry + updated `inventory_stocks`.
+- Employees:
+  Mark attendance and create salary record for same user/month branch context.
+- Reports:
+  Open per-report page (sales/purchases/etc.) and export page-specific PDF route.

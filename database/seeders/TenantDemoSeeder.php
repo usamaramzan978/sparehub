@@ -124,8 +124,10 @@ final class TenantDemoSeeder extends Seeder
             [
                 'category_id' => $category->id,
                 'brand_id' => $brand->id,
-                'default_tax_id' => $tax->id,
-                'default_unit_id' => $unit->id,
+                // 'default_tax_id' => $tax->id,
+                // 'default_unit_id' => $unit->id,
+                'default_tax_id' => null,
+                'default_unit_id' => null,
                 'part_number' => 'CHAIN-001',
                 'barcode' => '100000000001',
                 'name' => 'Bike Chain Set',
