@@ -171,6 +171,22 @@ it('filters reports by customer and vendor', function (): void {
     expect($response->viewData('purchases')->total())->toBe(1);
 });
 
+it('shows dedicated report pages', function (string $routeName): void {
+    authenticateReportsModuleUser();
+
+    $response = $this->get(reportsTenantRoute($routeName));
+
+    $response->assertSuccessful();
+})->with([
+    'overview' => 'reports.overview',
+    'sales' => 'reports.sales',
+    'purchases' => 'reports.purchases',
+    'sale payments' => 'reports.sale-payments',
+    'vendor payments' => 'reports.vendor-payments',
+    'receivables' => 'reports.receivables',
+    'payables' => 'reports.payables',
+]);
+
 it('exports detailed reports pdf', function (): void {
     authenticateReportsModuleUser();
 
@@ -179,6 +195,22 @@ it('exports detailed reports pdf', function (): void {
     $response->assertSuccessful();
     $response->assertHeader('content-type', 'application/pdf');
 });
+
+it('exports page specific reports pdf', function (string $routeName): void {
+    authenticateReportsModuleUser();
+
+    $response = $this->get(reportsTenantRoute($routeName));
+
+    $response->assertSuccessful();
+    $response->assertHeader('content-type', 'application/pdf');
+})->with([
+    'sales pdf' => 'reports.export.sales-pdf',
+    'purchases pdf' => 'reports.export.purchases-pdf',
+    'sale payments pdf' => 'reports.export.sale-payments-pdf',
+    'vendor payments pdf' => 'reports.export.vendor-payments-pdf',
+    'receivables pdf' => 'reports.export.receivables-pdf',
+    'payables pdf' => 'reports.export.payables-pdf',
+]);
 
 it('exports summary reports pdf', function (): void {
     authenticateReportsModuleUser();

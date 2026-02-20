@@ -14,6 +14,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('code', 30)->unique();
             $table->string('name', 100);
+            $table->string('type')->nullable();
             $table->decimal('rate', 7, 4)->default(0);
             $table->boolean('is_inclusive')->default(false);
             $table->string('status', 20)->default('active');

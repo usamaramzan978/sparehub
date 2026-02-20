@@ -50,6 +50,7 @@ final class SaleItemController extends Controller
             $payload['mechanic_id'] = null;
             $payload['mechanic_charge'] = 0;
         }
+
         $payload['mechanic_charge'] = (float) ($payload['mechanic_charge'] ?? 0);
         $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_price']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
 
@@ -92,6 +93,7 @@ final class SaleItemController extends Controller
             $payload['mechanic_id'] = null;
             $payload['mechanic_charge'] = 0;
         }
+
         $payload['mechanic_charge'] = (float) ($payload['mechanic_charge'] ?? 0);
         $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_price']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
 

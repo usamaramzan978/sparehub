@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\RecordStatus;
+use App\Enums\TaxType;
 use App\Models\Concerns\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,6 +20,7 @@ final class Tax extends Model
     protected $fillable = [
         'code',
         'name',
+        'type',
         'rate',
         'is_inclusive',
         'status',
@@ -28,5 +30,6 @@ final class Tax extends Model
         'rate' => 'decimal:4',
         'is_inclusive' => 'bool',
         'status' => RecordStatus::class,
+        'type' => TaxType::class,
     ];
 }

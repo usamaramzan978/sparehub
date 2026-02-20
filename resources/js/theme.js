@@ -34,7 +34,7 @@ const initDateRange = () => {
     flatpickr(input, {
         mode: "range",
         dateFormat: "F, d Y",
-        defaultDate: ["May, 01 2024", "May, 30 2024"],
+        defaultDate: ["May, 01 2026", "May, 30 2026"],
         disableMobile: true,
     });
 };

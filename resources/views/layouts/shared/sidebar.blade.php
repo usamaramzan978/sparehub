@@ -108,8 +108,15 @@
                                     $isUsers = request()->routeIs('tenant.users.*');
                                     $isRoles = request()->routeIs('tenant.roles.*');
                                     $isPermissions = request()->routeIs('tenant.permissions.*');
-                                    $isSystem = request()->routeIs('tenant.reports.*', 'tenant.settings.*');
                                     $isReports = request()->routeIs('tenant.reports.*');
+                                    $isReportsOverview = request()->routeIs('tenant.reports.index', 'tenant.reports.overview');
+                                    $isReportsSales = request()->routeIs('tenant.reports.sales');
+                                    $isReportsPurchases = request()->routeIs('tenant.reports.purchases');
+                                    $isReportsSalePayments = request()->routeIs('tenant.reports.sale-payments');
+                                    $isReportsVendorPayments = request()->routeIs('tenant.reports.vendor-payments');
+                                    $isReportsReceivables = request()->routeIs('tenant.reports.receivables');
+                                    $isReportsPayables = request()->routeIs('tenant.reports.payables');
+                                    $isSystem = request()->routeIs('tenant.settings.*');
                                     $isSettings = request()->routeIs('tenant.settings.*');
                                     $isProfile = request()->routeIs('tenant.profile.*');
                                 @endphp
@@ -592,6 +599,45 @@
                                         </ul>
                                     </li>
 
+                                    <li class="slide has-sub {{ $isReports ? 'active open' : '' }}">
+                                        <a href="javascript:void(0);"
+                                            class="side-menu__item {{ $isReports ? 'active' : '' }}">
+                                            <i class="ri-file-chart-line side-menu__icon"></i>
+                                            <span class="side-menu__label">{{ __('Reports') }}</span>
+                                            <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                                        </a>
+                                        <ul class="slide-menu child1 {{ $isReports ? 'open' : '' }}">
+                                            <li class="slide {{ $isReportsOverview ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.overview') }}"
+                                                    class="side-menu__item {{ $isReportsOverview ? 'active' : '' }}">{{ __('Overview') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsSales ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.sales') }}"
+                                                    class="side-menu__item {{ $isReportsSales ? 'active' : '' }}">{{ __('Sales') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsPurchases ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.purchases') }}"
+                                                    class="side-menu__item {{ $isReportsPurchases ? 'active' : '' }}">{{ __('Purchases') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsSalePayments ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.sale-payments') }}"
+                                                    class="side-menu__item {{ $isReportsSalePayments ? 'active' : '' }}">{{ __('Sale Payments') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsVendorPayments ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.vendor-payments') }}"
+                                                    class="side-menu__item {{ $isReportsVendorPayments ? 'active' : '' }}">{{ __('Vendor Payments') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsReceivables ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.receivables') }}"
+                                                    class="side-menu__item {{ $isReportsReceivables ? 'active' : '' }}">{{ __('Receivables') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsPayables ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.payables') }}"
+                                                    class="side-menu__item {{ $isReportsPayables ? 'active' : '' }}">{{ __('Payables') }}</a>
+                                            </li>
+                                        </ul>
+                                    </li>
+
                                     <li class="slide has-sub {{ $isSystem ? 'active open' : '' }}">
                                         <a href="javascript:void(0);"
                                             class="side-menu__item {{ $isSystem ? 'active' : '' }}">
@@ -603,10 +649,6 @@
                                             <li class="slide {{ $isSettings ? 'active' : '' }}">
                                                 <a href="{{ route('tenant.settings.edit') }}"
                                                     class="side-menu__item {{ $isSettings ? 'active' : '' }}">{{ __('Settings') }}</a>
-                                            </li>
-                                            <li class="slide {{ $isReports ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.reports.index') }}"
-                                                    class="side-menu__item {{ $isReports ? 'active' : '' }}">{{ __('Reports') }}</a>
                                             </li>
                                             <li class="slide"><a href="#"
                                                     class="side-menu__item">{{ __('Audit Logs') }}</a></li>

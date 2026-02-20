@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Request;
 use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
 
 final class Media extends SpatieMedia
 {
+    use HasFactory;
+
     public function getConnectionName(): ?string
     {
         return config('tenancy.database.central_connection');

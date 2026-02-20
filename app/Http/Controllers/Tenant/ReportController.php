@@ -25,7 +25,42 @@ final class ReportController extends Controller
 {
     public function index(Request $request): View
     {
+        return $this->overview($request);
+    }
+
+    public function overview(Request $request): View
+    {
         return view('tenants.reports.index', $this->buildReportData($request, true));
+    }
+
+    public function sales(Request $request): View
+    {
+        return view('tenants.reports.sales', $this->buildReportData($request, true));
+    }
+
+    public function purchases(Request $request): View
+    {
+        return view('tenants.reports.purchases', $this->buildReportData($request, true));
+    }
+
+    public function salePayments(Request $request): View
+    {
+        return view('tenants.reports.sale-payments', $this->buildReportData($request, true));
+    }
+
+    public function vendorPayments(Request $request): View
+    {
+        return view('tenants.reports.vendor-payments', $this->buildReportData($request, true));
+    }
+
+    public function receivables(Request $request): View
+    {
+        return view('tenants.reports.receivables', $this->buildReportData($request, true));
+    }
+
+    public function payables(Request $request): View
+    {
+        return view('tenants.reports.payables', $this->buildReportData($request, true));
     }
 
     public function exportPdf(Request $request): Response
@@ -38,6 +73,36 @@ final class ReportController extends Controller
             ->download('reports-'.now()->format('Ymd_His').'.pdf');
     }
 
+    public function exportSalesPdf(Request $request): Response
+    {
+        return $this->exportSingleReportPdf($request, 'sales');
+    }
+
+    public function exportPurchasesPdf(Request $request): Response
+    {
+        return $this->exportSingleReportPdf($request, 'purchases');
+    }
+
+    public function exportSalePaymentsPdf(Request $request): Response
+    {
+        return $this->exportSingleReportPdf($request, 'sale-payments');
+    }
+
+    public function exportVendorPaymentsPdf(Request $request): Response
+    {
+        return $this->exportSingleReportPdf($request, 'vendor-payments');
+    }
+
+    public function exportReceivablesPdf(Request $request): Response
+    {
+        return $this->exportSingleReportPdf($request, 'receivables');
+    }
+
+    public function exportPayablesPdf(Request $request): Response
+    {
+        return $this->exportSingleReportPdf($request, 'payables');
+    }
+
     public function exportSummaryPdf(Request $request): Response
     {
         $data = $this->buildReportData($request, false);
@@ -46,6 +111,44 @@ final class ReportController extends Controller
         return Pdf::loadView('tenants.reports.summary-pdf', $data)
             ->setPaper('a4', 'portrait')
             ->download('reports-summary-'.now()->format('Ymd_His').'.pdf');
+    }
+
+    private function exportSingleReportPdf(Request $request, string $reportKey): Response
+    {
+        $reportTitles = [
+            'sales' => 'Sales Report',
+            'purchases' => 'Purchases Report',
+            'sale-payments' => 'Sale Payments Report',
+            'vendor-payments' => 'Vendor Payments Report',
+            'receivables' => 'Receivables Report',
+            'payables' => 'Payables Report',
+        ];
+
+        $reportSlugs = [
+            'sales' => 'sales',
+            'purchases' => 'purchases',
+            'sale-payments' => 'sale-payments',
+            'vendor-payments' => 'vendor-payments',
+            'receivables' => 'receivables',
+            'payables' => 'payables',
+        ];
+
+        abort_unless(isset($reportTitles[$reportKey], $reportSlugs[$reportKey]), 404);
+
+        $data = $this->buildReportData($request, false);
+        $data['generatedAt'] = now();
+        $data['reportKey'] = $reportKey;
+        $data['reportTitle'] = $reportTitles[$reportKey];
+
+        return Pdf::loadView('tenants.reports.single-pdf', $data)
+            ->setPaper('a4', 'landscape')
+            ->download(
+                sprintf(
+                    '%s-report-%s.pdf',
+                    $reportSlugs[$reportKey],
+                    now()->format('Ymd_His')
+                )
+            );
     }
 
     /**

@@ -104,6 +104,7 @@ it('shows expenses index for current branch only', function (): void {
     $response = $this->get(expensesTenantRoute('expenses.index'));
 
     $response->assertSuccessful();
+
     expect($response->viewData('items')->total())->toBe(1);
     $response->assertSee('Lunch for mechanics');
     $response->assertDontSee('Should not show');

@@ -48,7 +48,7 @@ final class ServiceCatalog extends Model
         return $this->belongsTo(Tax::class, 'default_tax_id');
     }
 
-    public function getIsTaxableAttribute(): bool
+    protected function getIsTaxableAttribute(): bool
     {
         return $this->default_tax_id !== null;
     }

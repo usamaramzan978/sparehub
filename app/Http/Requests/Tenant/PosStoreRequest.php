@@ -77,12 +77,12 @@ final class PosStoreRequest extends FormRequest
 
                 $mechanicId = $item['mechanic_id'] ?? null;
                 if (! is_string($mechanicId) || $mechanicId === '') {
-                    $validator->errors()->add("items.$index.mechanic_id", 'Please select a mechanic when Add Mechanic is enabled.');
+                    $validator->errors()->add(sprintf('items.%s.mechanic_id', $index), 'Please select a mechanic when Add Mechanic is enabled.');
                 }
 
                 $mechanicCharge = $item['mechanic_charge'] ?? null;
                 if (! is_numeric($mechanicCharge) || (float) $mechanicCharge <= 0) {
-                    $validator->errors()->add("items.$index.mechanic_charge", 'Please enter mechanic payable greater than zero when Add Mechanic is enabled.');
+                    $validator->errors()->add(sprintf('items.%s.mechanic_charge', $index), 'Please enter mechanic payable greater than zero when Add Mechanic is enabled.');
                 }
             }
         });

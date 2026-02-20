@@ -114,7 +114,21 @@ Route::middleware([
 
         Route::controller(ReportController::class)->group(function (): void {
             Route::get('reports', 'index')->name('reports.index');
+            Route::get('reports/overview', 'overview')->name('reports.overview');
+            Route::get('reports/sales', 'sales')->name('reports.sales');
+            Route::get('reports/purchases', 'purchases')->name('reports.purchases');
+            Route::get('reports/sale-payments', 'salePayments')->name('reports.sale-payments');
+            Route::get('reports/vendor-payments', 'vendorPayments')->name('reports.vendor-payments');
+            Route::get('reports/receivables', 'receivables')->name('reports.receivables');
+            Route::get('reports/payables', 'payables')->name('reports.payables');
+
             Route::get('reports/export/pdf', 'exportPdf')->name('reports.export.pdf');
+            Route::get('reports/export/sales-pdf', 'exportSalesPdf')->name('reports.export.sales-pdf');
+            Route::get('reports/export/purchases-pdf', 'exportPurchasesPdf')->name('reports.export.purchases-pdf');
+            Route::get('reports/export/sale-payments-pdf', 'exportSalePaymentsPdf')->name('reports.export.sale-payments-pdf');
+            Route::get('reports/export/vendor-payments-pdf', 'exportVendorPaymentsPdf')->name('reports.export.vendor-payments-pdf');
+            Route::get('reports/export/receivables-pdf', 'exportReceivablesPdf')->name('reports.export.receivables-pdf');
+            Route::get('reports/export/payables-pdf', 'exportPayablesPdf')->name('reports.export.payables-pdf');
             Route::get('reports/export/summary-pdf', 'exportSummaryPdf')->name('reports.export.summary-pdf');
         });
 
