@@ -13,7 +13,8 @@
                     $isTenants = request()->routeIs('system.tenants.*');
                     $isPlans = request()->routeIs('system.plans.*');
                     $isTenantUsers = request()->routeIs('system.tenant-users.*');
-                    $isManagement = $isTenants || $isPlans || $isTenantUsers;
+                    $isSupportTickets = request()->routeIs('system.support-tickets.*');
+                    $isManagement = $isTenants || $isPlans || $isTenantUsers || $isSupportTickets;
                 @endphp
 
                 <nav class="main-menu-container nav nav-pills flex-column">
@@ -47,6 +48,11 @@
                                 <li class="slide {{ $isTenantUsers ? 'active' : '' }}">
                                     <a href="{{ route('system.tenant-users.index') }}" class="side-menu__item {{ $isTenantUsers ? 'active' : '' }}">
                                         {{ __('Tenant Users') }}
+                                    </a>
+                                </li>
+                                <li class="slide {{ $isSupportTickets ? 'active' : '' }}">
+                                    <a href="{{ route('system.support-tickets.index') }}" class="side-menu__item {{ $isSupportTickets ? 'active' : '' }}">
+                                        {{ __('Support Tickets') }}
                                     </a>
                                 </li>
                             </ul>

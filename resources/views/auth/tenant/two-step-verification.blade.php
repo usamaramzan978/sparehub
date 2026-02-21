@@ -54,8 +54,13 @@
                                                 </g>
                                             </svg> </span> </div>
                                     <p class="h4 fw-semibold mb-0 text-center">Verify Your Account</p>
-                                    <p class="mb-4 text-muted fw-normal text-center">Enter the 4 digit code sent to your
-                                        email.</p>
+                                    <p class="mb-4 text-muted fw-normal text-center">
+                                        @if ($method === \App\Enums\TwoFactorMethod::AUTHENTICATOR)
+                                            Enter the 6 digit code from your authenticator app.
+                                        @else
+                                            Enter the 6 digit code sent to your email.
+                                        @endif
+                                    </p>
                                     @if (session('status'))
                                         <div class="alert alert-success mt-3 mb-0" role="alert">
                                             {{ session('status') }}
@@ -75,20 +80,26 @@
                                         @csrf
                                         <div class="col-xl-12 mb-2">
                                             <div class="row">
-                                                <div class="col-3"> <input type="text" class="form-control text-center"
+                                                <div class="col-2"> <input type="text" class="form-control text-center"
                                                         name="code[]" id="one" maxlength="1" inputmode="numeric"
                                                         autocomplete="one-time-code">
                                                 </div>
-                                                <div class="col-3"> <input type="text" class="form-control text-center"
+                                                <div class="col-2"> <input type="text" class="form-control text-center"
                                                         name="code[]" id="two" maxlength="1" inputmode="numeric"
                                                         autocomplete="one-time-code">
                                                 </div>
-                                                <div class="col-3"> <input type="text" class="form-control text-center"
+                                                <div class="col-2"> <input type="text" class="form-control text-center"
                                                         name="code[]" id="three" maxlength="1" inputmode="numeric"
                                                         autocomplete="one-time-code">
                                                 </div>
-                                                <div class="col-3"> <input type="text" class="form-control text-center"
+                                                <div class="col-2"> <input type="text" class="form-control text-center"
                                                         name="code[]" id="four" maxlength="1" inputmode="numeric"
+                                                        autocomplete="one-time-code"> </div>
+                                                <div class="col-2"> <input type="text" class="form-control text-center"
+                                                        name="code[]" id="five" maxlength="1" inputmode="numeric"
+                                                        autocomplete="one-time-code"> </div>
+                                                <div class="col-2"> <input type="text" class="form-control text-center"
+                                                        name="code[]" id="six" maxlength="1" inputmode="numeric"
                                                         autocomplete="one-time-code"> </div>
                                             </div>
                                             <div class="form-check mt-2"> <input class="form-check-input" type="checkbox"

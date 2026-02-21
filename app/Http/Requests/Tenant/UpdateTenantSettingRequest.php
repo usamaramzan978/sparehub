@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tenant;
 
+use App\Enums\TwoFactorMethod;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class UpdateTenantSettingRequest extends FormRequest
 {
@@ -23,10 +25,14 @@ final class UpdateTenantSettingRequest extends FormRequest
             'logo' => ['nullable', 'image', 'max:2048'],
             'support_email' => ['nullable', 'email', 'max:255'],
             'support_phone' => ['nullable', 'string', 'max:50'],
-            'notify_email' => ['nullable', 'boolean'],
-            'enable_otp' => ['nullable', 'boolean'],
-            'otp_length' => ['nullable', 'integer', 'between:4,10'],
-            'otp_expiry_minutes' => ['nullable', 'integer', 'between:1,120'],
+            'timezone' => ['nullable', 'timezone:all'],
+            'email_notifications_enabled' => ['nullable', 'boolean'],
+            'two_factor_enabled' => ['nullable', 'boolean'],
+            'two_factor_method' => [
+                'nullable',
+                'required_if:two_factor_enabled,1',
+                Rule::enum(TwoFactorMethod::class),
+            ],
         ];
     }
 
@@ -39,8 +45,7 @@ final class UpdateTenantSettingRequest extends FormRequest
             'logo.image' => 'Logo must be a valid image file.',
             'logo.max' => 'Logo must be less than 2MB.',
             'support_email.email' => 'Support email must be a valid email address.',
-            'otp_length.between' => 'OTP length must be between 4 and 10 digits.',
-            'otp_expiry_minutes.between' => 'OTP expiry must be between 1 and 120 minutes.',
+            'two_factor_method.required_if' => 'Two-factor method is required when two-factor authentication is enabled.',
         ];
     }
 }

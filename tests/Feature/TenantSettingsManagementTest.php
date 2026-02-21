@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\BranchStatus;
+use App\Enums\TwoFactorMethod;
 use App\Enums\UserStatus;
 use App\Models\Branch;
 use App\Models\TenantSetting;
@@ -84,10 +85,10 @@ it('creates tenant settings on first update', function (): void {
         'company_name' => 'SpareHub',
         'support_email' => 'support@example.test',
         'support_phone' => '12345',
-        'notify_email' => '1',
-        'enable_otp' => '1',
-        'otp_length' => 6,
-        'otp_expiry_minutes' => 10,
+        'timezone' => 'Asia/Karachi',
+        'email_notifications_enabled' => '1',
+        'two_factor_enabled' => '1',
+        'two_factor_method' => TwoFactorMethod::EMAIL->value,
     ]);
 
     $response->assertRedirect(settingsTenantRoute('settings.edit'));
@@ -95,7 +96,9 @@ it('creates tenant settings on first update', function (): void {
     $settings = TenantSetting::query()->where('branch_id', $fixture['branch']->id)->firstOrFail();
     expect($settings->company_name)->toBe('SpareHub');
     expect($settings->support_email)->toBe('support@example.test');
-    expect($settings->enable_otp)->toBeTrue();
+    expect($settings->timezone)->toBe('Asia/Karachi');
+    expect($settings->two_factor_enabled)->toBeTrue();
+    expect($settings->two_factor_method)->toBe(TwoFactorMethod::EMAIL);
 });
 
 it('updates existing tenant settings row', function (): void {
@@ -122,10 +125,82 @@ it('validates settings fields', function (): void {
     $response = $this->from(settingsTenantRoute('settings.edit'))
         ->put(settingsTenantRoute('settings.update'), [
             'support_email' => 'invalid-email',
-            'otp_length' => 3,
-            'otp_expiry_minutes' => 130,
+            'two_factor_enabled' => '1',
         ]);
 
     $response->assertRedirect(settingsTenantRoute('settings.edit'));
-    $response->assertSessionHasErrors(['support_email', 'otp_length', 'otp_expiry_minutes']);
+    $response->assertSessionHasErrors(['support_email', 'two_factor_method']);
+});
+
+it('validates allowed two-factor methods', function (): void {
+    authenticateSettingsModuleUser();
+
+    $response = $this->from(settingsTenantRoute('settings.edit'))
+        ->put(settingsTenantRoute('settings.update'), [
+            'two_factor_enabled' => '1',
+            'two_factor_method' => 'sms',
+        ]);
+
+    $response->assertRedirect(settingsTenantRoute('settings.edit'));
+    $response->assertSessionHasErrors(['two_factor_method']);
+});
+
+it('validates timezone values', function (): void {
+    authenticateSettingsModuleUser();
+
+    $response = $this->from(settingsTenantRoute('settings.edit'))
+        ->put(settingsTenantRoute('settings.update'), [
+            'timezone' => 'Mars/Phobos',
+        ]);
+
+    $response->assertRedirect(settingsTenantRoute('settings.edit'));
+    $response->assertSessionHasErrors(['timezone']);
+});
+
+it('clears two-factor method when two-factor is disabled', function (): void {
+    $fixture = authenticateSettingsModuleUser();
+
+    $settings = TenantSetting::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['branch']->id,
+        'two_factor_enabled' => true,
+        'two_factor_method' => TwoFactorMethod::AUTHENTICATOR->value,
+    ]);
+
+    $response = $this->put(settingsTenantRoute('settings.update'), [
+        'two_factor_enabled' => '0',
+        'two_factor_method' => TwoFactorMethod::EMAIL->value,
+    ]);
+
+    $response->assertRedirect(settingsTenantRoute('settings.edit'));
+
+    $settings->refresh();
+    expect($settings->two_factor_enabled)->toBeFalse();
+    expect($settings->two_factor_method)->toBeNull();
+});
+
+it('shows authenticator setup qr details in settings during initial enrollment', function (): void {
+    authenticateSettingsModuleUser();
+
+    $this->put(settingsTenantRoute('settings.update'), [
+        'two_factor_enabled' => '1',
+        'two_factor_method' => TwoFactorMethod::AUTHENTICATOR->value,
+    ])->assertRedirect(settingsTenantRoute('settings.edit'));
+
+    $response = $this->get(settingsTenantRoute('settings.edit'));
+
+    $response->assertSuccessful();
+    $response->assertSee('Manual key:');
+});
+
+it('applies tenant timezone from settings on tenant requests', function (): void {
+    $fixture = authenticateSettingsModuleUser();
+
+    TenantSetting::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['branch']->id,
+        'timezone' => 'Asia/Karachi',
+    ]);
+
+    $this->get(settingsTenantRoute('settings.edit'))->assertSuccessful();
+
+    expect(config('app.timezone'))->toBe('Asia/Karachi');
 });

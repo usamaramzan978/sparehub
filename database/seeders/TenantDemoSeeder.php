@@ -63,11 +63,9 @@ final class TenantDemoSeeder extends Seeder
                 'company_name' => 'Sparehub Demo Auto Shop',
                 'support_email' => 'support@sparehub.local',
                 'support_phone' => '+92-300-0000000',
-                'enable_two_factor' => false,
-                'notify_email' => true,
-                'enable_otp' => false,
-                'otp_length' => 6,
-                'otp_expiry_minutes' => 10,
+                'two_factor_enabled' => false,
+                'two_factor_method' => null,
+                'email_notifications_enabled' => true,
             ]
         );
 

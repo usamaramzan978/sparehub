@@ -39,6 +39,7 @@ use App\Http\Controllers\Tenant\SalePaymentController;
 use App\Http\Controllers\Tenant\SalesTreeController;
 use App\Http\Controllers\Tenant\ServiceCatalogController;
 use App\Http\Controllers\Tenant\SettingController;
+use App\Http\Controllers\Tenant\SupportTicketController;
 use App\Http\Controllers\Tenant\TaxController;
 use App\Http\Controllers\Tenant\UnitController;
 use App\Http\Controllers\Tenant\UserController;
@@ -163,6 +164,12 @@ Route::middleware([
             'purchase-return-items' => PurchaseReturnItemController::class,
             'vendor-payments' => VendorPaymentController::class,
         ]);
+
+        Route::resource('support-tickets', SupportTicketController::class)
+            ->only(['index', 'create', 'store', 'show'])
+            ->parameters(['support-tickets' => 'supportTicket']);
+        Route::post('support-tickets/{supportTicket}/messages', [SupportTicketController::class, 'storeMessage'])
+            ->name('support-tickets.messages.store');
 
         Route::resource('brands', BrandController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);

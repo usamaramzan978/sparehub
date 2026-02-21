@@ -177,6 +177,25 @@ Switch branch from branch switch option in UI (session-based).
 - Profile: update your personal account details.
 - Settings: update company-level tenant settings (subject to permissions).
 
+### 10.1 Two-Factor Authentication (2FA)
+
+From `Settings`, tenant admin can enable 2FA and choose method:
+- `Email`: users receive a 6-digit code on login.
+- `Authenticator App`: users scan QR/manual key from `Settings` and then use app-generated 6-digit code on login.
+
+Notes:
+- Authenticator setup is done from `Settings` (not on login verification page).
+- Login `/two-step` page asks only for 6-digit code.
+
+### 10.2 Tenant Timezone
+
+From `Settings > Timezone`, tenant can choose its business timezone.
+
+This affects:
+- date/time display across tenant panel
+- business day boundaries for reports/operations tied to tenant requests
+- header digital clock (shown before POS button), which runs in tenant timezone
+
 ## 11. Basic Troubleshooting
 
 - Cannot access page: ask admin to grant role permission.

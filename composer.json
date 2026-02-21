@@ -10,12 +10,15 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "bacon/bacon-qr-code": "^3.0",
         "barryvdh/laravel-dompdf": "^3.1",
         "endroid/qr-code": "^6.1",
         "laravel/framework": "^12.0",
         "laravel/telescope": "^5.17",
         "laravel/tinker": "^2.10.1",
         "picqer/php-barcode-generator": "^3.2",
+        "pragmarx/google2fa": "^9.0",
+        "spatie/laravel-activitylog": "^4.11",
         "spatie/laravel-medialibrary": "^11.20",
         "spatie/laravel-permission": "^7.1",
         "stancl/tenancy": "^3.9"

@@ -2,17 +2,23 @@
 
 declare(strict_types=1);
 
+use App\Enums\BranchStatus;
 use App\Enums\LoginUserType;
 use App\Enums\TenantStatus;
+use App\Enums\TwoFactorMethod;
 use App\Enums\UserStatus;
+use App\Mail\TenantTwoStepCodeMail;
+use App\Models\Branch;
 use App\Models\LoginMap;
 use App\Models\Tenant;
+use App\Models\TenantSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Facades\Tenancy;
@@ -301,4 +307,175 @@ it('prevents nonce replay on authenticate endpoint', function (): void {
 
     $replayResponse = $this->get($signedUrl);
     $replayResponse->assertRedirect(route('tenant.login', ['tenant' => $tenant->id]));
+});
+
+it('redirects to two-step and sends email code when tenant uses email two-factor', function (): void {
+    $this->withoutMiddleware([
+        InitializeTenancyByPath::class,
+        PreventAccessFromCentralDomains::class,
+    ]);
+
+    Mail::fake();
+
+    $tenant = makeTenant('Tenant Email 2FA');
+    Tenancy::initialize($tenant);
+
+    $branch = Branch::query()->create([
+        'code' => 'MAIN',
+        'name' => 'Main Branch',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    $user = User::query()->create([
+        'branch_id' => $branch->id,
+        'name' => 'Email 2FA User',
+        'email' => 'email.2fa@test.local',
+        'password' => Hash::make('secret-pass'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+    $userId = (string) $user->id;
+
+    LoginMap::query()->create([
+        'tenant_id' => $tenant->id,
+        'type_id' => $userId,
+        'type' => LoginUserType::USER->value,
+        'email' => $user->email,
+        'password' => Hash::make('secret-pass'),
+        'status' => true,
+    ]);
+
+    TenantSetting::query()->create([
+        'branch_id' => $branch->id,
+        'two_factor_enabled' => true,
+        'two_factor_method' => TwoFactorMethod::EMAIL->value,
+    ]);
+
+    $nonce = (string) Str::uuid();
+    Cache::store('database')->put('login_nonce:'.$nonce, [
+        'type_id' => $userId,
+        'type' => LoginUserType::USER->value,
+        'remember' => false,
+        'tenant_id' => $tenant->id,
+    ], now()->addSeconds(30));
+
+    $signedUrl = URL::temporarySignedRoute(
+        'tenant.authenticate',
+        now()->addSeconds(30),
+        ['tenant' => $tenant->id, 'nonce' => $nonce]
+    );
+
+    $response = $this->get($signedUrl);
+
+    $response->assertRedirect(route('tenant.two-step', ['tenant' => $tenant->id]));
+    $response->assertSessionHas('two_step.required', true);
+    $response->assertSessionHas('two_step.method', TwoFactorMethod::EMAIL->value);
+    Mail::assertSent(TenantTwoStepCodeMail::class);
+});
+
+it('redirects to two-step and prepares authenticator challenge when tenant uses authenticator two-factor', function (): void {
+    $this->withoutMiddleware([
+        InitializeTenancyByPath::class,
+        PreventAccessFromCentralDomains::class,
+    ]);
+
+    $tenant = makeTenant('Tenant App 2FA');
+    Tenancy::initialize($tenant);
+
+    $branch = Branch::query()->create([
+        'code' => 'MAIN',
+        'name' => 'Main Branch',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    $user = User::query()->create([
+        'branch_id' => $branch->id,
+        'name' => 'App 2FA User',
+        'email' => 'app.2fa@test.local',
+        'password' => Hash::make('secret-pass'),
+        'status' => UserStatus::ACTIVE->value,
+        'two_factor_secret' => null,
+        'two_factor_verified_at' => null,
+    ]);
+    $userId = (string) $user->id;
+
+    LoginMap::query()->create([
+        'tenant_id' => $tenant->id,
+        'type_id' => $userId,
+        'type' => LoginUserType::USER->value,
+        'email' => $user->email,
+        'password' => Hash::make('secret-pass'),
+        'status' => true,
+    ]);
+
+    TenantSetting::query()->create([
+        'branch_id' => $branch->id,
+        'two_factor_enabled' => true,
+        'two_factor_method' => TwoFactorMethod::AUTHENTICATOR->value,
+    ]);
+
+    $nonce = (string) Str::uuid();
+    Cache::store('database')->put('login_nonce:'.$nonce, [
+        'type_id' => $userId,
+        'type' => LoginUserType::USER->value,
+        'remember' => false,
+        'tenant_id' => $tenant->id,
+    ], now()->addSeconds(30));
+
+    $signedUrl = URL::temporarySignedRoute(
+        'tenant.authenticate',
+        now()->addSeconds(30),
+        ['tenant' => $tenant->id, 'nonce' => $nonce]
+    );
+
+    $response = $this->get($signedUrl);
+
+    $response->assertRedirect(route('tenant.two-step', ['tenant' => $tenant->id]));
+    $response->assertSessionHas('two_step.required', true);
+    $response->assertSessionHas('two_step.method', TwoFactorMethod::AUTHENTICATOR->value);
+    $response->assertSessionHas('two_step.setup_required', true);
+
+    $user->refresh();
+    expect($user->two_factor_secret)->not->toBeNull()
+        ->and($user->two_factor_type)->toBe('app');
+});
+
+it('does not show qr details on two-step page for already enrolled authenticator users', function (): void {
+    $this->withoutMiddleware([
+        InitializeTenancyByPath::class,
+        PreventAccessFromCentralDomains::class,
+    ]);
+
+    $tenant = makeTenant('Tenant App 2FA Enrolled');
+    Tenancy::initialize($tenant);
+
+    $branch = Branch::query()->create([
+        'code' => 'MAIN',
+        'name' => 'Main Branch',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    $user = User::query()->create([
+        'branch_id' => $branch->id,
+        'name' => 'App 2FA Enrolled User',
+        'email' => 'app.2fa.enrolled@test.local',
+        'password' => Hash::make('secret-pass'),
+        'status' => UserStatus::ACTIVE->value,
+        'two_factor_type' => 'app',
+        'two_factor_secret' => 'JBSWY3DPEHPK3PXP',
+        'two_factor_verified_at' => now(),
+    ]);
+
+    test()->actingAs($user, 'user');
+    test()->withSession([
+        'two_step.required' => true,
+        'two_step.verified' => false,
+        'two_step.method' => TwoFactorMethod::AUTHENTICATOR->value,
+        'two_step.setup_required' => false,
+    ]);
+
+    $response = $this->get(route('tenant.two-step', ['tenant' => $tenant->id]));
+
+    $response->assertSuccessful();
+    $response->assertDontSee('Manual key:');
+    $response->assertDontSee('Scan this QR code');
 });

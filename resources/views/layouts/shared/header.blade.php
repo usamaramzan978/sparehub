@@ -1,6 +1,11 @@
 @php
     $branches = auth()->check() ? \App\Models\Branch::query()->active()->orderBy('name')->get() : collect();
     $currentBranchId = session('tenant.current_branch_id');
+    $tenantTimezone =
+        \App\Models\TenantSetting::query()
+            ->withoutGlobalScopes()
+            ->where('branch_id', $currentBranchId)
+            ->value('timezone') ?? config('app.timezone', 'UTC');
 @endphp
 
 <header class="app-header sticky" id="header"> <!-- Start::main-header-container -->
@@ -53,6 +58,16 @@
             @php
                 $isQuickPosActive = request()->routeIs('tenant.pos.*');
             @endphp
+
+            <li class="header-element d-none d-md-block me-2">
+                <div class="tenant-digital-clock" data-timezone="{{ $tenantTimezone }}"
+                    title="{{ __('Tenant Timezone') }}: {{ $tenantTimezone }}">
+                    <span class="tenant-digital-clock__icon"><i class="ri-time-line"></i></span>
+                    <span class="tenant-digital-clock__time" data-clock-time>--:--:--</span>
+                    <span class="tenant-digital-clock__zone">{{ $tenantTimezone }}</span>
+                </div>
+            </li>
+
             <li class="header-element d-none d-md-block">
                 <a href="{{ route('tenant.pos.index') }}"
                     class="btn btn-sm {{ $isQuickPosActive ? 'btn-primary' : 'btn-outline-primary' }} d-inline-flex align-items-center gap-1"
@@ -86,7 +101,8 @@
                                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16">
                             </line>
                             <line x1="64" y1="192" x2="56" y2="200" fill="none"
-                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16">
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="16">
                             </line>
                             <line x1="192" y1="64" x2="200" y2="56" fill="none"
                                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
@@ -107,12 +123,12 @@
                         </svg> <!-- End::header-link-icon --> </span> </a> <!-- End::header-link|layout-setting -->
             </li>
 
-            <!-- End::header-element --> <!-- Start::header-element -->
+            {{-- Notification
             <li class="header-element notifications-dropdown d-xl-block d-none dropdown">
-                <!-- Start::header-link|dropdown-toggle --> <a href="javascript:void(0);"
-                    class="header-link dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside"
-                    id="messageDropdown" aria-expanded="false"> <svg xmlns="http://www.w3.org/2000/svg"
-                        class="header-link-icon animate-bell" viewBox="0 0 256 256">
+                <a href="javascript:void(0);" class="header-link dropdown-toggle" data-bs-toggle="dropdown"
+                    data-bs-auto-close="outside" id="messageDropdown" aria-expanded="false"> <svg
+                        xmlns="http://www.w3.org/2000/svg" class="header-link-icon animate-bell"
+                        viewBox="0 0 256 256">
                         <rect width="256" height="256" fill="none"></rect>
                         <path d="M96,192a32,32,0,0,0,64,0" fill="none" stroke="currentColor"
                             stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></path>
@@ -127,25 +143,18 @@
                     </svg>
                     <span class="header-icon-pulse bg-secondary rounded pulse pulse-secondary"></span>
                 </a>
-                <!-- End::header-link|dropdown-toggle --> <!-- Start::main-header-dropdown -->
+
                 <div class="main-header-dropdown dropdown-menu dropdown-menu-end" data-popper-placement="none">
                     <div class="p-3">
-                        {{-- <div class="d-flex align-items-center justify-content-between">
-                                <p class="mb-0 fs-16">{{ __('Notifications') }}</p>
-                                    <span class="badge bg-secondary-transparent">{{ $headerUnreadCount }}
-                                        {{ __('Unread') }}</span>
-                            </div> --}}
+                        <div class="d-flex align-items-center justify-content-between">
+                            <p class="mb-0 fs-16">{{ __('Notifications') }}</p>
+                            <span class="badge bg-secondary-transparent">
+                                0
+                                {{ __('Unread') }}</span>
+                        </div>
                     </div>
                     <div class="dropdown-divider"></div>
                     <div class="px-3 pb-2">
-                        {{-- @if ($headerUnreadCount > 0)
-                                <form action="{{ route('notifications.mark-all-read') }}" method="POST"
-                                    class="mb-2">
-                                    @csrf
-                                    <button type="submit"
-                                        class="btn btn-sm btn-outline-secondary w-100">{{ __('Mark all as read') }}</button>
-                                </form>
-                            @endif --}}
                         <ul class="list-unstyled mb-0" id="header-notification-scroll1" data-simplebar="init">
                             <div class="simplebar-wrapper" style="margin: 0px;">
                                 <div class="simplebar-height-auto-observer-wrapper">
@@ -173,15 +182,13 @@
                     </div>
                     <div class="p-3 empty-header-item1 border-top">
                         <div class="d-grid text-center">
-                            {{-- <a href="{{ route('notifications.index') }}"
-                                class="text-primary text-decoration-underline">
+                            <a href="#" class="text-primary text-decoration-underline">
                                 {{ __('View All') }}<i class="ri-arrow-right-line"></i>
-                            </a> --}}
+                            </a>
                         </div>
                     </div>
-                </div> <!-- End::main-header-dropdown -->
-            </li>
-            <!-- End::header-element -->
+                </div>
+            </li> --}}
 
             <!-- Start::header-element -->
             <li class="header-element header-fullscreen">
@@ -234,9 +241,11 @@
                             </span> <span class="d-block fs-12 text-muted">{{ $headerRole ?? __('User') }}</span>
                         </div>
                     </li>
-                    <li><a class="dropdown-item d-flex align-items-center" href="{{ route('tenant.profile.show') }}"><i
+                    <li><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('tenant.profile.show') }}"><i
                                 class="ti ti-user text-primary me-2 fs-16"></i>{{ __('Profile') }}</a> </li>
-                    <li><a class="dropdown-item d-flex align-items-center" href="{{ route('tenant.settings.edit') }}"><i
+                    <li><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('tenant.settings.edit') }}"><i
                                 class="ti ti-settings text-info me-2 fs-16"></i>{{ __('Settings') }}</a> </li>
                     <li><a class="dropdown-item d-flex align-items-center" href="chat.html"><i
                                 class="ti ti-headset text-warning me-2 fs-16"></i>{{ __('Support') }}</a> </li>
@@ -273,8 +282,67 @@
         </ul> <!-- End::header-content-right -->
     </div> <!-- End::main-header-container -->
 </header>
+<style>
+    .tenant-digital-clock {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.3rem 0.65rem;
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        border-radius: 9999px;
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(56, 189, 248, 0.08));
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .tenant-digital-clock__icon {
+        color: #4f46e5;
+        line-height: 1;
+    }
+
+    .tenant-digital-clock__time {
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #0f172a;
+        letter-spacing: 0.05em;
+    }
+
+    .tenant-digital-clock__zone {
+        font-size: 0.69rem;
+        font-weight: 600;
+        color: #475569;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const clockElement = document.querySelector('.tenant-digital-clock');
+        if (!clockElement) {
+            return;
+        }
 
+        const timezone = clockElement.getAttribute('data-timezone') || 'UTC';
+        const timeElement = clockElement.querySelector('[data-clock-time]');
+        if (!timeElement) {
+            return;
+        }
+
+        const formatter = new Intl.DateTimeFormat('en-GB', {
+            timeZone: timezone,
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        });
+
+        const renderClock = () => {
+            timeElement.textContent = formatter.format(new Date());
+        };
+
+        renderClock();
+        setInterval(renderClock, 1000);
     });
 </script>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\TwoFactorMethod;
 use App\Models\Concerns\BranchScopedBySession;
 use App\Models\Concerns\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -24,19 +25,16 @@ final class TenantSetting extends Model
         'logo_path',
         'support_email',
         'support_phone',
-        'enable_two_factor',
-        'notify_email',
-        'enable_otp',
-        'otp_length',
-        'otp_expiry_minutes',
+        'timezone',
+        'two_factor_enabled',
+        'two_factor_method',
+        'email_notifications_enabled',
     ];
 
     protected $casts = [
-        'enable_two_factor' => 'bool',
-        'notify_email' => 'bool',
-        'enable_otp' => 'bool',
-        'otp_length' => 'int',
-        'otp_expiry_minutes' => 'int',
+        'two_factor_enabled' => 'bool',
+        'two_factor_method' => TwoFactorMethod::class,
+        'email_notifications_enabled' => 'bool',
     ];
 
     public function branch(): BelongsTo

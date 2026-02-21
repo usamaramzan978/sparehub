@@ -91,6 +91,7 @@
                                     $isPurchaseReturnItems = request()->routeIs('tenant.purchase-return-items.*');
                                     $isVendorPayments = request()->routeIs('tenant.vendor-payments.*');
                                     $isExpenses = request()->routeIs('tenant.expenses.*');
+                                    $isSupportTickets = request()->routeIs('tenant.support-tickets.*');
 
                                     $isAccessControl = request()->routeIs(
                                         'tenant.users.*',
@@ -525,6 +526,13 @@
                                             class="side-menu__item {{ $isExpenses ? 'active' : '' }}">
                                             <i class="ri-wallet-3-line side-menu__icon"></i>
                                             <span class="side-menu__label">{{ __('Expenses') }}</span>
+                                        </a>
+                                    </li>
+                                    <li class="slide {{ $isSupportTickets ? 'active' : '' }}">
+                                        <a href="{{ route('tenant.support-tickets.index') }}"
+                                            class="side-menu__item {{ $isSupportTickets ? 'active' : '' }}">
+                                            <i class="ri-customer-service-2-line side-menu__icon"></i>
+                                            <span class="side-menu__label">{{ __('Support Tickets') }}</span>
                                         </a>
                                     </li>
 

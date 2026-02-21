@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\Branch;
+use App\Models\TenantSetting;
 use Closure;
+use DateTimeZone;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -26,6 +28,8 @@ final class EnsureBranchSelected
                     $session->forget('tenant.current_branch_id');
                 }
             }
+
+            $this->applyTenantTimezone((string) $session->get('tenant.current_branch_id'));
         }
 
         return $next($request);
@@ -49,5 +53,24 @@ final class EnsureBranchSelected
             ->active()
             ->orderBy('name')
             ->value('id');
+    }
+
+    private function applyTenantTimezone(string $branchId): void
+    {
+        if ($branchId === '') {
+            return;
+        }
+
+        $timezone = TenantSetting::query()
+            ->withoutGlobalScope('session_branch')
+            ->where('branch_id', $branchId)
+            ->value('timezone');
+
+        if (! is_string($timezone) || ! in_array($timezone, DateTimeZone::listIdentifiers(), true)) {
+            return;
+        }
+
+        config(['app.timezone' => $timezone]);
+        date_default_timezone_set($timezone);
     }
 }

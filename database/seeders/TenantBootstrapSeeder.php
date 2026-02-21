@@ -547,11 +547,10 @@ final class TenantBootstrapSeeder extends Seeder
                     'company_name' => 'SpareHub Bike POS - '.$branch->name,
                     'support_email' => 'support@sparehub.pk',
                     'support_phone' => '0300-0000000',
-                    'enable_two_factor' => false,
-                    'notify_email' => true,
-                    'enable_otp' => false,
-                    'otp_length' => 6,
-                    'otp_expiry_minutes' => 10,
+                    'two_factor_enabled' => false,
+                    'two_factor_method' => null,
+                    'email_notifications_enabled' => false,
+                    'timezone' => 'Asia/Karachi',
                 ]
             );
         });

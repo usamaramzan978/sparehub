@@ -111,7 +111,7 @@ This document describes a secure multi-tenant authentication system implementati
 
 **Location**: `App\Http\Controllers\Auth\Tenant\AuthController`
 
-**Method**: `authenticateTenant(Request $request)`
+**Method**: `authenticateTenant(Request $request, IssueTwoStepCodeAction $twoStep)`
 
 **Security Checks**:
 1. ✅ Validates signed URL signature
@@ -122,8 +122,26 @@ This document describes a secure multi-tenant authentication system implementati
 6. ✅ Verifies user's LoginMap status is active
 7. ✅ Verifies user account status is active
 8. ✅ Regenerates session to prevent fixation
+9. ✅ Applies tenant 2FA policy (email/authenticator) before dashboard redirect
 
 **Route**: `GET /firm/{tenant}/authenticate`
+
+### 4. Tenant 2FA integration (implemented)
+
+Tenant authentication now includes method-based two-step verification:
+- Configuration source: `tenant_settings`
+  - `two_factor_enabled`
+  - `two_factor_method` (`email`, `authenticator`)
+- Verification route: `POST /firm/{tenant}/two-step`
+
+Behavior:
+- If 2FA disabled: go directly to dashboard after tenant authentication.
+- If 2FA method is `email`: send 6-digit email code and require `/two-step` verification.
+- If 2FA method is `authenticator`: require 6-digit app code at `/two-step`.
+
+Enrollment model:
+- Authenticator QR/manual key is shown in tenant `Settings` during enrollment/setup.
+- `/two-step` page is verification-only (does not display enrollment secret material).
 
 ---
 
@@ -737,13 +755,12 @@ Route::middleware([
 ### Possible Improvements
 
 1. **SSO Integration**: Add SAML/OAuth support for enterprise tenants
-2. **2FA Support**: Add two-factor authentication per tenant
-3. **Remember Device**: Remember trusted devices to skip tenant picker
-4. **Last Used Tenant**: Auto-select user's most recently used tenant
-5. **Tenant Favorites**: Let users star/favorite specific tenants
-6. **API Token Auth**: Generate tenant-scoped API tokens
-7. **Audit Logging**: Track all authentication attempts
-8. **Account Linking**: Let users merge accounts across tenants
+2. **Remember Device**: Remember trusted devices to reduce repeated 2FA prompts
+3. **Last Used Tenant**: Auto-select user's most recently used tenant
+4. **Tenant Favorites**: Let users star/favorite specific tenants
+5. **API Token Auth**: Generate tenant-scoped API tokens
+6. **Audit Logging**: Track all authentication attempts
+7. **Account Linking**: Let users merge accounts across tenants
 
 ---
 
@@ -763,10 +780,10 @@ The implementation balances security, usability, and maintainability while handl
 
 ## Document Version
 
-- **Version**: 1.0
-- **Last Updated**: February 18, 2026
+- **Version**: 1.1
+- **Last Updated**: February 21, 2026
 - **Laravel Version**: 12.x
-- **Stancl Tenancy Version**: 4.x
+- **Stancl Tenancy Version**: 3.x
 
 ---
 

@@ -32,7 +32,6 @@
                             <th>{{ __('Category') }}</th>
                             <th>{{ __('Base Price') }}</th>
                             <th>{{ __('Duration (Min)') }}</th>
-                            <th>{{ __('Taxable') }}</th>
                             <th>{{ __('Status') }}</th>
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>

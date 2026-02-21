@@ -103,11 +103,13 @@
                         <p class="text-muted small mb-3">{{ __('Choose how the system sends operational alerts.') }}</p>
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <input type="hidden" name="notify_email" value="0">
+                                <input type="hidden" name="email_notifications_enabled" value="0">
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="notify_email"
-                                        name="notify_email" value="1" @checked(old('notify_email', $setting?->notify_email ?? true))>
-                                    <label class="form-check-label" for="notify_email">{{ __('Email Alerts') }}</label>
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        id="email_notifications_enabled" name="email_notifications_enabled" value="1"
+                                        @checked(old('email_notifications_enabled', $setting?->email_notifications_enabled ?? true))>
+                                    <label class="form-check-label"
+                                        for="email_notifications_enabled">{{ __('Email Alerts') }}</label>
                                 </div>
                             </div>
                         </div>
@@ -119,74 +121,69 @@
                         <h6 class="mb-0">{{ __('System Settings') }}</h6>
                     </div>
                     <div class="card-body">
-                        <p class="text-muted small mb-3">{{ __('OTP and session related system controls.') }}</p>
-                        @if ($enableLocaleTimezone)
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label" for="locale">{{ __('Locale') }}</label>
-                                    <select name="locale" id="locale"
-                                        class="form-select singl-select-2 @error('locale') is-invalid @enderror">
-                                        <option value="">
-                                            {{ __('Use system default') }}
-                                            ({{ config('tenancy.ui.default_locale', config('app.locale')) }})
-                                        </option>
-                                        @foreach ($locales as $code => $label)
-                                            <option value="{{ $code }}" @selected(old('locale', $setting?->locale) === $code)>
-                                                {{ $label }} ({{ $code }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('locale')
-                                        <span class="invalid-feedback d-block">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label" for="timezone">{{ __('Timezone') }}</label>
-                                    <select name="timezone" id="timezone"
-                                        class="form-select singl-select-2 @error('timezone') is-invalid @enderror">
-                                        <option value="">
-                                            {{ __('Use system default') }}
-                                            ({{ config('tenancy.ui.default_timezone', config('app.timezone')) }})
-                                        </option>
-                                        @foreach ($timezones as $timezone)
-                                            <option value="{{ $timezone }}" @selected(old('timezone', $setting?->timezone) === $timezone)>
-                                                {{ $timezone }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('timezone')
-                                        <span class="invalid-feedback d-block">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                        @endif
+                        <p class="text-muted small mb-3">{{ __('Security related system controls.') }}</p>
                         <div class="row">
                             <div class="col-md-4 mb-3 d-flex align-items-end">
-                                <input type="hidden" name="enable_otp" value="0">
+                                <input type="hidden" name="two_factor_enabled" value="0">
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="enable_otp"
-                                        name="enable_otp" value="1" @checked(old('enable_otp', $setting?->enable_otp ?? false))>
-                                    <label class="form-check-label" for="enable_otp">{{ __('Enable OTP') }}</label>
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        id="two_factor_enabled" name="two_factor_enabled" value="1"
+                                        @checked(old('two_factor_enabled', $setting?->two_factor_enabled ?? false))>
+                                    <label class="form-check-label"
+                                        for="two_factor_enabled">{{ __('Enable Two-Factor Authentication') }}</label>
                                 </div>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label" for="otp_length">{{ __('OTP Length') }}</label>
-                                <input type="number" name="otp_length" id="otp_length"
-                                    class="form-control @error('otp_length') is-invalid @enderror"
-                                    value="{{ old('otp_length', $setting?->otp_length ?? 6) }}" min="4"
-                                    max="10">
-                                @error('otp_length')
+                                <label class="form-label" for="two_factor_method">{{ __('Two-Factor Method') }}</label>
+                                <select name="two_factor_method" id="two_factor_method"
+                                    class="form-select @error('two_factor_method') is-invalid @enderror">
+                                    <option value="">{{ __('Select a method') }}</option>
+                                    <option value="email" @selected(old('two_factor_method', $setting?->two_factor_method?->value) === 'email')>
+                                        {{ __('Email') }}
+                                    </option>
+                                    <option value="authenticator" @selected(old('two_factor_method', $setting?->two_factor_method?->value) === 'authenticator')>
+                                        {{ __('Authenticator App') }}
+                                    </option>
+                                </select>
+                                @error('two_factor_method')
                                     <span class="invalid-feedback d-block">{{ $message }}</span>
                                 @enderror
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label"
-                                    for="otp_expiry_minutes">{{ __('OTP Expiry (minutes)') }}</label>
-                                <input type="number" name="otp_expiry_minutes" id="otp_expiry_minutes"
-                                    class="form-control @error('otp_expiry_minutes') is-invalid @enderror"
-                                    value="{{ old('otp_expiry_minutes', $setting?->otp_expiry_minutes ?? 10) }}"
-                                    min="1" max="120">
-                                @error('otp_expiry_minutes')
+                        </div>
+                        @if ($showAuthenticatorSetup)
+                            <div class="alert alert-info mt-2 mb-0">
+                                <p class="mb-2">{{ __('Scan this QR code in Google Authenticator (or any TOTP app).') }}
+                                </p>
+                                <div class="d-flex justify-content-center mb-2">{!! $authenticatorQrSvg !!}</div>
+                                <p class="mb-0 text-break">
+                                    <strong>{{ __('Manual key:') }}</strong> {{ $authenticatorSecret }}
+                                </p>
+                                <p class="mb-0 mt-2">
+                                    {{ __('After scanning, log out and sign in to verify with the 6-digit authenticator code.') }}
+                                </p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="card custom-card border-0 shadow-sm h-100" id="timezone-settings">
+                    <div class="card-header">
+                        <h6 class="mb-0">{{ __('Timezone') }}</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">{{ __('Choose how the system sets time') }}</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="timezone">{{ __('Timezone') }}</label>
+                                <select name="timezone" id="timezone"
+                                    class="form-select singl-select-2 @error('timezone') is-invalid @enderror">
+                                    @foreach ($timezones as $timezone)
+                                        <option value="{{ $timezone }}" @selected(old('timezone', $setting?->timezone) === $timezone)>
+                                            {{ $timezone }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('timezone')
                                     <span class="invalid-feedback d-block">{{ $message }}</span>
                                 @enderror
                             </div>

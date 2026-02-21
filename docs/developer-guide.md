@@ -66,6 +66,30 @@ Files:
 - `app/Http/Controllers/System/TenantController.php`
 - `app/Http/Controllers/System/TenantUserController.php`
 
+### 3.3 Tenant two-factor authentication (implemented)
+
+Tenant login supports method-based 2FA using tenant settings:
+- `two_factor_enabled` (boolean)
+- `two_factor_method` (`email` or `authenticator`)
+
+Flow summary:
+1. User is authenticated through signed tenant handoff (`tenant.authenticate`).
+2. Tenant branch settings are read from `tenant_settings`.
+3. If 2FA is disabled: user enters dashboard directly.
+4. If method is `email`: a 6-digit code is emailed and user is redirected to `/firm/{tenant}/two-step`.
+5. If method is `authenticator`: user is redirected to `/firm/{tenant}/two-step` and enters a 6-digit app code.
+
+Important UX behavior:
+- Authenticator enrollment (QR + manual key) is shown from tenant `Settings`, not from `/two-step`.
+- `/two-step` is code-entry only.
+
+Files:
+- `app/Actions/Auth/Tenant/IssueTwoStepCodeAction.php`
+- `app/Actions/Auth/Tenant/VerifyTwoStepCodeAction.php`
+- `app/Http/Controllers/Auth/Tenant/AuthController.php`
+- `resources/views/tenants/settings/edit.blade.php`
+- `resources/views/auth/tenant/two-step-verification.blade.php`
+
 ## 4. Branch Scoping Logic
 
 Branch scoping is session-driven and applied globally through `BranchScopedBySession` trait.
@@ -74,6 +98,7 @@ Behavior:
 - On tenant routes, models using trait auto-filter by `session('tenant.current_branch_id')`.
 - On save, if model has fillable `branch_id` and it is empty, branch is auto-injected.
 - Scope is disabled for console context.
+- Middleware also applies tenant timezone from `tenant_settings.timezone` using current branch session.
 
 Files:
 - `app/Models/Concerns/BranchScopedBySession.php`

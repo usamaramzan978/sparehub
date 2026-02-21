@@ -22,13 +22,11 @@ return new class extends Migration
             $table->string('support_email')->nullable();
             $table->string('support_phone', 50)->nullable();
 
-            $table->boolean('enable_two_factor')->default(false);
+            $table->boolean('two_factor_enabled')->default(false);
+            $table->string('two_factor_method')->nullable();
 
-            $table->boolean('notify_email')->default(true);
-
-            $table->boolean('enable_otp')->default(false);
-            $table->unsignedTinyInteger('otp_length')->default(6);
-            $table->unsignedSmallInteger('otp_expiry_minutes')->default(10);
+            $table->boolean('email_notifications_enabled')->default(true);
+            $table->string('timezone')->default('UTC');
 
             $table->timestamps();
 

@@ -12,6 +12,7 @@ use App\Actions\Auth\Tenant\RegisterAction;
 use App\Actions\Auth\Tenant\ResetPasswordAction;
 use App\Actions\Auth\Tenant\VerifyTwoStepCodeAction;
 use App\Enums\LoginUserType;
+use App\Enums\TwoFactorMethod;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\Tenant\ForgotPasswordRequest;
@@ -20,6 +21,7 @@ use App\Http\Requests\Auth\Tenant\RegisterRequest;
 use App\Http\Requests\Auth\Tenant\ResetPasswordRequest;
 use App\Http\Requests\Auth\Tenant\TwoStepVerificationRequest;
 use App\Models\LoginMap;
+use App\Models\TenantSetting;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,6 +31,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use PragmaRX\Google2FA\Google2FA;
 use Stancl\Tenancy\Facades\Tenancy;
 
 final class AuthController extends Controller
@@ -62,7 +65,11 @@ final class AuthController extends Controller
 
     public function showTwoStep(): View
     {
-        return view('auth.tenant.two-step-verification');
+        $method = TwoFactorMethod::tryFrom((string) session('two_step.method')) ?? TwoFactorMethod::EMAIL;
+
+        return view('auth.tenant.two-step-verification', [
+            'method' => $method,
+        ]);
     }
 
     public function login(LoginRequest $request, LoginAction $action): RedirectResponse
@@ -134,7 +141,7 @@ final class AuthController extends Controller
         );
     }
 
-    public function authenticateTenant(Request $request): RedirectResponse
+    public function authenticateTenant(Request $request, IssueTwoStepCodeAction $twoStep): RedirectResponse
     {
         abort_unless($request->hasValidSignature(), 403, 'Link expired or invalid.');
 
@@ -193,7 +200,42 @@ final class AuthController extends Controller
         // ✅ Store tenant in session for later redirect detection
         session(['user_tenant_id' => $tenantId]);
 
-        return to_route('tenant.dashboard', ['tenant' => $tenantId]);
+        $settings = TenantSetting::query()
+            ->where('branch_id', $user->branch_id)
+            ->first();
+
+        if (! $settings?->two_factor_enabled) {
+            $request->session()->put('two_step.required', false);
+            $request->session()->put('two_step.verified', true);
+            $request->session()->forget(['two_step.method', 'two_step.setup_required', 'two_step.code', 'two_step.expires_at']);
+
+            return to_route('tenant.dashboard', ['tenant' => $tenantId]);
+        }
+
+        $method = $settings->two_factor_method;
+
+        if ($method === TwoFactorMethod::AUTHENTICATOR) {
+            if (! $user->two_factor_secret) {
+                $google2fa = new Google2FA();
+                $user->forceFill([
+                    'two_factor_type' => 'app',
+                    'two_factor_secret' => $google2fa->generateSecretKey(),
+                    'two_factor_verified_at' => null,
+                ])->save();
+            }
+
+            $request->session()->put('two_step.required', true);
+            $request->session()->put('two_step.verified', false);
+            $request->session()->put('two_step.method', TwoFactorMethod::AUTHENTICATOR->value);
+            $request->session()->put('two_step.setup_required', $user->two_factor_verified_at === null);
+            $request->session()->forget(['two_step.code', 'two_step.expires_at']);
+
+            return to_route('tenant.two-step', ['tenant' => $tenantId]);
+        }
+
+        $twoStep->handle($request->session(), $user);
+
+        return to_route('tenant.two-step', ['tenant' => $tenantId]);
     }
 
     public function logout(LogoutAction $action): RedirectResponse
@@ -239,7 +281,9 @@ final class AuthController extends Controller
 
     public function verifyTwoStep(TwoStepVerificationRequest $request, VerifyTwoStepCodeAction $action): RedirectResponse
     {
-        $action->handle($request->session(), $request->input('code', []));
+        /** @var User $user */
+        $user = $request->user('user');
+        $action->handle($request->session(), $request->input('code', []), $user);
 
         return redirect()->intended('/');
     }
