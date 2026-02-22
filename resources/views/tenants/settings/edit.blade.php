@@ -150,19 +150,11 @@
                                 @enderror
                             </div>
                         </div>
-                        @if ($showAuthenticatorSetup)
-                            <div class="alert alert-info mt-2 mb-0">
-                                <p class="mb-2">{{ __('Scan this QR code in Google Authenticator (or any TOTP app).') }}
-                                </p>
-                                <div class="d-flex justify-content-center mb-2">{!! $authenticatorQrSvg !!}</div>
-                                <p class="mb-0 text-break">
-                                    <strong>{{ __('Manual key:') }}</strong> {{ $authenticatorSecret }}
-                                </p>
-                                <p class="mb-0 mt-2">
-                                    {{ __('After scanning, log out and sign in to verify with the 6-digit authenticator code.') }}
-                                </p>
-                            </div>
-                        @endif
+                        <div class="alert alert-info mt-2 mb-0">
+                            {{ __('Authenticator enrollment and recovery codes are managed in Profile Security.') }}
+                            <a href="{{ route('tenant.profile.security.show') }}"
+                                class="fw-semibold text-decoration-underline">{{ __('Open Security Page') }}</a>
+                        </div>
                     </div>
                 </div>
 

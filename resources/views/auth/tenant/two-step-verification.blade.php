@@ -113,6 +113,23 @@
                                             <button type="submit" class="btn btn-primary btn-lg">Verify</button>
                                         </div>
                                     </form>
+                                    @if ($method === \App\Enums\TwoFactorMethod::AUTHENTICATOR)
+                                        <div class="text-center my-3 text-muted fw-semibold">{{ __('OR') }}</div>
+                                        <form method="POST" action="{{ route('tenant.two-step.verify') }}"
+                                            class="row gy-2">
+                                            @csrf
+                                            <div class="col-12">
+                                                <label class="form-label">{{ __('Use Backup Code') }}</label>
+                                                <input type="text" name="backup_code" class="form-control"
+                                                    placeholder="AB12-CD34" autocomplete="one-time-code">
+                                                <small class="text-muted">{{ __('Format is case-insensitive.') }}</small>
+                                            </div>
+                                            <div class="col-12 d-grid">
+                                                <button type="submit"
+                                                    class="btn btn-outline-primary">{{ __('Verify With Backup Code') }}</button>
+                                            </div>
+                                        </form>
+                                    @endif
                                     <div class="text-center">
                                         <p class="fs-12 text-danger mt-3 mb-0"><sup><i class="ri-asterisk"></i></sup>Don't
                                             share the verification code with anyone !</p>

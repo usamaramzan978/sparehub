@@ -16,11 +16,13 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\ServiceCatalog;
 use App\Models\User;
+use App\Support\AuditTimelineLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 final class SaleController extends Controller
 {
@@ -63,11 +65,28 @@ final class SaleController extends Controller
 
         $payload['branch_id'] = $branchId;
         $payload['created_by'] = auth('user')->id();
+        $createdSale = null;
 
-        Sale::query()->getConnection()->transaction(function () use ($payload, $items, $branchId): void {
+        Sale::query()->getConnection()->transaction(function () use ($payload, $items, $branchId, &$createdSale): void {
             $sale = Sale::query()->create($payload);
             $this->syncSaleItems($sale, $items, $branchId);
+            $createdSale = $sale;
         });
+
+        if ($createdSale instanceof Sale) {
+            AuditTimelineLogger::log(
+                event: 'sale_created',
+                description: 'Sale invoice created.',
+                causer: Auth::guard('user')->user(),
+                subject: $createdSale,
+                properties: [
+                    'sale_id' => (string) $createdSale->id,
+                    'invoice_no' => $createdSale->invoice_no,
+                    'grand_total' => (float) $createdSale->grand_total,
+                    'status' => (string) $createdSale->status,
+                ],
+            );
+        }
 
         return to_route('tenant.sales.index')->with('status', 'Created.');
     }
@@ -136,14 +155,39 @@ final class SaleController extends Controller
             $this->syncSaleItems($sale, $items, $branchId);
         });
 
+        AuditTimelineLogger::log(
+            event: 'sale_updated',
+            description: 'Sale invoice updated.',
+            causer: Auth::guard('user')->user(),
+            subject: $sale,
+            properties: [
+                'sale_id' => (string) $sale->id,
+                'invoice_no' => $sale->invoice_no,
+                'changed_attributes' => array_keys($payload),
+            ],
+        );
+
         return to_route('tenant.sales.index')->with('status', 'Updated.');
     }
 
     public function destroy(Sale $sale): RedirectResponse
     {
         $this->ensureSaleInCurrentBranch($sale);
+        $snapshot = [
+            'sale_id' => (string) $sale->id,
+            'invoice_no' => $sale->invoice_no,
+            'grand_total' => (float) $sale->grand_total,
+        ];
         $this->syncStockForSaleItems($sale->items()->get(), $sale->branch_id, reverse: true);
         $sale->delete();
+
+        AuditTimelineLogger::log(
+            event: 'sale_deleted',
+            description: 'Sale invoice deleted.',
+            causer: Auth::guard('user')->user(),
+            subject: $sale,
+            properties: $snapshot,
+        );
 
         return to_route('tenant.sales.index')->with('status', 'Deleted.');
     }

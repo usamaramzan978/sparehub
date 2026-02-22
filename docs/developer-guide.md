@@ -68,26 +68,63 @@ Files:
 
 ### 3.3 Tenant two-factor authentication (implemented)
 
-Tenant login supports method-based 2FA using tenant settings:
-- `two_factor_enabled` (boolean)
-- `two_factor_method` (`email` or `authenticator`)
+#### Source of truth (table/column ownership)
 
-Flow summary:
+2FA is intentionally split between tenant policy and user enrollment state.
+
+1. Policy scope (tenant branch-level):
+- Table: `tenant_settings` (tenant DB)
+- Columns:
+  - `two_factor_enabled`
+  - `two_factor_method` (`email` | `authenticator`)
+
+2. Enrollment scope (tenant user-level):
+- Table: `users` (tenant DB)
+- Columns:
+  - `two_factor_type` (currently `app` for authenticator)
+  - `two_factor_secret` (TOTP secret)
+  - `two_factor_verified_at` (enrollment verification timestamp)
+  - `two_factor_recovery_codes` (hashed backup codes)
+
+3. Challenge/session scope (temporary only):
+- Session keys:
+  - `two_step.required`
+  - `two_step.verified`
+  - `two_step.method`
+  - `two_step.code`
+  - `two_step.expires_at`
+  - `two_step.setup_required`
+  - `two_step.enrollment_required`
+
+4. Login telemetry/audit:
+- Table: `login_attempts` (central DB)
+- Used for login attempt tracking and dashboard health metrics, not for 2FA policy.
+
+Important distinction:
+- Tenant 2FA uses tenant `users` + tenant `tenant_settings`.
+- Central `system_users` table is for system panel auth and is not tenant-user 2FA state.
+
+#### Runtime flow
+
 1. User is authenticated through signed tenant handoff (`tenant.authenticate`).
-2. Tenant branch settings are read from `tenant_settings`.
-3. If 2FA is disabled: user enters dashboard directly.
-4. If method is `email`: a 6-digit code is emailed and user is redirected to `/firm/{tenant}/two-step`.
-5. If method is `authenticator`: user is redirected to `/firm/{tenant}/two-step` and enters a 6-digit app code.
+2. Branch policy is loaded from tenant `tenant_settings`.
+3. If 2FA disabled: user enters dashboard directly.
+4. If method is `email`: code is sent and user verifies on `/firm/{tenant}/two-step`.
+5. If method is `authenticator` and user is not enrolled/verified:
+   - user is redirected to `Profile > Security` enrollment page.
+6. If method is `authenticator` and user is enrolled/verified:
+   - user verifies on `/firm/{tenant}/two-step` using app code or backup code.
 
-Important UX behavior:
-- Authenticator enrollment (QR + manual key) is shown from tenant `Settings`, not from `/two-step`.
-- `/two-step` is code-entry only.
+UX behavior:
+- Enrollment QR/manual key is shown only on Profile Security enrollment/reset flow.
+- `/two-step` remains verification-only.
 
 Files:
+- `app/Http/Controllers/Auth/Tenant/AuthController.php`
 - `app/Actions/Auth/Tenant/IssueTwoStepCodeAction.php`
 - `app/Actions/Auth/Tenant/VerifyTwoStepCodeAction.php`
-- `app/Http/Controllers/Auth/Tenant/AuthController.php`
-- `resources/views/tenants/settings/edit.blade.php`
+- `app/Http/Controllers/Tenant/ProfileController.php`
+- `resources/views/tenants/profile/security.blade.php`
 - `resources/views/auth/tenant/two-step-verification.blade.php`
 
 ## 4. Branch Scoping Logic
@@ -133,6 +170,60 @@ High-level groups from `routes/tenant.php` and tenant sidebar:
 
 Tenant sidebar:
 - `resources/views/layouts/shared/sidebar.blade.php`
+
+### 5.3 Recent Activity module (`/firm/{tenant}/activity-timeline`)
+
+Recent Activity is available under:
+- Sidebar: `System -> Recent Activity`
+- Route: `tenant.activity-timeline.index`
+- Controller: `app/Http/Controllers/Tenant/ActivityTimelineController.php`
+- View: `resources/views/tenants/activity-timeline/index.blade.php`
+
+Data source:
+- Reads tenant audit events from tenant DB table `tenant_activity_timelines`
+- Each tenant only reads its own DB, so no cross-tenant filter is required.
+
+Covered event/module types in timeline:
+- Authentication:
+  - login success (`auth_login_succeeded`)
+  - logout (`auth_logout`)
+  - failed login attempts (`auth_failure`)
+- Sales / POS:
+  - POS sale create (`pos_sale_created`)
+  - sale create/update/delete (`sale_created`, `sale_updated`, `sale_deleted`)
+  - sale payment record/update/delete (`sale_payment_recorded`, `sale_payment_updated`, `sale_payment_deleted`)
+- Purchases:
+  - purchase create/update/delete (`purchase_created`, `purchase_updated`, `purchase_deleted`)
+  - vendor payment record/update/delete (`vendor_payment_recorded`, `vendor_payment_updated`, `vendor_payment_deleted`)
+  - purchase return create/update/delete (`purchase_return_created`, `purchase_return_updated`, `purchase_return_deleted`)
+- Workshop:
+  - job card create/update/delete (`job_card_created`, `job_card_updated`, `job_card_deleted`)
+- Expenses:
+  - expense create/update/delete (`expense_created`, `expense_updated`, `expense_deleted`)
+- Inventory:
+  - stock adjustment (`inventory_stock_adjusted`)
+- Branch context:
+  - branch switch (`branch_switched`)
+  - branch create/update/delete (`branch_created`, `branch_updated`, `branch_deleted`)
+- Tenant settings:
+  - settings updates (`settings_updated`)
+  - 2FA policy changes (`two_factor_policy_changed`)
+- Profile Security / 2FA:
+  - email OTP issued (`two_step_code_issued`)
+  - challenge required (`two_step_challenge_required`)
+  - enrollment required (`two_factor_enrollment_required`)
+  - verification success/failure (`two_step_verified`, `two_step_verification_failed`)
+  - enrollment started (`two_factor_enrollment_started`)
+  - enrollment verified (`two_factor_enrollment_verified`)
+  - authenticator secret reset (`two_factor_secret_reset`)
+  - backup codes regenerated (`two_factor_backup_codes_regenerated`)
+- User/Profile management:
+  - profile update (`profile_updated`)
+  - user create/update/delete (`user_created`, `user_updated`, `user_deleted`)
+
+Current scope note:
+- Timeline currently focuses on security + context-critical events.
+- Sales/Purchases/Inventory operational events can be added later using the same tenant timeline pattern.
 
 ## 6. Data Model: Core Dependencies
 

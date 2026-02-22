@@ -1,11 +1,10 @@
 @php
-    $branches = auth()->check() ? \App\Models\Branch::query()->active()->orderBy('name')->get() : collect();
-    $currentBranchId = session('tenant.current_branch_id');
-    $tenantTimezone =
-        \App\Models\TenantSetting::query()
-            ->withoutGlobalScopes()
-            ->where('branch_id', $currentBranchId)
-            ->value('timezone') ?? config('app.timezone', 'UTC');
+    $branches = $headerBranches ?? collect();
+    $currentBranchId = $headerCurrentBranchId ?? session('tenant.current_branch_id');
+    $currentBranchName = $headerCurrentBranchName ?? '';
+    $tenantTimezone = $headerTenantTimezone ?? config('app.timezone', 'UTC');
+    $displayName = $headerDisplayName ?? __('User');
+    $displayRole = $headerRole ?? __('User');
 @endphp
 
 <header class="app-header sticky" id="header"> <!-- Start::main-header-container -->
@@ -61,7 +60,7 @@
 
             <li class="header-element d-none d-md-block me-2">
                 <div class="tenant-digital-clock" data-timezone="{{ $tenantTimezone }}"
-                    title="{{ __('Tenant Timezone') }}: {{ $tenantTimezone }}">
+                    title="{{ __('Tenant Timezone') }}: {{ $tenantTimezone }}{{ $currentBranchName !== '' ? ' | ' . __('Branch') . ': ' . $currentBranchName : '' }}">
                     <span class="tenant-digital-clock__icon"><i class="ri-time-line"></i></span>
                     <span class="tenant-digital-clock__time" data-clock-time>--:--:--</span>
                     <span class="tenant-digital-clock__zone">{{ $tenantTimezone }}</span>
@@ -230,20 +229,23 @@
                     <div class="d-flex align-items-center">
                         <div class="me-xl-2 me-0"> <img src="../assets/images/faces/2.jpg" alt="img"
                                 class="avatar avatar-sm avatar-rounded"> </div>
-                        <div class="d-xl-block d-none lh-1"> <span class="fw-medium lh-1">{{ 'TEST' }}</span>
+                        <div class="d-xl-block d-none lh-1"> <span class="fw-medium lh-1">{{ $displayName }}</span>
                         </div>
                     </div>
                 </a> <!-- End::header-link|dropdown-toggle -->
                 <ul class="main-header-dropdown dropdown-menu pt-0 overflow-hidden header-profile-dropdown dropdown-menu-end"
                     aria-labelledby="mainHeaderProfile">
-                    <li>
-                        <div class="py-2 px-3 text-center"> <span class="fw-semibold"> {{ 'TEST' }}
-                            </span> <span class="d-block fs-12 text-muted">{{ $headerRole ?? __('User') }}</span>
+                    <li class="border-bottom">
+                        <div class="py-2 px-3 text-center"> <span class="fw-semibold"> {{ $displayName }}
+                            </span> <span class="d-block fs-12 text-muted">{{ $displayRole }}</span>
                         </div>
                     </li>
                     <li><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('tenant.profile.show') }}"><i
                                 class="ti ti-user text-primary me-2 fs-16"></i>{{ __('Profile') }}</a> </li>
+                    <li><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('tenant.profile.security.show') }}"><i
+                                class="ti ti-shield-lock text-warning me-2 fs-16"></i>{{ __('Security') }}</a> </li>
                     <li><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('tenant.settings.edit') }}"><i
                                 class="ti ti-settings text-info me-2 fs-16"></i>{{ __('Settings') }}</a> </li>

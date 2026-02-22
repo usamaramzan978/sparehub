@@ -16,11 +16,13 @@ use App\Models\StockMove;
 use App\Models\Tax;
 use App\Models\Vendor;
 use App\Models\Warehouse;
+use App\Support\AuditTimelineLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 final class PurchaseController extends Controller
 {
@@ -64,11 +66,28 @@ final class PurchaseController extends Controller
 
         $payload['branch_id'] = $branchId;
         $payload['created_by'] = auth('user')->id();
+        $createdPurchase = null;
 
-        Purchase::query()->getConnection()->transaction(function () use ($payload, $items, $branchId): void {
+        Purchase::query()->getConnection()->transaction(function () use ($payload, $items, $branchId, &$createdPurchase): void {
             $purchase = Purchase::query()->create($payload);
             $this->syncPurchaseItems($purchase, $items, $branchId);
+            $createdPurchase = $purchase;
         });
+
+        if ($createdPurchase instanceof Purchase) {
+            AuditTimelineLogger::log(
+                event: 'purchase_created',
+                description: 'Purchase invoice created.',
+                causer: Auth::guard('user')->user(),
+                subject: $createdPurchase,
+                properties: [
+                    'purchase_id' => (string) $createdPurchase->id,
+                    'purchase_no' => $createdPurchase->purchase_no,
+                    'grand_total' => (float) $createdPurchase->grand_total,
+                    'status' => (string) $createdPurchase->status,
+                ],
+            );
+        }
 
         return to_route('tenant.purchases.index')->with('status', 'Created.');
     }
@@ -120,14 +139,39 @@ final class PurchaseController extends Controller
             $this->syncPurchaseItems($purchase, $items, $branchId);
         });
 
+        AuditTimelineLogger::log(
+            event: 'purchase_updated',
+            description: 'Purchase invoice updated.',
+            causer: Auth::guard('user')->user(),
+            subject: $purchase,
+            properties: [
+                'purchase_id' => (string) $purchase->id,
+                'purchase_no' => $purchase->purchase_no,
+                'changed_attributes' => array_keys($payload),
+            ],
+        );
+
         return to_route('tenant.purchases.index')->with('status', 'Updated.');
     }
 
     public function destroy(Purchase $purchase): RedirectResponse
     {
         $this->ensurePurchaseInCurrentBranch($purchase);
+        $snapshot = [
+            'purchase_id' => (string) $purchase->id,
+            'purchase_no' => $purchase->purchase_no,
+            'grand_total' => (float) $purchase->grand_total,
+        ];
         $this->syncStockForPurchaseItems($purchase->items()->get(), $purchase->branch_id, reverse: true);
         $purchase->delete();
+
+        AuditTimelineLogger::log(
+            event: 'purchase_deleted',
+            description: 'Purchase invoice deleted.',
+            causer: Auth::guard('user')->user(),
+            subject: $purchase,
+            properties: $snapshot,
+        );
 
         return to_route('tenant.purchases.index')->with('status', 'Deleted.');
     }

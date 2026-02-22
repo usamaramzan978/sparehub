@@ -10,9 +10,12 @@ use App\Http\Requests\Tenant\SalePaymentRequest;
 use App\Models\Sale;
 use App\Models\SalePayment;
 use App\Models\User;
+use App\Support\AuditTimelineLogger;
+use BackedEnum;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 final class SalePaymentController extends Controller
 {
@@ -44,6 +47,19 @@ final class SalePaymentController extends Controller
 
         $payment = SalePayment::query()->create($payload);
         $this->recalculatePaid($payment->sale);
+
+        AuditTimelineLogger::log(
+            event: 'sale_payment_recorded',
+            description: 'Sale payment recorded.',
+            causer: Auth::guard('user')->user(),
+            subject: $payment,
+            properties: [
+                'sale_id' => (string) $payment->sale_id,
+                'payment_id' => (string) $payment->id,
+                'amount' => (float) $payment->amount,
+                'method' => $this->paymentMethodValue($payment->payment_method),
+            ],
+        );
 
         return to_route('tenant.sale-payments.index')->with('status', 'Created.');
     }
@@ -79,6 +95,19 @@ final class SalePaymentController extends Controller
         $salePayment->update($payload);
         $this->recalculatePaid($salePayment->sale);
 
+        AuditTimelineLogger::log(
+            event: 'sale_payment_updated',
+            description: 'Sale payment updated.',
+            causer: Auth::guard('user')->user(),
+            subject: $salePayment,
+            properties: [
+                'sale_id' => (string) $salePayment->sale_id,
+                'payment_id' => (string) $salePayment->id,
+                'amount' => (float) $salePayment->amount,
+                'method' => $this->paymentMethodValue($salePayment->payment_method),
+            ],
+        );
+
         return to_route('tenant.sale-payments.index')->with('status', 'Updated.');
     }
 
@@ -86,8 +115,22 @@ final class SalePaymentController extends Controller
     {
         $this->ensureSalePaymentInCurrentBranch($salePayment);
         $sale = $salePayment->sale;
+        $snapshot = [
+            'sale_id' => (string) $salePayment->sale_id,
+            'payment_id' => (string) $salePayment->id,
+            'amount' => (float) $salePayment->amount,
+            'method' => $this->paymentMethodValue($salePayment->payment_method),
+        ];
         $salePayment->delete();
         $this->recalculatePaid($sale);
+
+        AuditTimelineLogger::log(
+            event: 'sale_payment_deleted',
+            description: 'Sale payment deleted.',
+            causer: Auth::guard('user')->user(),
+            subject: $salePayment,
+            properties: $snapshot,
+        );
 
         return to_route('tenant.sale-payments.index')->with('status', 'Deleted.');
     }
@@ -110,6 +153,15 @@ final class SalePaymentController extends Controller
             'paid_total' => $paid,
             'balance_due' => $grandTotal - $paid,
         ]);
+    }
+
+    private function paymentMethodValue(mixed $method): string
+    {
+        if ($method instanceof BackedEnum) {
+            return (string) $method->value;
+        }
+
+        return (string) $method;
     }
 
     /**

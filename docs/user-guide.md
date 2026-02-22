@@ -181,11 +181,12 @@ Switch branch from branch switch option in UI (session-based).
 
 From `Settings`, tenant admin can enable 2FA and choose method:
 - `Email`: users receive a 6-digit code on login.
-- `Authenticator App`: users scan QR/manual key from `Settings` and then use app-generated 6-digit code on login.
+- `Authenticator App`: users enroll from `Profile > Security` and then use app-generated 6-digit code on login.
 
 Notes:
-- Authenticator setup is done from `Settings` (not on login verification page).
-- Login `/two-step` page asks only for 6-digit code.
+- Settings controls policy only (`enable + method`) at tenant level.
+- Authenticator setup/reset + backup codes are managed in `Profile > Security`.
+- Login `/two-step` is verification-only; for authenticator it also allows backup code usage.
 
 ### 10.2 Tenant Timezone
 

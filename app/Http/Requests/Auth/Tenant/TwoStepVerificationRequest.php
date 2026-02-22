@@ -19,8 +19,9 @@ final class TwoStepVerificationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'array', 'size:6'],
-            'code.*' => ['required', 'digits:1'],
+            'code' => ['nullable', 'array', 'size:6', 'required_without:backup_code'],
+            'code.*' => ['nullable', 'digits:1'],
+            'backup_code' => ['nullable', 'string', 'max:32', 'required_without:code'],
         ];
     }
 

@@ -19,6 +19,11 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->string('status')->index();
+            $table->timestamp('last_login_at')->nullable();
+            $table->string('last_login_ip', 45)->nullable();
+            $table->enum('two_factor_type', ['email', 'sms', 'app'])->nullable();
+            $table->text('two_factor_secret')->nullable();
+            $table->timestamp('two_factor_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

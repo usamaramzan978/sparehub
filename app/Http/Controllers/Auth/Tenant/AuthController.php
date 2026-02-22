@@ -23,6 +23,7 @@ use App\Http\Requests\Auth\Tenant\TwoStepVerificationRequest;
 use App\Models\LoginMap;
 use App\Models\TenantSetting;
 use App\Models\User;
+use App\Support\AuditTimelineLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,7 +32,6 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
-use PragmaRX\Google2FA\Google2FA;
 use Stancl\Tenancy\Facades\Tenancy;
 
 final class AuthController extends Controller
@@ -207,7 +207,17 @@ final class AuthController extends Controller
         if (! $settings?->two_factor_enabled) {
             $request->session()->put('two_step.required', false);
             $request->session()->put('two_step.verified', true);
-            $request->session()->forget(['two_step.method', 'two_step.setup_required', 'two_step.code', 'two_step.expires_at']);
+            $request->session()->forget(['two_step.method', 'two_step.setup_required', 'two_step.enrollment_required', 'two_step.code', 'two_step.expires_at']);
+
+            AuditTimelineLogger::log(
+                event: 'auth_login_succeeded',
+                description: 'Tenant login succeeded.',
+                causer: $user,
+                subject: $user,
+                properties: [
+                    'two_factor_required' => false,
+                ],
+            );
 
             return to_route('tenant.dashboard', ['tenant' => $tenantId]);
         }
@@ -215,20 +225,39 @@ final class AuthController extends Controller
         $method = $settings->two_factor_method;
 
         if ($method === TwoFactorMethod::AUTHENTICATOR) {
-            if (! $user->two_factor_secret) {
-                $google2fa = new Google2FA();
-                $user->forceFill([
-                    'two_factor_type' => 'app',
-                    'two_factor_secret' => $google2fa->generateSecretKey(),
-                    'two_factor_verified_at' => null,
-                ])->save();
-            }
+            $setupRequired = $user->two_factor_secret === null || $user->two_factor_verified_at === null;
 
             $request->session()->put('two_step.required', true);
             $request->session()->put('two_step.verified', false);
             $request->session()->put('two_step.method', TwoFactorMethod::AUTHENTICATOR->value);
-            $request->session()->put('two_step.setup_required', $user->two_factor_verified_at === null);
+            $request->session()->put('two_step.setup_required', $setupRequired);
+            $request->session()->put('two_step.enrollment_required', $setupRequired);
             $request->session()->forget(['two_step.code', 'two_step.expires_at']);
+
+            if ($setupRequired) {
+                AuditTimelineLogger::log(
+                    event: 'two_factor_enrollment_required',
+                    description: 'Authenticator enrollment required before completing login.',
+                    causer: $user,
+                    subject: $user,
+                    properties: [
+                        'method' => TwoFactorMethod::AUTHENTICATOR->value,
+                    ],
+                );
+
+                return to_route('tenant.profile.security.show', ['tenant' => $tenantId])
+                    ->with('status', 'Complete authenticator enrollment from Security before continuing.');
+            }
+
+            AuditTimelineLogger::log(
+                event: 'two_step_challenge_required',
+                description: 'Two-step verification challenge required.',
+                causer: $user,
+                subject: $user,
+                properties: [
+                    'method' => TwoFactorMethod::AUTHENTICATOR->value,
+                ],
+            );
 
             return to_route('tenant.two-step', ['tenant' => $tenantId]);
         }
@@ -240,6 +269,17 @@ final class AuthController extends Controller
 
     public function logout(LogoutAction $action): RedirectResponse
     {
+        /** @var User|null $user */
+        $user = Auth::guard('user')->user();
+        if ($user) {
+            AuditTimelineLogger::log(
+                event: 'auth_logout',
+                description: 'Tenant user logged out.',
+                causer: $user,
+                subject: $user,
+            );
+        }
+
         $action->handle();
 
         request()->session()->invalidate();
@@ -283,7 +323,27 @@ final class AuthController extends Controller
     {
         /** @var User $user */
         $user = $request->user('user');
-        $action->handle($request->session(), $request->input('code', []), $user);
+        $method = TwoFactorMethod::tryFrom((string) $request->session()->get('two_step.method')) ?? TwoFactorMethod::EMAIL;
+        $usedBackupCode = mb_trim($request->string('backup_code')->toString()) !== '';
+
+        $action->handle(
+            $request->session(),
+            is_array($request->input('code')) ? $request->input('code', []) : [],
+            $user,
+            $request->string('backup_code')->toString()
+        );
+
+        AuditTimelineLogger::log(
+            event: 'auth_login_succeeded',
+            description: 'Tenant login succeeded after two-step verification.',
+            causer: $user,
+            subject: $user,
+            properties: [
+                'two_factor_required' => true,
+                'method' => $method->value,
+                'used_backup_code' => $usedBackupCode,
+            ],
+        );
 
         return redirect()->intended('/');
     }

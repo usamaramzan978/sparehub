@@ -76,6 +76,7 @@ it('shows settings edit page', function (): void {
 
     $response->assertSuccessful();
     $response->assertSee('Settings');
+    $response->assertSee('Settings User');
 });
 
 it('creates tenant settings on first update', function (): void {
@@ -178,7 +179,7 @@ it('clears two-factor method when two-factor is disabled', function (): void {
     expect($settings->two_factor_method)->toBeNull();
 });
 
-it('shows authenticator setup qr details in settings during initial enrollment', function (): void {
+it('shows security-page guidance instead of authenticator qr details in settings', function (): void {
     authenticateSettingsModuleUser();
 
     $this->put(settingsTenantRoute('settings.update'), [
@@ -189,7 +190,8 @@ it('shows authenticator setup qr details in settings during initial enrollment',
     $response = $this->get(settingsTenantRoute('settings.edit'));
 
     $response->assertSuccessful();
-    $response->assertSee('Manual key:');
+    $response->assertSee('Open Security Page');
+    $response->assertDontSee('Manual key:');
 });
 
 it('applies tenant timezone from settings on tenant requests', function (): void {

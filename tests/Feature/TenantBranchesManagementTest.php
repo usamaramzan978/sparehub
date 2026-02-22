@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
@@ -131,6 +132,14 @@ it('stores a branch', function (): void {
         'warehouse_id' => $warehouse->id,
         'status' => BranchStatus::ACTIVE->value,
     ], 'tenant');
+
+    $event = DB::connection('tenant')
+        ->table('tenant_activity_timelines')
+        ->where('event', 'branch_created')
+        ->latest('id')
+        ->first();
+
+    expect($event)->not->toBeNull();
 });
 
 it('validates required fields when storing branch', function (string $field): void {
@@ -226,6 +235,14 @@ it('deletes branch when it is not the selected branch and at least one branch re
 
     $this->assertDatabaseMissing('branches', ['id' => $deletableBranch->id], 'tenant');
     $this->assertDatabaseHas('branches', ['id' => $fixture['branch']->id], 'tenant');
+
+    $event = DB::connection('tenant')
+        ->table('tenant_activity_timelines')
+        ->where('event', 'branch_deleted')
+        ->latest('id')
+        ->first();
+
+    expect($event)->not->toBeNull();
 });
 
 it('clamps branch pagination to minimum and maximum per-page limits', function (): void {

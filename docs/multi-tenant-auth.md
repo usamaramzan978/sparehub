@@ -137,11 +137,23 @@ Tenant authentication now includes method-based two-step verification:
 Behavior:
 - If 2FA disabled: go directly to dashboard after tenant authentication.
 - If 2FA method is `email`: send 6-digit email code and require `/two-step` verification.
-- If 2FA method is `authenticator`: require 6-digit app code at `/two-step`.
+- If 2FA method is `authenticator`:
+  - if not enrolled/verified, redirect to `Profile > Security` enrollment flow
+  - if already enrolled/verified, require `/two-step` (app code or backup code)
+
+2FA data ownership:
+- Tenant policy: tenant DB `tenant_settings.two_factor_enabled`, `tenant_settings.two_factor_method`
+- Tenant user enrollment: tenant DB `users.two_factor_type`, `users.two_factor_secret`, `users.two_factor_verified_at`, `users.two_factor_recovery_codes`
+- Challenge state: session keys under `two_step.*`
+- Login telemetry: central DB `login_attempts` (tracking only; not policy/enrollment source)
+
+Important boundary:
+- Tenant-user 2FA state is in tenant `users` table.
+- Central `system_users` and system login tracking are separate concerns.
 
 Enrollment model:
-- Authenticator QR/manual key is shown in tenant `Settings` during enrollment/setup.
-- `/two-step` page is verification-only (does not display enrollment secret material).
+- Authenticator QR/manual key is shown in `Profile > Security` enrollment/reset pages.
+- `/two-step` page is verification-only and supports backup code input for authenticator users.
 
 ---
 

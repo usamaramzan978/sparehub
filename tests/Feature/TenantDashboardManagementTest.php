@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Enums\BranchStatus;
+use App\Enums\CustomerStatus;
 use App\Enums\InvoiceType;
+use App\Enums\JobCardStatus;
 use App\Enums\PaymentMethodType;
 use App\Enums\PurchaseStatus;
 use App\Enums\RecordStatus;
@@ -11,7 +13,9 @@ use App\Enums\SaleStatus;
 use App\Enums\UserStatus;
 use App\Models\Branch;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\InventoryStock;
+use App\Models\JobCard;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Sale;
@@ -166,6 +170,22 @@ function authenticateDashboardUser(): void
         'qty_reserved' => 1,
     ]);
 
+    $customer = Customer::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branch->id,
+        'code' => 'DB-CUST-1',
+        'name' => 'Dashboard Customer',
+        'status' => CustomerStatus::ACTIVE->value,
+    ]);
+
+    JobCard::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branch->id,
+        'customer_id' => $customer->id,
+        'created_by' => $user->id,
+        'job_no' => 'DB-JC-1',
+        'job_date' => now()->toDateString(),
+        'status' => JobCardStatus::IN_PROGRESS->value,
+    ]);
+
     test()->actingAs($user, 'user');
     test()->withSession(['tenant.current_branch_id' => $branch->id]);
 }
@@ -183,12 +203,24 @@ it('shows dashboard summary and chart data', function (): void {
 
     $summary = $response->viewData('summary');
     $chartData = $response->viewData('chartData');
+    $tenantHealth = $response->viewData('tenantHealth');
 
     expect($summary)->toHaveKeys(['sales_total', 'purchases_total', 'cashflow_net']);
     expect((float) $summary['cashflow_net'])->toBe((float) $summary['sale_payments_total'] - (float) $summary['vendor_payments_total']);
     expect($chartData['trend_labels'])->not->toBeEmpty();
+    expect($tenantHealth)->toMatchArray([
+        'low_stock_count' => 1,
+        'unpaid_vendors_count' => 1,
+        'open_job_cards_count' => 1,
+        'failed_logins_count' => 0,
+    ]);
 
     $response->assertSee('Top Stock');
+    $response->assertSee('Tenant Health');
+    $response->assertSee('Low Stock Items');
+    $response->assertSee('Unpaid Vendors');
+    $response->assertSee('Open Job Cards');
+    $response->assertSee('Failed Logins');
     $response->assertSee('High Stock Product');
     $response->assertSee('20');
 });

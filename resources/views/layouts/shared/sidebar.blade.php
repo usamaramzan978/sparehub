@@ -117,9 +117,11 @@
                                     $isReportsVendorPayments = request()->routeIs('tenant.reports.vendor-payments');
                                     $isReportsReceivables = request()->routeIs('tenant.reports.receivables');
                                     $isReportsPayables = request()->routeIs('tenant.reports.payables');
-                                    $isSystem = request()->routeIs('tenant.settings.*');
+                                    $isSystem = request()->routeIs('tenant.settings.*', 'tenant.activity-timeline.*');
                                     $isSettings = request()->routeIs('tenant.settings.*');
-                                    $isProfile = request()->routeIs('tenant.profile.*');
+                                    $isActivityTimeline = request()->routeIs('tenant.activity-timeline.*');
+                                    $isProfile = request()->routeIs('tenant.profile.show', 'tenant.profile.edit', 'tenant.profile.update');
+                                    $isProfileSecurity = request()->routeIs('tenant.profile.security.*');
                                 @endphp
 
                                 <ul class="main-menu">
@@ -658,8 +660,10 @@
                                                 <a href="{{ route('tenant.settings.edit') }}"
                                                     class="side-menu__item {{ $isSettings ? 'active' : '' }}">{{ __('Settings') }}</a>
                                             </li>
-                                            <li class="slide"><a href="#"
-                                                    class="side-menu__item">{{ __('Audit Logs') }}</a></li>
+                                            <li class="slide {{ $isActivityTimeline ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.activity-timeline.index') }}"
+                                                    class="side-menu__item {{ $isActivityTimeline ? 'active' : '' }}">{{ __('Recent Activity') }}</a>
+                                            </li>
                                             <li class="slide"><a href="#"
                                                     class="side-menu__item">{{ __('Reminders') }}</a></li>
                                         </ul>
@@ -672,6 +676,13 @@
                                             class="side-menu__item {{ $isProfile ? 'active' : '' }}">
                                             <i class="ri-user-line side-menu__icon"></i>
                                             <span class="side-menu__label">{{ __('Profile') }}</span>
+                                        </a>
+                                    </li>
+                                    <li class="slide {{ $isProfileSecurity ? 'active' : '' }}">
+                                        <a href="{{ route('tenant.profile.security.show') }}"
+                                            class="side-menu__item {{ $isProfileSecurity ? 'active' : '' }}">
+                                            <i class="ri-shield-keyhole-line side-menu__icon"></i>
+                                            <span class="side-menu__label">{{ __('Security') }}</span>
                                         </a>
                                     </li>
                                     <li class="slide">

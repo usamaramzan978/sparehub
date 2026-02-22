@@ -11,10 +11,13 @@ use App\Models\Customer;
 use App\Models\CustomerVehicle;
 use App\Models\JobCard;
 use App\Models\User;
+use App\Support\AuditTimelineLogger;
+use BackedEnum;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 final class JobCardController extends Controller
 {
@@ -70,7 +73,19 @@ final class JobCardController extends Controller
         $payload['branch_id'] = $this->currentBranchId();
         $payload['created_by'] = auth('user')->id();
 
-        JobCard::query()->create($payload);
+        $jobCard = JobCard::query()->create($payload);
+
+        AuditTimelineLogger::log(
+            event: 'job_card_created',
+            description: 'Job card created.',
+            causer: Auth::guard('user')->user(),
+            subject: $jobCard,
+            properties: [
+                'job_card_id' => (string) $jobCard->id,
+                'job_no' => (string) $jobCard->job_no,
+                'status' => $this->statusValue($jobCard->status),
+            ],
+        );
 
         return to_route('tenant.job-cards.index')
             ->with('status', 'Created.');
@@ -113,6 +128,18 @@ final class JobCardController extends Controller
 
         $jobCard->update($payload);
 
+        AuditTimelineLogger::log(
+            event: 'job_card_updated',
+            description: 'Job card updated.',
+            causer: Auth::guard('user')->user(),
+            subject: $jobCard,
+            properties: [
+                'job_card_id' => (string) $jobCard->id,
+                'job_no' => (string) $jobCard->job_no,
+                'changed_attributes' => array_keys($payload),
+            ],
+        );
+
         return to_route('tenant.job-cards.index')
             ->with('status', 'Updated.');
     }
@@ -121,7 +148,21 @@ final class JobCardController extends Controller
     {
         $this->ensureJobCardInCurrentBranch($jobCard);
 
+        $snapshot = [
+            'job_card_id' => (string) $jobCard->id,
+            'job_no' => (string) $jobCard->job_no,
+            'status' => $this->statusValue($jobCard->status),
+        ];
+
         $jobCard->delete();
+
+        AuditTimelineLogger::log(
+            event: 'job_card_deleted',
+            description: 'Job card deleted.',
+            causer: Auth::guard('user')->user(),
+            subject: $jobCard,
+            properties: $snapshot,
+        );
 
         return to_route('tenant.job-cards.index')
             ->with('status', 'Deleted.');
@@ -130,6 +171,15 @@ final class JobCardController extends Controller
     private function ensureJobCardInCurrentBranch(JobCard $jobCard): void
     {
         abort_if($jobCard->branch_id !== $this->currentBranchId(), 404);
+    }
+
+    private function statusValue(mixed $status): string
+    {
+        if ($status instanceof BackedEnum) {
+            return (string) $status->value;
+        }
+
+        return (string) $status;
     }
 
     /**

@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Enums\BranchStatus;
+use App\Enums\TwoFactorMethod;
 use App\Enums\UserStatus;
 use App\Models\Branch;
+use App\Models\TenantSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
@@ -103,4 +105,65 @@ it('validates profile password confirmation', function (): void {
 
     $response->assertRedirect(profileTenantRoute('profile.edit'));
     $response->assertSessionHasErrors(['password']);
+});
+
+it('shows profile security page', function (): void {
+    $fixtureUser = authenticateProfileModuleUser();
+
+    TenantSetting::query()->create([
+        'branch_id' => (string) $fixtureUser->branch_id,
+        'two_factor_enabled' => true,
+        'two_factor_method' => TwoFactorMethod::AUTHENTICATOR->value,
+    ]);
+
+    $response = $this->get(profileTenantRoute('profile.security.show'));
+
+    $response->assertSuccessful();
+    $response->assertSee('Profile Security');
+    $response->assertSee('Start Authenticator Setup');
+});
+
+it('starts authenticator setup and stores recovery codes', function (): void {
+    $fixtureUser = authenticateProfileModuleUser();
+
+    TenantSetting::query()->create([
+        'branch_id' => (string) $fixtureUser->branch_id,
+        'two_factor_enabled' => true,
+        'two_factor_method' => TwoFactorMethod::AUTHENTICATOR->value,
+    ]);
+
+    $response = $this->post(profileTenantRoute('profile.security.authenticator.setup'));
+
+    $response->assertRedirect(profileTenantRoute('profile.security.show'));
+
+    $fixtureUser->refresh();
+    expect($fixtureUser->two_factor_secret)->not->toBeNull()
+        ->and($fixtureUser->two_factor_verified_at)->toBeNull()
+        ->and($fixtureUser->two_factor_recovery_codes)->toBeArray()
+        ->and(count($fixtureUser->two_factor_recovery_codes))->toBe(8);
+});
+
+it('regenerates backup codes from security page', function (): void {
+    $fixtureUser = authenticateProfileModuleUser();
+
+    TenantSetting::query()->create([
+        'branch_id' => (string) $fixtureUser->branch_id,
+        'two_factor_enabled' => true,
+        'two_factor_method' => TwoFactorMethod::AUTHENTICATOR->value,
+    ]);
+
+    $this->post(profileTenantRoute('profile.security.authenticator.setup'))
+        ->assertRedirect(profileTenantRoute('profile.security.show'));
+
+    $before = User::query()->findOrFail($fixtureUser->id);
+    $codesBefore = $before->two_factor_recovery_codes;
+
+    $response = $this->post(profileTenantRoute('profile.security.backup-codes.regenerate'));
+
+    $response->assertRedirect(profileTenantRoute('profile.security.show'));
+
+    $fixtureUser->refresh();
+    expect($fixtureUser->two_factor_recovery_codes)->toBeArray()
+        ->and(count($fixtureUser->two_factor_recovery_codes))->toBe(8)
+        ->and($fixtureUser->two_factor_recovery_codes)->not->toBe($codesBefore);
 });

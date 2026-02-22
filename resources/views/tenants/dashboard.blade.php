@@ -98,6 +98,50 @@
     </div>
 
     <div class="row g-3 mt-1">
+        <div class="col-12">
+            <div class="card custom-card border-0 shadow-sm">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h6 class="card-title mb-0">{{ __('Tenant Health') }}</h6>
+                    <span class="badge bg-primary-transparent">{{ __('Operational Visibility') }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="border rounded-2 p-3 h-100">
+                                <span class="text-muted small">{{ __('Low Stock Items') }}</span>
+                                <h5 class="mt-2 mb-0 text-danger">{{ number_format($tenantHealth['low_stock_count']) }}</h5>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="border rounded-2 p-3 h-100">
+                                <span class="text-muted small">{{ __('Unpaid Vendors') }}</span>
+                                <h5 class="mt-2 mb-0 text-warning">{{ number_format($tenantHealth['unpaid_vendors_count']) }}
+                                </h5>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="border rounded-2 p-3 h-100">
+                                <span class="text-muted small">{{ __('Open Job Cards') }}</span>
+                                <h5 class="mt-2 mb-0 text-info">{{ number_format($tenantHealth['open_job_cards_count']) }}</h5>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="border rounded-2 p-3 h-100">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="text-muted small">{{ __('Failed Logins') }}</span>
+                                    <span class="badge bg-danger-transparent">{{ __('Last 24h') }}</span>
+                                </div>
+                                <h5 class="mt-2 mb-0 text-danger">{{ number_format($tenantHealth['failed_logins_count']) }}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-1">
         <div class="col-12 col-xl-8">
             <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-header d-flex align-items-center justify-content-between">

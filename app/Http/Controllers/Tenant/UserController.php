@@ -11,11 +11,13 @@ use App\Http\Requests\Tenant\UserRequest;
 use App\Models\Branch;
 use App\Models\LoginMap;
 use App\Models\User;
+use App\Support\AuditTimelineLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -80,6 +82,18 @@ final class UserController extends Controller
         $user = User::query()->create($data);
         $this->syncLoginMap($user);
 
+        AuditTimelineLogger::log(
+            event: 'user_created',
+            description: 'Tenant user created.',
+            causer: Auth::guard('user')->user(),
+            subject: $user,
+            properties: [
+                'user_id' => (string) $user->id,
+                'user_email' => $user->email,
+                'branch_id' => (string) $user->branch_id,
+            ],
+        );
+
         return to_route('tenant.users.index')
             ->with('status', 'Created.');
     }
@@ -115,6 +129,18 @@ final class UserController extends Controller
         $user->update($data);
         $this->syncLoginMap($user->refresh());
 
+        AuditTimelineLogger::log(
+            event: 'user_updated',
+            description: 'Tenant user updated.',
+            causer: Auth::guard('user')->user(),
+            subject: $user,
+            properties: [
+                'user_id' => (string) $user->id,
+                'user_email' => $user->email,
+                'changed_attributes' => array_keys($data),
+            ],
+        );
+
         return to_route('tenant.users.index')
             ->with('status', 'Updated.');
     }
@@ -123,8 +149,22 @@ final class UserController extends Controller
     {
         $this->ensureUserInCurrentBranch($user);
 
+        $userSnapshot = [
+            'user_id' => (string) $user->id,
+            'user_email' => $user->email,
+            'branch_id' => (string) $user->branch_id,
+        ];
+
         $this->deleteLoginMap($user);
         $user->delete();
+
+        AuditTimelineLogger::log(
+            event: 'user_deleted',
+            description: 'Tenant user deleted.',
+            causer: Auth::guard('user')->user(),
+            subject: $user,
+            properties: $userSnapshot,
+        );
 
         return to_route('tenant.users.index')
             ->with('status', 'Deleted.');

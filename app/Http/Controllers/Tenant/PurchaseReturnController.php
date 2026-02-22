@@ -17,11 +17,13 @@ use App\Models\PurchaseReturnItem;
 use App\Models\StockMove;
 use App\Models\Tax;
 use App\Models\Vendor;
+use App\Support\AuditTimelineLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 final class PurchaseReturnController extends Controller
 {
@@ -63,11 +65,27 @@ final class PurchaseReturnController extends Controller
 
         $payload['branch_id'] = $this->currentBranchId();
         $payload['created_by'] = auth('user')->id();
+        $createdReturn = null;
 
-        PurchaseReturn::query()->getConnection()->transaction(function () use ($payload, $items): void {
+        PurchaseReturn::query()->getConnection()->transaction(function () use ($payload, $items, &$createdReturn): void {
             $purchaseReturn = PurchaseReturn::query()->create($payload);
             $this->syncPurchaseReturnItems($purchaseReturn, $items);
+            $createdReturn = $purchaseReturn;
         });
+
+        if ($createdReturn instanceof PurchaseReturn) {
+            AuditTimelineLogger::log(
+                event: 'purchase_return_created',
+                description: 'Purchase return created.',
+                causer: Auth::guard('user')->user(),
+                subject: $createdReturn,
+                properties: [
+                    'purchase_return_id' => (string) $createdReturn->id,
+                    'return_no' => $createdReturn->return_no,
+                    'grand_total' => (float) $createdReturn->grand_total,
+                ],
+            );
+        }
 
         return to_route('tenant.purchase-returns.index')->with('status', 'Created.');
     }
@@ -116,14 +134,39 @@ final class PurchaseReturnController extends Controller
             $this->syncPurchaseReturnItems($purchaseReturn, $items);
         });
 
+        AuditTimelineLogger::log(
+            event: 'purchase_return_updated',
+            description: 'Purchase return updated.',
+            causer: Auth::guard('user')->user(),
+            subject: $purchaseReturn,
+            properties: [
+                'purchase_return_id' => (string) $purchaseReturn->id,
+                'return_no' => $purchaseReturn->return_no,
+                'changed_attributes' => array_keys($payload),
+            ],
+        );
+
         return to_route('tenant.purchase-returns.index')->with('status', 'Updated.');
     }
 
     public function destroy(PurchaseReturn $purchaseReturn): RedirectResponse
     {
         $this->ensurePurchaseReturnInCurrentBranch($purchaseReturn);
+        $snapshot = [
+            'purchase_return_id' => (string) $purchaseReturn->id,
+            'return_no' => $purchaseReturn->return_no,
+            'grand_total' => (float) $purchaseReturn->grand_total,
+        ];
         $this->syncStockForPurchaseReturnItems($purchaseReturn->items()->get(), $purchaseReturn->branch_id, reverse: true);
         $purchaseReturn->delete();
+
+        AuditTimelineLogger::log(
+            event: 'purchase_return_deleted',
+            description: 'Purchase return deleted.',
+            causer: Auth::guard('user')->user(),
+            subject: $purchaseReturn,
+            properties: $snapshot,
+        );
 
         return to_route('tenant.purchase-returns.index')->with('status', 'Deleted.');
     }

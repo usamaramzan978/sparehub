@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Auth\Tenant\AuthController as TenantAuthController;
+use App\Http\Controllers\Tenant\ActivityTimelineController;
 use App\Http\Controllers\Tenant\BranchController;
 use App\Http\Controllers\Tenant\BranchSwitchController;
 use App\Http\Controllers\Tenant\BrandController;
@@ -71,7 +72,7 @@ Route::middleware([
         Route::post('reset-password', (new TenantAuthController())->resetPassword(...))->name('auth.reset-password.submit');
     });
 
-    Route::middleware(['auth:user', 'tenant.branch'])->group(function (): void {
+    Route::middleware(['auth:user', 'tenant.branch', 'tenant.two-step'])->group(function (): void {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
         Route::get('end-of-day', EndOfDayController::class)->name('end-of-day');
         Route::get('products/stock', [ProductStockController::class, 'index'])->name('products.stock.index');
@@ -99,12 +100,18 @@ Route::middleware([
             Route::get('profile', 'show')->name('profile.show');
             Route::get('profile/edit', 'edit')->name('profile.edit');
             Route::put('profile', 'update')->name('profile.update');
+            Route::get('profile/security', 'security')->name('profile.security.show');
+            Route::post('profile/security/authenticator/setup', 'setupAuthenticator')->name('profile.security.authenticator.setup');
+            Route::post('profile/security/authenticator/verify', 'verifyAuthenticator')->name('profile.security.authenticator.verify');
+            Route::post('profile/security/authenticator/reset', 'resetAuthenticator')->name('profile.security.authenticator.reset');
+            Route::post('profile/security/backup-codes/regenerate', 'regenerateBackupCodes')->name('profile.security.backup-codes.regenerate');
         });
 
         Route::controller(SettingController::class)->group(function (): void {
             Route::get('settings', 'edit')->name('settings.edit');
             Route::put('settings', 'update')->name('settings.update');
         });
+        Route::get('activity-timeline', ActivityTimelineController::class)->name('activity-timeline.index');
 
         Route::controller(PosController::class)->prefix('pos')->name('pos.')->group(function (): void {
             Route::get('/', 'index')->name('index');

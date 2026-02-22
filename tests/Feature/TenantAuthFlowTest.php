@@ -17,6 +17,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
@@ -370,9 +371,17 @@ it('redirects to two-step and sends email code when tenant uses email two-factor
     $response->assertSessionHas('two_step.required', true);
     $response->assertSessionHas('two_step.method', TwoFactorMethod::EMAIL->value);
     Mail::assertSent(TenantTwoStepCodeMail::class);
+
+    $event = DB::connection('tenant')
+        ->table('tenant_activity_timelines')
+        ->where('event', 'two_step_code_issued')
+        ->latest('id')
+        ->first();
+
+    expect($event)->not->toBeNull();
 });
 
-it('redirects to two-step and prepares authenticator challenge when tenant uses authenticator two-factor', function (): void {
+it('redirects to profile security enrollment when authenticator setup is incomplete', function (): void {
     $this->withoutMiddleware([
         InitializeTenancyByPath::class,
         PreventAccessFromCentralDomains::class,
@@ -429,14 +438,14 @@ it('redirects to two-step and prepares authenticator challenge when tenant uses 
 
     $response = $this->get($signedUrl);
 
-    $response->assertRedirect(route('tenant.two-step', ['tenant' => $tenant->id]));
+    $response->assertRedirect(route('tenant.profile.security.show', ['tenant' => $tenant->id]));
     $response->assertSessionHas('two_step.required', true);
     $response->assertSessionHas('two_step.method', TwoFactorMethod::AUTHENTICATOR->value);
     $response->assertSessionHas('two_step.setup_required', true);
+    $response->assertSessionHas('two_step.enrollment_required', true);
 
     $user->refresh();
-    expect($user->two_factor_secret)->not->toBeNull()
-        ->and($user->two_factor_type)->toBe('app');
+    expect($user->two_factor_secret)->toBeNull();
 });
 
 it('does not show qr details on two-step page for already enrolled authenticator users', function (): void {

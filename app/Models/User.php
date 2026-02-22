@@ -47,6 +47,7 @@ final class User extends Authenticatable
         'two_factor_type',
         'two_factor_secret',
         'two_factor_verified_at',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -57,6 +58,8 @@ final class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     public function branch(): BelongsTo
@@ -175,6 +178,7 @@ final class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'two_factor_verified_at' => 'datetime',
+            'two_factor_recovery_codes' => 'array',
             'password' => 'hashed',
             'status' => UserStatus::class,
         ];

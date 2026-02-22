@@ -10,9 +10,12 @@ use App\Http\Requests\Tenant\VendorPaymentRequest;
 use App\Models\Purchase;
 use App\Models\Vendor;
 use App\Models\VendorPayment;
+use App\Support\AuditTimelineLogger;
+use BackedEnum;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 final class VendorPaymentController extends Controller
 {
@@ -45,6 +48,19 @@ final class VendorPaymentController extends Controller
 
         $payment = VendorPayment::query()->create($payload);
         $this->recalculatePurchasePaid($payment->purchase);
+
+        AuditTimelineLogger::log(
+            event: 'vendor_payment_recorded',
+            description: 'Vendor payment recorded.',
+            causer: Auth::guard('user')->user(),
+            subject: $payment,
+            properties: [
+                'purchase_id' => (string) ($payment->purchase_id ?? ''),
+                'payment_id' => (string) $payment->id,
+                'amount' => (float) $payment->amount,
+                'method' => $this->paymentMethodValue($payment->payment_method),
+            ],
+        );
 
         return to_route('tenant.vendor-payments.index')->with('status', 'Created.');
     }
@@ -84,6 +100,19 @@ final class VendorPaymentController extends Controller
         $this->recalculatePurchasePaid($oldPurchase);
         $this->recalculatePurchasePaid($vendorPayment->purchase);
 
+        AuditTimelineLogger::log(
+            event: 'vendor_payment_updated',
+            description: 'Vendor payment updated.',
+            causer: Auth::guard('user')->user(),
+            subject: $vendorPayment,
+            properties: [
+                'purchase_id' => (string) ($vendorPayment->purchase_id ?? ''),
+                'payment_id' => (string) $vendorPayment->id,
+                'amount' => (float) $vendorPayment->amount,
+                'method' => $this->paymentMethodValue($vendorPayment->payment_method),
+            ],
+        );
+
         return to_route('tenant.vendor-payments.index')->with('status', 'Updated.');
     }
 
@@ -92,8 +121,22 @@ final class VendorPaymentController extends Controller
         $this->ensureVendorPaymentInCurrentBranch($vendorPayment);
 
         $purchase = $vendorPayment->purchase;
+        $snapshot = [
+            'purchase_id' => (string) ($vendorPayment->purchase_id ?? ''),
+            'payment_id' => (string) $vendorPayment->id,
+            'amount' => (float) $vendorPayment->amount,
+            'method' => $this->paymentMethodValue($vendorPayment->payment_method),
+        ];
         $vendorPayment->delete();
         $this->recalculatePurchasePaid($purchase);
+
+        AuditTimelineLogger::log(
+            event: 'vendor_payment_deleted',
+            description: 'Vendor payment deleted.',
+            causer: Auth::guard('user')->user(),
+            subject: $vendorPayment,
+            properties: $snapshot,
+        );
 
         return to_route('tenant.vendor-payments.index')->with('status', 'Deleted.');
     }
@@ -116,6 +159,15 @@ final class VendorPaymentController extends Controller
             'paid_total' => $paid,
             'balance_due' => $grandTotal - $paid,
         ]);
+    }
+
+    private function paymentMethodValue(mixed $method): string
+    {
+        if ($method instanceof BackedEnum) {
+            return (string) $method->value;
+        }
+
+        return (string) $method;
     }
 
     /**

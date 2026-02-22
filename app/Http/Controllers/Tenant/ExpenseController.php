@@ -8,10 +8,13 @@ use App\Enums\PaymentMethodType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\ExpenseRequest;
 use App\Models\Expense;
+use App\Support\AuditTimelineLogger;
+use BackedEnum;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 final class ExpenseController extends Controller
 {
@@ -61,7 +64,20 @@ final class ExpenseController extends Controller
         $payload['branch_id'] = $this->currentBranchId();
         $payload['created_by'] = auth('user')->id();
 
-        Expense::query()->create($payload);
+        $expense = Expense::query()->create($payload);
+
+        AuditTimelineLogger::log(
+            event: 'expense_created',
+            description: 'Expense recorded.',
+            causer: Auth::guard('user')->user(),
+            subject: $expense,
+            properties: [
+                'expense_id' => (string) $expense->id,
+                'title' => (string) $expense->title,
+                'amount' => (float) $expense->amount,
+                'method' => $this->paymentMethodValue($expense->payment_method),
+            ],
+        );
 
         return to_route('tenant.expenses.index')->with('status', 'Created.');
     }
@@ -71,7 +87,21 @@ final class ExpenseController extends Controller
         unset($tenant);
         $expense = $this->resolveExpense($expense);
         $this->ensureExpenseInCurrentBranch($expense);
-        $expense->update($request->validated());
+        $payload = $request->validated();
+        $expense->update($payload);
+
+        AuditTimelineLogger::log(
+            event: 'expense_updated',
+            description: 'Expense updated.',
+            causer: Auth::guard('user')->user(),
+            subject: $expense,
+            properties: [
+                'expense_id' => (string) $expense->id,
+                'title' => (string) $expense->title,
+                'amount' => (float) $expense->amount,
+                'changed_attributes' => array_keys($payload),
+            ],
+        );
 
         return to_route('tenant.expenses.index')->with('status', 'Updated.');
     }
@@ -81,9 +111,31 @@ final class ExpenseController extends Controller
         unset($tenant);
         $expense = $this->resolveExpense($expense);
         $this->ensureExpenseInCurrentBranch($expense);
+        $snapshot = [
+            'expense_id' => (string) $expense->id,
+            'title' => (string) $expense->title,
+            'amount' => (float) $expense->amount,
+        ];
         $expense->delete();
 
+        AuditTimelineLogger::log(
+            event: 'expense_deleted',
+            description: 'Expense deleted.',
+            causer: Auth::guard('user')->user(),
+            subject: $expense,
+            properties: $snapshot,
+        );
+
         return to_route('tenant.expenses.index')->with('status', 'Deleted.');
+    }
+
+    private function paymentMethodValue(mixed $method): string
+    {
+        if ($method instanceof BackedEnum) {
+            return (string) $method->value;
+        }
+
+        return (string) $method;
     }
 
     private function ensureExpenseInCurrentBranch(Expense $expense): void

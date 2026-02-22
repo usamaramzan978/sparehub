@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Enums\CustomerStatus;
 use App\Enums\JobCardStatus;
+use App\Enums\LoginUserType;
 use App\Enums\PaymentMethodType;
 use App\Enums\PurchaseStatus;
 use App\Enums\RecordStatus;
@@ -15,7 +16,8 @@ use App\Http\Requests\Tenant\DashboardFilterRequest;
 use App\Models\Customer;
 use App\Models\InventoryStock;
 use App\Models\JobCard;
-use App\Models\Product;
+use App\Models\LoginAttempt;
+use App\Models\LoginMap;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\SalePayment;
@@ -25,7 +27,9 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Stancl\Tenancy\Facades\Tenancy;
 
 final class DashboardController extends Controller
 {
@@ -183,25 +187,44 @@ final class DashboardController extends Controller
         $lowStockItems = InventoryStock::query()
             ->with(['product:id,name,sku,track_stock'])
             ->where('branch_id', $branchId)
+            ->whereHas('product', fn ($query) => $query->where('track_stock', true))
             ->selectRaw('product_id, SUM(qty_on_hand) as qty_on_hand, SUM(qty_reserved) as qty_reserved')
             ->groupBy('product_id')
             ->havingRaw('SUM(qty_on_hand) <= 5')
             ->orderBy('qty_on_hand')
             ->limit(8)
-            ->get()
-            ->filter(fn (InventoryStock $stock): bool => $stock->product instanceof Product && (bool) $stock->product->track_stock)
-            ->values();
+            ->get();
 
         $topStockItems = InventoryStock::query()
             ->with(['product:id,name,sku,track_stock'])
             ->where('branch_id', $branchId)
+            ->whereHas('product', fn ($query) => $query->where('track_stock', true))
             ->selectRaw('product_id, SUM(qty_on_hand) as qty_on_hand, SUM(qty_reserved) as qty_reserved')
             ->groupBy('product_id')
             ->orderByDesc('qty_on_hand')
             ->limit(8)
-            ->get()
-            ->filter(fn (InventoryStock $stock): bool => $stock->product instanceof Product && (bool) $stock->product->track_stock)
-            ->values();
+            ->get();
+
+        $tenantId = (string) (tenant()?->getTenantKey() ?? '');
+
+        $tenantHealth = [
+            'low_stock_count' => InventoryStock::query()
+                ->where('branch_id', $branchId)
+                ->whereHas('product', fn ($query) => $query->where('track_stock', true))
+                ->selectRaw('product_id')
+                ->groupBy('product_id')
+                ->havingRaw('SUM(qty_on_hand) <= 5')
+                ->get()
+                ->count(),
+            'unpaid_vendors_count' => Purchase::query()
+                ->where('branch_id', $branchId)
+                ->whereNotNull('vendor_id')
+                ->where('balance_due', '>', 0)
+                ->distinct()
+                ->count('vendor_id'),
+            'open_job_cards_count' => (int) $summary['open_job_cards_count'],
+            'failed_logins_count' => $this->countRecentFailedLogins($tenantId),
+        ];
 
         $recentSales = Sale::query()
             ->with(['customer:id,name'])
@@ -232,6 +255,7 @@ final class DashboardController extends Controller
             'topStockItems' => $topStockItems,
             'recentSales' => $recentSales,
             'recentPurchases' => $recentPurchases,
+            'tenantHealth' => $tenantHealth,
             'chartData' => [
                 'trend_labels' => $trendLabels,
                 'sales_trend' => $salesTrend,
@@ -244,6 +268,36 @@ final class DashboardController extends Controller
                 'purchase_status_values' => $purchaseStatusCounts->pluck('value')->all(),
             ],
         ]);
+    }
+
+    private function countRecentFailedLogins(string $tenantId, int $hours = 24): int
+    {
+        if ($tenantId === '') {
+            return 0;
+        }
+
+        return (int) rescue(function () use ($tenantId, $hours): int {
+            return (int) Tenancy::central(function () use ($tenantId, $hours): int {
+                $centralConnection = (string) config('tenancy.database.central_connection', config('database.default'));
+
+                if (
+                    ! Schema::connection($centralConnection)->hasTable('login_attempts')
+                    || ! Schema::connection($centralConnection)->hasTable('login_maps')
+                ) {
+                    return 0;
+                }
+
+                return (int) LoginAttempt::query()
+                    ->where('status', 'failed')
+                    ->where('user_type', LoginUserType::USER->value)
+                    ->where('attempted_at', '>=', now()->subHours($hours))
+                    ->whereIn('email', LoginMap::query()
+                        ->where('tenant_id', $tenantId)
+                        ->where('type', LoginUserType::USER->value)
+                        ->select('email'))
+                    ->count();
+            });
+        }, 0, false);
     }
 
     /**

@@ -23,11 +23,13 @@ use App\Models\ServiceCatalog;
 use App\Models\Tax;
 use App\Models\TenantSetting;
 use App\Models\User;
+use App\Support\AuditTimelineLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 final class PosController extends Controller
 {
@@ -357,6 +359,20 @@ final class PosController extends Controller
                     'payment_proof_path' => $media->getPathRelativeToRoot(),
                 ]);
         }
+
+        AuditTimelineLogger::log(
+            event: 'pos_sale_created',
+            description: 'POS sale created.',
+            causer: Auth::guard('user')->user(),
+            subject: $sale,
+            properties: [
+                'sale_id' => (string) $sale->id,
+                'invoice_no' => $sale->invoice_no,
+                'grand_total' => (float) $sale->grand_total,
+                'paid_total' => (float) $sale->paid_total,
+                'payment_mode' => $paymentMode,
+            ],
+        );
 
         $tenantRouteKey = (string) (request()->route('tenant') ?? tenant('id'));
 

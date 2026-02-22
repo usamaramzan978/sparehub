@@ -18,6 +18,7 @@
 
     <x-breadcrumb title="{{ __('Profile') }}" :items="$breadcrumbs">
         <x-slot:actions>
+            <a href="{{ route('tenant.profile.security.show') }}" class="btn btn-outline-primary">{{ __('Security') }}</a>
             <a href="{{ route('tenant.profile.edit') }}" class="btn btn-secondary">{{ __('Edit Profile') }}</a>
         </x-slot:actions>
     </x-breadcrumb>

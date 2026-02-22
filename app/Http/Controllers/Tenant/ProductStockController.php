@@ -13,10 +13,12 @@ use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\ProductPrice;
 use App\Models\StockMove;
+use App\Support\AuditTimelineLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 final class ProductStockController extends Controller
@@ -144,8 +146,14 @@ final class ProductStockController extends Controller
         $action = (string) $payload['action'];
         $qty = (float) $payload['qty'];
         $remarks = isset($payload['remarks']) ? (string) $payload['remarks'] : null;
+        $adjustmentSummary = [
+            'previous_qty' => 0.0,
+            'new_qty' => 0.0,
+            'move_qty' => 0.0,
+            'move_type' => null,
+        ];
 
-        InventoryStock::query()->getConnection()->transaction(function () use ($action, $branchId, $productId, $qty, $remarks): void {
+        InventoryStock::query()->getConnection()->transaction(function () use ($action, $branchId, $productId, $qty, $remarks, &$adjustmentSummary): void {
             $stockRow = InventoryStock::query()
                 ->where('branch_id', $branchId)
                 ->where('product_id', $productId)
@@ -212,7 +220,33 @@ final class ProductStockController extends Controller
                     'occurred_at' => now(),
                 ]);
             }
+
+            $adjustmentSummary = [
+                'previous_qty' => $currentQty,
+                'new_qty' => $newQty,
+                'move_qty' => $moveQty,
+                'move_type' => $moveType->value,
+            ];
         });
+
+        $product = Product::query()->find($productId);
+        AuditTimelineLogger::log(
+            event: 'inventory_stock_adjusted',
+            description: 'Inventory stock adjusted.',
+            causer: Auth::guard('user')->user(),
+            subject: $product,
+            properties: [
+                'product_id' => $productId,
+                'product_name' => (string) ($product?->name ?? ''),
+                'action' => $action,
+                'requested_qty' => $qty,
+                'move_qty' => (float) $adjustmentSummary['move_qty'],
+                'move_type' => $adjustmentSummary['move_type'],
+                'previous_qty' => (float) $adjustmentSummary['previous_qty'],
+                'new_qty' => (float) $adjustmentSummary['new_qty'],
+                'remarks' => $remarks,
+            ],
+        );
 
         return to_route('tenant.products.stock.adjustments')
             ->with('status', 'Stock adjusted.');

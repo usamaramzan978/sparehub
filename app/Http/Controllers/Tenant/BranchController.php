@@ -9,9 +9,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\BranchRequest;
 use App\Models\Branch;
 use App\Models\Warehouse;
+use App\Support\AuditTimelineLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 final class BranchController extends Controller
 {
@@ -30,7 +32,18 @@ final class BranchController extends Controller
 
     public function store(BranchRequest $request): RedirectResponse
     {
-        Branch::query()->create($request->validated());
+        $branch = Branch::query()->create($request->validated());
+
+        AuditTimelineLogger::log(
+            event: 'branch_created',
+            description: 'Branch created.',
+            causer: Auth::guard('user')->user(),
+            subject: $branch,
+            properties: [
+                'branch_id' => (string) $branch->id,
+                'branch_name' => $branch->name,
+            ],
+        );
 
         return to_route('tenant.branches.index')
             ->with('status', 'Created.');
@@ -56,7 +69,20 @@ final class BranchController extends Controller
 
     public function update(BranchRequest $request, Branch $branch): RedirectResponse
     {
-        $branch->update($request->validated());
+        $changes = $request->validated();
+        $branch->update($changes);
+
+        AuditTimelineLogger::log(
+            event: 'branch_updated',
+            description: 'Branch updated.',
+            causer: Auth::guard('user')->user(),
+            subject: $branch,
+            properties: [
+                'branch_id' => (string) $branch->id,
+                'branch_name' => $branch->name,
+                'changed_attributes' => array_keys($changes),
+            ],
+        );
 
         return to_route('tenant.branches.index')
             ->with('status', 'Updated.');
@@ -86,7 +112,20 @@ final class BranchController extends Controller
                 ->with('error', 'You cannot delete the currently selected branch.');
         }
 
+        $branchSnapshot = [
+            'branch_id' => (string) $branch->id,
+            'branch_name' => $branch->name,
+        ];
+
         $branch->delete();
+
+        AuditTimelineLogger::log(
+            event: 'branch_deleted',
+            description: 'Branch deleted.',
+            causer: Auth::guard('user')->user(),
+            subject: $branch,
+            properties: $branchSnapshot,
+        );
 
         return to_route('tenant.branches.index')
             ->with('status', 'Deleted.');
