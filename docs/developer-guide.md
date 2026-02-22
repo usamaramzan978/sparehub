@@ -115,6 +115,32 @@ Important distinction:
 6. If method is `authenticator` and user is enrolled/verified:
    - user verifies on `/firm/{tenant}/two-step` using app code or backup code.
 
+#### Enforcement guard flow (`tenant.two-step` middleware)
+
+`EnsureTwoStepVerified` controls protected tenant routes when 2FA challenge is pending.
+
+Decision behavior:
+1. If `two_step.required=false` or `two_step.verified=true`: request continues.
+2. If enrollment is pending (`two_step.enrollment_required=true`):
+   - allowed routes:
+     - `tenant.profile.security.*` (complete authenticator setup)
+     - `tenant.settings.*` (disable 2FA if enabled by mistake)
+     - `tenant.logout`
+   - all other protected routes redirect to `tenant.profile.security.show` with warning.
+3. If enrollment is not pending but verification is required:
+   - allowed routes:
+     - `tenant.two-step`, `tenant.two-step.verify`, `tenant.logout`
+   - all other protected routes redirect to `tenant.two-step` with warning.
+
+Stale-session self-heal:
+- Middleware checks if session says `enrollment_required=true` but user already has both:
+  - `users.two_factor_secret`
+  - `users.two_factor_verified_at`
+- If yes, it clears stale `two_step.*` enrollment/challenge session keys and allows navigation.
+
+Settings-side unlock behavior:
+- When tenant 2FA is disabled from Settings (`two_factor_enabled=false`), `SettingController@update` clears all `two_step.*` challenge/enrollment session keys immediately so user is not stuck in security redirects.
+
 UX behavior:
 - Enrollment QR/manual key is shown only on Profile Security enrollment/reset flow.
 - `/two-step` remains verification-only.

@@ -44,6 +44,15 @@ final class SettingController extends Controller
 
         if (! $request->boolean('two_factor_enabled')) {
             $data['two_factor_method'] = null;
+            $request->session()->put('two_step.required', false);
+            $request->session()->put('two_step.verified', true);
+            $request->session()->forget([
+                'two_step.method',
+                'two_step.setup_required',
+                'two_step.enrollment_required',
+                'two_step.code',
+                'two_step.expires_at',
+            ]);
         }
 
         unset($data['logo']);

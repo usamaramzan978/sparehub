@@ -121,6 +121,11 @@
                         <h6 class="mb-0">{{ __('System Settings') }}</h6>
                     </div>
                     <div class="card-body">
+                        @if (session('two_step.enrollment_required'))
+                            <div class="alert alert-warning">
+                                {{ __('Two-factor authenticator setup is pending for your account. Complete it from Security, or disable authenticator here if this was enabled by mistake.') }}
+                            </div>
+                        @endif
                         <p class="text-muted small mb-3">{{ __('Security related system controls.') }}</p>
                         <div class="row">
                             <div class="col-md-4 mb-3 d-flex align-items-end">

@@ -206,3 +206,60 @@ it('applies tenant timezone from settings on tenant requests', function (): void
 
     expect(config('app.timezone'))->toBe('Asia/Karachi');
 });
+
+it('allows settings access while authenticator enrollment is pending', function (): void {
+    $fixture = authenticateSettingsModuleUser();
+
+    TenantSetting::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['branch']->id,
+        'two_factor_enabled' => true,
+        'two_factor_method' => TwoFactorMethod::AUTHENTICATOR->value,
+    ]);
+
+    $this->withSession([
+        'two_step.required' => true,
+        'two_step.verified' => false,
+        'two_step.enrollment_required' => true,
+        'two_step.setup_required' => true,
+        'two_step.method' => TwoFactorMethod::AUTHENTICATOR->value,
+    ]);
+
+    $response = $this->get(settingsTenantRoute('settings.edit'));
+
+    $response->assertSuccessful();
+    $response->assertSee('System Settings');
+});
+
+it('clears pending two-step lock flags when two-factor is disabled from settings', function (): void {
+    $fixture = authenticateSettingsModuleUser();
+
+    TenantSetting::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['branch']->id,
+        'two_factor_enabled' => true,
+        'two_factor_method' => TwoFactorMethod::AUTHENTICATOR->value,
+    ]);
+
+    $this->withSession([
+        'two_step.required' => true,
+        'two_step.verified' => false,
+        'two_step.enrollment_required' => true,
+        'two_step.setup_required' => true,
+        'two_step.method' => TwoFactorMethod::AUTHENTICATOR->value,
+        'two_step.code' => '123456',
+        'two_step.expires_at' => now()->addMinute(),
+    ]);
+
+    $response = $this->put(settingsTenantRoute('settings.update'), [
+        'two_factor_enabled' => '0',
+        'two_factor_method' => TwoFactorMethod::AUTHENTICATOR->value,
+    ]);
+
+    $response->assertRedirect(settingsTenantRoute('settings.edit'));
+    $response->assertSessionHas('two_step.required', false);
+    $response->assertSessionHas('two_step.verified', true);
+    $response->assertSessionMissing('two_step.method');
+    $response->assertSessionMissing('two_step.setup_required');
+    $response->assertSessionMissing('two_step.enrollment_required');
+    $response->assertSessionMissing('two_step.code');
+    $response->assertSessionMissing('two_step.expires_at');
+});
