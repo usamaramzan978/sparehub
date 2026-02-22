@@ -11,6 +11,8 @@ use App\Http\Controllers\System\TenantController;
 use App\Http\Controllers\System\TenantUserController;
 use Illuminate\Support\Facades\Route;
 
+Route::view('/landing', 'website.landing')->name('website.landing');
+
 Route::middleware('guest')->group(function (): void {
     Route::get('/', (new TenantAuthController())->showLogin(...))->name('auth.login');
     Route::post('/', (new TenantAuthController())->login(...))->middleware(['throttle:6,1'])
