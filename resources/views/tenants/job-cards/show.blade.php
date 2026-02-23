@@ -22,7 +22,7 @@
                 <div>
                     <div class="text-muted small">{{ __('Job No') }}</div>
                     <h5 class="mb-1">{{ $jobCard->job_no }}</h5>
-                    <div class="text-muted small">{{ __('Date') }}: {{ $jobCard->job_date?->format('Y-m-d') ?? '-' }}
+                    <div class="text-muted small">{{ __('Date') }}: @tenantDate($jobCard->job_date, 'Y-m-d')
                     </div>
                 </div>
                 <div class="text-end">
@@ -71,13 +71,13 @@
                 <div class="col-12 col-md-6 col-xl-3">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('In Time') }}</div>
-                        <div class="fw-semibold">{{ $jobCard->in_time?->format('Y-m-d H:i') ?? '-' }}</div>
+                        <div class="fw-semibold">@tenantDate($jobCard->in_time, 'Y-m-d H:i')</div>
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-xl-3">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Out Time') }}</div>
-                        <div class="fw-semibold">{{ $jobCard->out_time?->format('Y-m-d H:i') ?? '-' }}</div>
+                        <div class="fw-semibold">@tenantDate($jobCard->out_time, 'Y-m-d H:i')</div>
                     </div>
                 </div>
             </div>

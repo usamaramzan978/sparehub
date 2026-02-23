@@ -44,7 +44,7 @@
                         @forelse ($items as $purchase)
                             <tr>
                                 <td>{{ $purchase->purchase_no }}</td>
-                                <td>{{ $purchase->purchase_date?->format('Y-m-d') }}</td>
+                                <td>@tenantDate($purchase->purchase_date, 'Y-m-d', '')</td>
                                 <td>{{ $purchase->vendor?->name ?? '-' }}</td>
                                 <td>{{ $purchase->warehouse?->name ?? '-' }}</td>
                                 <td>{{ ucfirst(str_replace('_', ' ', $purchase->status->value)) }}</td>

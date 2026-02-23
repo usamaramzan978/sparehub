@@ -89,8 +89,8 @@
                                         <span class="badge bg-secondary-transparent">{{ __('Absent / Not Marked') }}</span>
                                     @endif
                                 </td>
-                                <td>{{ $record?->check_in_at?->format('H:i') ?? '-' }}</td>
-                                <td>{{ $record?->check_out_at?->format('H:i') ?? '-' }}</td>
+                                <td>@tenantDate($record?->check_in_at, 'H:i')</td>
+                                <td>@tenantDate($record?->check_out_at, 'H:i')</td>
                                 <td>
                                     @if ($record?->total_minutes)
                                         {{ intdiv((int) $record->total_minutes, 60) }}h

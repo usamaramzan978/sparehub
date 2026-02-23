@@ -38,7 +38,7 @@
                             <tr>
                                 <td>{{ $sale->invoice_no }}</td>
                                 <td>{{ $sale->customer?->name ?? '-' }}</td>
-                                <td>{{ $sale->invoice_date?->format('Y-m-d') }}</td>
+                                <td>@tenantDate($sale->invoice_date, 'Y-m-d', '')</td>
                                 <td class="text-end">{{ number_format((float) $sale->balance_due, 2) }}</td>
                             </tr>
                         @empty

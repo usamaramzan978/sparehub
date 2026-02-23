@@ -65,7 +65,7 @@
                             <label class="form-label" for="effective_from">{{ __('Effective From') }}</label>
                             <input type="datetime-local" name="effective_from" id="effective_from"
                                 class="form-control @error('effective_from') is-invalid @enderror"
-                                value="{{ old('effective_from', now()->format('Y-m-d\TH:i')) }}" required>
+                                value="{{ old('effective_from', \App\Support\TenantDateTime::format(now(), 'Y-m-d\\TH:i', '')) }}" required>
                             @error('effective_from')
                                 <span class="invalid-feedback d-block">{{ $message }}</span>
                             @enderror

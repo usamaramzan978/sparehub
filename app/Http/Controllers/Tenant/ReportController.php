@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Actions\Tenant\Report\BuildReportDataAction;
 use App\Actions\Tenant\Report\ExportSingleReportPdfAction;
 use App\Http\Controllers\Controller;
+use App\Support\TenantDateTime;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -57,11 +58,11 @@ final class ReportController extends Controller
     public function exportPdf(Request $request, BuildReportDataAction $buildReportDataAction): Response
     {
         $data = $buildReportDataAction->handle($request, $this->currentBranchId(), false);
-        $data['generatedAt'] = now();
+        $data['generatedAt'] = TenantDateTime::now();
 
         return Pdf::loadView('tenants.reports.pdf', $data)
             ->setPaper('a4', 'landscape')
-            ->download('reports-'.now()->format('Ymd_His').'.pdf');
+            ->download('reports-'.TenantDateTime::now()->format('Ymd_His').'.pdf');
     }
 
     public function exportSalesPdf(Request $request, BuildReportDataAction $buildReportDataAction, ExportSingleReportPdfAction $exportSingleReportPdfAction): Response
@@ -97,10 +98,10 @@ final class ReportController extends Controller
     public function exportSummaryPdf(Request $request, BuildReportDataAction $buildReportDataAction): Response
     {
         $data = $buildReportDataAction->handle($request, $this->currentBranchId(), false);
-        $data['generatedAt'] = now();
+        $data['generatedAt'] = TenantDateTime::now();
 
         return Pdf::loadView('tenants.reports.summary-pdf', $data)
             ->setPaper('a4', 'portrait')
-            ->download('reports-summary-'.now()->format('Ymd_His').'.pdf');
+            ->download('reports-summary-'.TenantDateTime::now()->format('Ymd_His').'.pdf');
     }
 }

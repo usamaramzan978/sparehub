@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Tenant\Report;
 
+use App\Support\TenantDateTime;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
 
@@ -34,7 +35,7 @@ final class ExportSingleReportPdfAction
 
         abort_unless(isset($reportTitles[$reportKey], $reportSlugs[$reportKey]), 404);
 
-        $data['generatedAt'] = now();
+        $data['generatedAt'] = TenantDateTime::now();
         $data['reportKey'] = $reportKey;
         $data['reportTitle'] = $reportTitles[$reportKey];
 
@@ -44,7 +45,7 @@ final class ExportSingleReportPdfAction
                 sprintf(
                     '%s-report-%s.pdf',
                     $reportSlugs[$reportKey],
-                    now()->format('Ymd_His')
+                    TenantDateTime::now()->format('Ymd_His')
                 )
             );
     }

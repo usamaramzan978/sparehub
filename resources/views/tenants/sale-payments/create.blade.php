@@ -91,7 +91,7 @@
                         <label class="form-label" for="paid_at">{{ __('Paid At') }}</label>
                         <input type="datetime-local" name="paid_at" id="paid_at"
                             class="form-control @error('paid_at') is-invalid @enderror"
-                            value="{{ old('paid_at', now()->format('Y-m-d\TH:i')) }}" required>
+                            value="{{ old('paid_at', \App\Support\TenantDateTime::format(now(), 'Y-m-d\\TH:i', '')) }}" required>
                         @error('paid_at')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror

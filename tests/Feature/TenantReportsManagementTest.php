@@ -16,6 +16,7 @@ use App\Models\SalePayment;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\VendorPayment;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
@@ -219,4 +220,83 @@ it('exports summary reports pdf', function (): void {
 
     $response->assertSuccessful();
     $response->assertHeader('content-type', 'application/pdf');
+});
+
+it('applies full-day tenant date range boundaries for payment datetime filters', function (): void {
+    $fixture = authenticateReportsModuleUser();
+    $branch = $fixture['branch'];
+    $sale = $fixture['sale'];
+    $purchase = $fixture['purchase'];
+
+    $user = auth('user')->user();
+
+    SalePayment::query()->withoutGlobalScopes()->create([
+        'sale_id' => $sale->id,
+        'branch_id' => $branch->id,
+        'received_by' => $user?->id,
+        'payment_method' => PaymentMethodType::CASH->value,
+        'amount' => 50,
+        'paid_at' => Carbon::parse('2026-03-01 00:00:00'),
+    ]);
+
+    SalePayment::query()->withoutGlobalScopes()->create([
+        'sale_id' => $sale->id,
+        'branch_id' => $branch->id,
+        'received_by' => $user?->id,
+        'payment_method' => PaymentMethodType::CASH->value,
+        'amount' => 75,
+        'paid_at' => Carbon::parse('2026-03-01 23:59:59'),
+    ]);
+
+    SalePayment::query()->withoutGlobalScopes()->create([
+        'sale_id' => $sale->id,
+        'branch_id' => $branch->id,
+        'received_by' => $user?->id,
+        'payment_method' => PaymentMethodType::CASH->value,
+        'amount' => 90,
+        'paid_at' => Carbon::parse('2026-03-02 00:00:00'),
+    ]);
+
+    VendorPayment::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branch->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $purchase->id,
+        'created_by' => $user?->id,
+        'payment_no' => 'REP-VP-EDGE-1',
+        'payment_method' => PaymentMethodType::BANK->value,
+        'amount' => 45,
+        'paid_at' => Carbon::parse('2026-03-01 00:00:00'),
+    ]);
+
+    VendorPayment::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branch->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $purchase->id,
+        'created_by' => $user?->id,
+        'payment_no' => 'REP-VP-EDGE-2',
+        'payment_method' => PaymentMethodType::BANK->value,
+        'amount' => 55,
+        'paid_at' => Carbon::parse('2026-03-01 23:59:59'),
+    ]);
+
+    VendorPayment::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branch->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $purchase->id,
+        'created_by' => $user?->id,
+        'payment_no' => 'REP-VP-OUT',
+        'payment_method' => PaymentMethodType::BANK->value,
+        'amount' => 65,
+        'paid_at' => Carbon::parse('2026-03-02 00:00:00'),
+    ]);
+
+    $response = $this->get(reportsTenantRoute('reports.index', [
+        'date_from' => '2026-03-01',
+        'date_to' => '2026-03-01',
+    ]));
+
+    $response->assertSuccessful();
+
+    expect($response->viewData('salePayments')->total())->toBe(2);
+    expect($response->viewData('vendorPayments')->total())->toBe(2);
 });

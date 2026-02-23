@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Models\Branch;
 use App\Models\TenantSetting;
 use App\Support\HeaderContextCache;
+use App\Support\TenantDateTime;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +66,10 @@ final class AppServiceProvider extends ServiceProvider
         });
 
         Route::model('branch', Branch::class);
+
+        Blade::directive('tenantDate', function (string $expression): string {
+            return sprintf('<?php echo \\%s::format(%s); ?>', TenantDateTime::class, $expression);
+        });
 
         View::composer('layouts.shared.header', function ($view): void {
             $currentBranchId = (string) session('tenant.current_branch_id', '');

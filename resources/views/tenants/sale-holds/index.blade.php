@@ -56,8 +56,8 @@
                             <tr>
                                 <td>{{ $hold->hold_no }}</td>
                                 <td>{{ $hold->customer?->name ?? '-' }}</td>
-                                <td>{{ $hold->expires_at?->format('Y-m-d H:i') ?? '-' }}</td>
-                                <td>{{ $hold->created_at?->format('Y-m-d H:i') }}</td>
+                                <td>@tenantDate($hold->expires_at, 'Y-m-d H:i')</td>
+                                <td>@tenantDate($hold->created_at, 'Y-m-d H:i', '')</td>
                                 <td class="text-end">
                                     <div class="btn-list">
                                         <a href="{{ route('tenant.sale-holds.show', $hold) }}"

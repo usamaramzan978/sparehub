@@ -29,7 +29,7 @@
                 </div>
                 <div class="text-end">
                     <div class="text-muted small">{{ __('Expires At') }}</div>
-                    <div class="fw-semibold">{{ $saleHold->expires_at?->format('Y-m-d H:i') ?? '-' }}</div>
+                    <div class="fw-semibold">@tenantDate($saleHold->expires_at, 'Y-m-d H:i')</div>
                 </div>
             </div>
 
@@ -49,7 +49,7 @@
                 <div class="col-12 col-md-6 col-xl-4">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Created At') }}</div>
-                        <div class="fw-semibold">{{ $saleHold->created_at?->format('Y-m-d H:i') ?? '-' }}</div>
+                        <div class="fw-semibold">@tenantDate($saleHold->created_at, 'Y-m-d H:i')</div>
                     </div>
                 </div>
             </div>

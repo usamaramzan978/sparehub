@@ -79,7 +79,7 @@
                 <div class="col-12 col-md-6">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Purchase Date') }}</div>
-                        <div class="fw-semibold">{{ $purchaseItem->purchase?->purchase_date?->format('Y-m-d') ?? '-' }}
+                        <div class="fw-semibold">@tenantDate($purchaseItem->purchase?->purchase_date, 'Y-m-d')
                         </div>
                     </div>
                 </div>

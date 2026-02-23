@@ -69,7 +69,7 @@
                             <label class="form-label" for="effective_from_{{ $productPrice->id }}">{{ __('Effective From') }}</label>
                             <input type="datetime-local" name="effective_from" id="effective_from_{{ $productPrice->id }}"
                                 class="form-control @error('effective_from') is-invalid @enderror"
-                                value="{{ old('effective_from', $productPrice->effective_from?->format('Y-m-d\TH:i')) }}"
+                                value="{{ old('effective_from', \App\Support\TenantDateTime::format($productPrice->effective_from, 'Y-m-d\\TH:i', '')) }}"
                                 required>
                             @error('effective_from')
                                 <span class="invalid-feedback d-block">{{ $message }}</span>

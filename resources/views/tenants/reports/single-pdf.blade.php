@@ -46,7 +46,7 @@
     <body>
         <div class="header">
             <h1>{{ $reportTitle }}</h1>
-            <div class="meta">Generated: {{ $generatedAt->format('Y-m-d H:i') }}</div>
+            <div class="meta">Generated: @tenantDate($generatedAt, 'Y-m-d H:i')</div>
             @if ($filters['date_from'] !== '' || $filters['date_to'] !== '')
                 <div class="meta">
                     Period:
@@ -74,7 +74,7 @@
                     @forelse ($sales as $sale)
                         <tr>
                             <td>{{ $sale->invoice_no }}</td>
-                            <td>{{ $sale->invoice_date?->format('Y-m-d') }}</td>
+                            <td>@tenantDate($sale->invoice_date, 'Y-m-d', '')</td>
                             <td>{{ $sale->customer?->name ?? '-' }}</td>
                             <td>{{ ucfirst($sale->invoice_type->value) }}</td>
                             <td>{{ ucfirst(str_replace('_', ' ', $sale->status->value)) }}</td>
@@ -104,7 +104,7 @@
                     @forelse ($purchases as $purchase)
                         <tr>
                             <td>{{ $purchase->purchase_no }}</td>
-                            <td>{{ $purchase->purchase_date?->format('Y-m-d') }}</td>
+                            <td>@tenantDate($purchase->purchase_date, 'Y-m-d', '')</td>
                             <td>{{ $purchase->vendor?->name ?? '-' }}</td>
                             <td>{{ ucfirst(str_replace('_', ' ', $purchase->status->value)) }}</td>
                             <td class="text-right">{{ number_format((float) $purchase->grand_total, 2) }}</td>
@@ -133,7 +133,7 @@
                         <tr>
                             <td>{{ $payment->sale?->invoice_no ?? '-' }}</td>
                             <td>{{ ucfirst($payment->payment_method->value) }}</td>
-                            <td>{{ $payment->paid_at?->format('Y-m-d H:i') }}</td>
+                            <td>@tenantDate($payment->paid_at, 'Y-m-d H:i')</td>
                             <td>{{ $payment->reference_no ?: '-' }}</td>
                             <td class="text-right">{{ number_format((float) $payment->amount, 2) }}</td>
                         </tr>
@@ -161,7 +161,7 @@
                             <td>{{ $payment->payment_no }}</td>
                             <td>{{ $payment->vendor?->name ?? '-' }}</td>
                             <td>{{ ucfirst($payment->payment_method->value) }}</td>
-                            <td>{{ $payment->paid_at?->format('Y-m-d H:i') }}</td>
+                            <td>@tenantDate($payment->paid_at, 'Y-m-d H:i')</td>
                             <td class="text-right">{{ number_format((float) $payment->amount, 2) }}</td>
                         </tr>
                     @empty
@@ -186,7 +186,7 @@
                         <tr>
                             <td>{{ $sale->invoice_no }}</td>
                             <td>{{ $sale->customer?->name ?? '-' }}</td>
-                            <td>{{ $sale->invoice_date?->format('Y-m-d') }}</td>
+                            <td>@tenantDate($sale->invoice_date, 'Y-m-d', '')</td>
                             <td class="text-right">{{ number_format((float) $sale->balance_due, 2) }}</td>
                         </tr>
                     @empty
@@ -211,7 +211,7 @@
                         <tr>
                             <td>{{ $purchase->purchase_no }}</td>
                             <td>{{ $purchase->vendor?->name ?? '-' }}</td>
-                            <td>{{ $purchase->purchase_date?->format('Y-m-d') }}</td>
+                            <td>@tenantDate($purchase->purchase_date, 'Y-m-d', '')</td>
                             <td class="text-right">{{ number_format((float) $purchase->balance_due, 2) }}</td>
                         </tr>
                     @empty

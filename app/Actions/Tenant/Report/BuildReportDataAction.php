@@ -14,6 +14,7 @@ use App\Models\Sale;
 use App\Models\SalePayment;
 use App\Models\Vendor;
 use App\Models\VendorPayment;
+use App\Support\TenantDateTime;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -35,6 +36,8 @@ final class BuildReportDataAction
         $search = mb_trim($request->string('search')->toString());
         $minTotal = mb_trim($request->string('min_total')->toString());
         $maxTotal = mb_trim($request->string('max_total')->toString());
+        $dateFromAt = $dateFrom !== '' ? TenantDateTime::startOfDay($dateFrom) : null;
+        $dateToAt = $dateTo !== '' ? TenantDateTime::endOfDay($dateTo) : null;
 
         $salesBase = Sale::query()
             ->with(['customer'])
@@ -75,8 +78,8 @@ final class BuildReportDataAction
         $salePaymentsBase = SalePayment::query()
             ->with(['sale.customer', 'receiver'])
             ->where('branch_id', $branchId)
-            ->when($dateFrom !== '', fn (Builder $query) => $query->whereDate('paid_at', '>=', $dateFrom))
-            ->when($dateTo !== '', fn (Builder $query) => $query->whereDate('paid_at', '<=', $dateTo))
+            ->when($dateFromAt !== null, fn (Builder $query) => $query->where('paid_at', '>=', $dateFromAt))
+            ->when($dateToAt !== null, fn (Builder $query) => $query->where('paid_at', '<=', $dateToAt))
             ->when($paymentMethod !== '', fn (Builder $query) => $query->where('payment_method', $paymentMethod))
             ->when($customerId !== '', fn (Builder $query) => $query->whereHas('sale', fn (Builder $saleQuery) => $saleQuery->where('customer_id', $customerId)))
             ->when($search !== '', function (Builder $query) use ($search): void {
@@ -90,8 +93,8 @@ final class BuildReportDataAction
         $vendorPaymentsBase = VendorPayment::query()
             ->with(['vendor', 'purchase', 'creator'])
             ->where('branch_id', $branchId)
-            ->when($dateFrom !== '', fn (Builder $query) => $query->whereDate('paid_at', '>=', $dateFrom))
-            ->when($dateTo !== '', fn (Builder $query) => $query->whereDate('paid_at', '<=', $dateTo))
+            ->when($dateFromAt !== null, fn (Builder $query) => $query->where('paid_at', '>=', $dateFromAt))
+            ->when($dateToAt !== null, fn (Builder $query) => $query->where('paid_at', '<=', $dateToAt))
             ->when($paymentMethod !== '', fn (Builder $query) => $query->where('payment_method', $paymentMethod))
             ->when($vendorId !== '', fn (Builder $query) => $query->where('vendor_id', $vendorId))
             ->when($search !== '', function (Builder $query) use ($search): void {

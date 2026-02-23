@@ -32,7 +32,7 @@
                 <div>
                     <div class="text-muted small">{{ __('Invoice') }}</div>
                     <h5 class="mb-1">{{ $sale->invoice_no }}</h5>
-                    <div class="text-muted small">{{ __('Date') }}: {{ $sale->invoice_date?->format('Y-m-d') ?? '-' }}
+                    <div class="text-muted small">{{ __('Date') }}: @tenantDate($sale->invoice_date, 'Y-m-d')
                     </div>
                 </div>
                 <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $sale->status->value)) }}</span>
@@ -197,7 +197,7 @@
                                 <td>{{ ucfirst($salePayment->payment_method->value) }}</td>
                                 <td class="text-end">{{ number_format((float) $salePayment->amount, 2) }}</td>
                                 <td>{{ $salePayment->receiver?->name ?? '-' }}</td>
-                                <td>{{ $salePayment->paid_at?->format('Y-m-d H:i') ?? '-' }}</td>
+                                <td>@tenantDate($salePayment->paid_at, 'Y-m-d H:i')</td>
                                 <td>{{ $salePayment->reference_no ?? '-' }}</td>
                                 <td class="text-end">
                                     <a href="{{ route('tenant.sale-payments.show', $salePayment) }}"

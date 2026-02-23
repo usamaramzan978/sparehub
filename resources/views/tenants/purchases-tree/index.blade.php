@@ -155,7 +155,7 @@
                                                             @endforeach
                                                         </div>
                                                     </td>
-                                                    <td>{{ $purchase->purchase_date?->format('Y-m-d') ?: '-' }}</td>
+                                                    <td>@tenantDate($purchase->purchase_date, 'Y-m-d')</td>
                                                     <td>{{ ucfirst(str_replace('_', ' ', $purchase->status->value)) }}</td>
                                                     <td>{{ $purchase->warehouse?->name ?: '-' }}</td>
                                                     <td class="text-end">{{ $row['items_count'] }}</td>

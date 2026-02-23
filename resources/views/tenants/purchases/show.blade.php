@@ -23,7 +23,7 @@
                     <div class="text-muted small">{{ __('Purchase No') }}</div>
                     <h5 class="mb-1">{{ $purchase->purchase_no }}</h5>
                     <div class="text-muted small">{{ __('Date') }}:
-                        {{ $purchase->purchase_date?->format('Y-m-d') ?? '-' }}</div>
+                        @tenantDate($purchase->purchase_date, 'Y-m-d')</div>
                 </div>
                 <div class="text-end">
                     <div class="text-muted small">{{ __('Status') }}</div>
@@ -53,7 +53,7 @@
                 <div class="col-12 col-md-6 col-xl-3">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Due Date') }}</div>
-                        <div class="fw-semibold">{{ $purchase->due_date?->format('Y-m-d') ?? '-' }}</div>
+                        <div class="fw-semibold">@tenantDate($purchase->due_date, 'Y-m-d')</div>
                     </div>
                 </div>
 
@@ -170,7 +170,7 @@
                                 <td>{{ $vendorPayment->payment_no }}</td>
                                 <td>{{ ucfirst($vendorPayment->payment_method->value) }}</td>
                                 <td class="text-end">{{ number_format((float) $vendorPayment->amount, 2) }}</td>
-                                <td>{{ $vendorPayment->paid_at?->format('Y-m-d H:i') ?? '-' }}</td>
+                                <td>@tenantDate($vendorPayment->paid_at, 'Y-m-d H:i')</td>
                                 <td class="text-end">
                                     <a href="{{ route('tenant.vendor-payments.show', $vendorPayment) }}"
                                         class="btn btn-sm btn-icon btn-primary-light btn-wave waves-effect waves-light"
@@ -211,7 +211,7 @@
                         @forelse ($purchase->returns as $purchaseReturn)
                             <tr>
                                 <td>{{ $purchaseReturn->return_no }}</td>
-                                <td>{{ $purchaseReturn->return_date?->format('Y-m-d') ?? '-' }}</td>
+                                <td>@tenantDate($purchaseReturn->return_date, 'Y-m-d')</td>
                                 <td>{{ ucfirst(str_replace('_', ' ', $purchaseReturn->status->value)) }}</td>
                                 <td class="text-end">{{ number_format((float) $purchaseReturn->grand_total, 2) }}</td>
                                 <td class="text-end">

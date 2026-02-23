@@ -45,7 +45,7 @@
                 <div class="col-12">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Created At') }}</div>
-                        <div>{{ $supportTicket->created_at?->format('Y-m-d H:i') ?? '-' }}</div>
+                        <div>@tenantDate($supportTicket->created_at, 'Y-m-d H:i')</div>
                     </div>
                 </div>
                 <div class="col-12">
@@ -90,7 +90,7 @@
                                 {{ $message->sender_name }}
                                 {{-- <span class="text-muted">({{ ucfirst($message->sender_type) }})</span> --}}
                             </div>
-                            <small class="text-muted">{{ $message->created_at?->format('Y-m-d H:i') ?? '-' }}</small>
+                            <small class="text-muted">@tenantDate($message->created_at, 'Y-m-d H:i')</small>
                         </div>
                         <div class="mb-0">{{ $message->message }}</div>
                     </div>

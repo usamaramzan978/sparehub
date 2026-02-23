@@ -48,7 +48,7 @@
                                 <td>{{ number_format((float) $productPrice->mrp, 2) }}</td>
                                 <td>{{ number_format((float) $productPrice->retail_price, 2) }}</td>
                                 <td>{{ number_format((float) $productPrice->wholesale_price, 2) }}</td>
-                                <td>{{ $productPrice->effective_from?->format('Y-m-d H:i') }}</td>
+                                <td>@tenantDate($productPrice->effective_from, 'Y-m-d H:i', '')</td>
                                 <td class="text-end">
                                     <div class="btn-list">
                                         <span class="d-inline-block" data-bs-toggle="tooltip" title="{{ __('View') }}">

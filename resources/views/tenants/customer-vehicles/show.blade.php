@@ -54,7 +54,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="text-muted small">{{ __('Created At') }}</div>
-                            <div class="fw-semibold">{{ $vehicle->created_at?->format('Y-m-d H:i') ?? '-' }}</div>
+                            <div class="fw-semibold">@tenantDate($vehicle->created_at, 'Y-m-d H:i')</div>
                         </div>
                     </div>
                 </div>

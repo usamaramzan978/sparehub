@@ -107,7 +107,7 @@
                                 @forelse (collect($sales->items())->take(5) as $sale)
                                     <tr>
                                         <td>{{ $sale->invoice_no }}</td>
-                                        <td>{{ $sale->invoice_date?->format('Y-m-d') }}</td>
+                                        <td>@tenantDate($sale->invoice_date, 'Y-m-d', '')</td>
                                         <td>{{ $sale->customer?->name ?? '-' }}</td>
                                         <td class="text-end">{{ number_format((float) $sale->grand_total, 2) }}</td>
                                     </tr>
@@ -142,7 +142,7 @@
                                 @forelse (collect($purchases->items())->take(5) as $purchase)
                                     <tr>
                                         <td>{{ $purchase->purchase_no }}</td>
-                                        <td>{{ $purchase->purchase_date?->format('Y-m-d') }}</td>
+                                        <td>@tenantDate($purchase->purchase_date, 'Y-m-d', '')</td>
                                         <td>{{ $purchase->vendor?->name ?? '-' }}</td>
                                         <td class="text-end">{{ number_format((float) $purchase->grand_total, 2) }}</td>
                                     </tr>

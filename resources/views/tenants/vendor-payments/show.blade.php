@@ -24,7 +24,7 @@
                     <div class="text-muted small">{{ __('Payment No') }}</div>
                     <h5 class="mb-1">{{ $vendorPayment->payment_no }}</h5>
                     <div class="text-muted small">{{ __('Paid At') }}:
-                        {{ $vendorPayment->paid_at?->format('Y-m-d H:i') ?? '-' }}</div>
+                        @tenantDate($vendorPayment->paid_at, 'Y-m-d H:i')</div>
                 </div>
                 <div class="text-end">
                     <div class="text-muted small">{{ __('Amount') }}</div>

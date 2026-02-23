@@ -42,7 +42,7 @@
                                 for="expires_at_{{ $saleHold->id }}">{{ __('Expires At') }}</label>
                             <input type="datetime-local" name="expires_at" id="expires_at_{{ $saleHold->id }}"
                                 class="form-control @error('expires_at') is-invalid @enderror"
-                                value="{{ old('expires_at', $saleHold->expires_at?->format('Y-m-d\TH:i')) }}">
+                                value="{{ old('expires_at', \App\Support\TenantDateTime::format($saleHold->expires_at, 'Y-m-d\\TH:i', '')) }}">
                             @error('expires_at')
                                 <span class="invalid-feedback d-block">{{ $message }}</span>
                             @enderror

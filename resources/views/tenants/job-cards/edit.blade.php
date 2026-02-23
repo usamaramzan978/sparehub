@@ -44,7 +44,7 @@
                         <label class="form-label" for="job_date">{{ __('Job Date') }}</label>
                         <input type="date" name="job_date" id="job_date"
                             class="form-control @error('job_date') is-invalid @enderror"
-                            value="{{ old('job_date', $jobCard->job_date?->format('Y-m-d')) }}" required>
+                            value="{{ old('job_date', \App\Support\TenantDateTime::format($jobCard->job_date, 'Y-m-d', '')) }}" required>
                         @error('job_date')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
@@ -141,7 +141,7 @@
                         <label class="form-label" for="in_time">{{ __('In Time') }}</label>
                         <input type="datetime-local" name="in_time" id="in_time"
                             class="form-control @error('in_time') is-invalid @enderror"
-                            value="{{ old('in_time', $jobCard->in_time?->format('Y-m-d\TH:i')) }}">
+                            value="{{ old('in_time', \App\Support\TenantDateTime::format($jobCard->in_time, 'Y-m-d\\TH:i', '')) }}">
                         @error('in_time')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
@@ -150,7 +150,7 @@
                         <label class="form-label" for="out_time">{{ __('Out Time') }}</label>
                         <input type="datetime-local" name="out_time" id="out_time"
                             class="form-control @error('out_time') is-invalid @enderror"
-                            value="{{ old('out_time', $jobCard->out_time?->format('Y-m-d\TH:i')) }}">
+                            value="{{ old('out_time', \App\Support\TenantDateTime::format($jobCard->out_time, 'Y-m-d\\TH:i', '')) }}">
                         @error('out_time')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror

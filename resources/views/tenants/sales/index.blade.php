@@ -60,7 +60,7 @@
                             @endphp
                             <tr>
                                 <td>{{ $sale->invoice_no }}</td>
-                                <td>{{ $sale->invoice_date?->format('Y-m-d') }}</td>
+                                <td>@tenantDate($sale->invoice_date, 'Y-m-d', '')</td>
                                 <td>{{ $sale->customer?->name ?? '-' }}</td>
                                 <td>
                                     <span

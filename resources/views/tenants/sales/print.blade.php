@@ -75,7 +75,7 @@
     <div class="receipt">
         <div class="row">
             <span>{{ $sale->branch?->name ?? 'Branch' }}</span>
-            <span>{{ $sale->created_at->format('Y-m-d H:i') }}</span>
+            <span>@tenantDate($sale->created_at, 'Y-m-d H:i')</span>
         </div>
         <div class="row muted">
             <span>Invoice</span>

@@ -107,7 +107,7 @@
                                 <td>
                                     @if ($record?->paid_at)
                                         <span class="badge bg-success-transparent">{{ __('Paid') }}</span>
-                                        <div><small class="text-muted">{{ $record->paid_at->format('Y-m-d') }}</small>
+                                        <div><small class="text-muted">@tenantDate($record->paid_at, 'Y-m-d')</small>
                                         </div>
                                     @else
                                         <span class="badge bg-warning-transparent">{{ __('Pending') }}</span>

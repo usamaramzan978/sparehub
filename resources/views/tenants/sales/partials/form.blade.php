@@ -66,7 +66,7 @@
             <label class="form-label" for="invoice_date">{{ __('Invoice Date') }}</label>
             <input type="date" name="invoice_date" id="invoice_date"
                 class="form-control @error('invoice_date') is-invalid @enderror"
-                value="{{ old('invoice_date', $currentSale?->invoice_date?->format('Y-m-d') ?? now()->toDateString()) }}" required>
+                value="{{ old('invoice_date', \App\Support\TenantDateTime::format($currentSale?->invoice_date ?? now(), 'Y-m-d', '')) }}" required>
             @error('invoice_date')
                 <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror
@@ -324,7 +324,7 @@
             <label class="form-label" for="posted_at">{{ __('Posted At') }}</label>
             <input type="datetime-local" name="posted_at" id="posted_at"
                 class="form-control @error('posted_at') is-invalid @enderror"
-                value="{{ old('posted_at', $currentSale?->posted_at?->format('Y-m-d\\TH:i')) }}">
+                value="{{ old('posted_at', \App\Support\TenantDateTime::format($currentSale?->posted_at, 'Y-m-d\\TH:i', '')) }}">
             @error('posted_at')
                 <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror

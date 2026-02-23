@@ -58,13 +58,13 @@
                 <div class="col-12 col-md-6">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Effective From') }}</div>
-                        <div class="fw-semibold">{{ $productPrice->effective_from?->format('Y-m-d H:i') ?? '-' }}</div>
+                        <div class="fw-semibold">@tenantDate($productPrice->effective_from, 'Y-m-d H:i')</div>
                     </div>
                 </div>
                 <div class="col-12 col-md-6">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Created At') }}</div>
-                        <div class="fw-semibold">{{ $productPrice->created_at?->format('Y-m-d H:i') ?? '-' }}</div>
+                        <div class="fw-semibold">@tenantDate($productPrice->created_at, 'Y-m-d H:i')</div>
                     </div>
                 </div>
             </div>

@@ -34,7 +34,7 @@
                                 <td>{{ $payment->purchase?->purchase_no ?? '-' }}</td>
                                 <td>{{ ucfirst($payment->payment_method->value) }}</td>
                                 <td>{{ number_format((float) $payment->amount, 2) }}</td>
-                                <td>{{ $payment->paid_at?->format('Y-m-d H:i') }}</td>
+                                <td>@tenantDate($payment->paid_at, 'Y-m-d H:i', '')</td>
                                 <td class="text-end">
                                     <div class="btn-list">
                                         <a href="{{ route('tenant.vendor-payments.show', $payment) }}"

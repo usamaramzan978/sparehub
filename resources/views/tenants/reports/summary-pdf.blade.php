@@ -59,7 +59,7 @@
     </head>
     <body>
         <h1>Reports Summary</h1>
-        <div class="meta">Generated: {{ $generatedAt->format('Y-m-d H:i') }}</div>
+        <div class="meta">Generated: @tenantDate($generatedAt, 'Y-m-d H:i')</div>
         @if ($filters['date_from'] !== '' || $filters['date_to'] !== '')
             <div class="meta">
                 Period:
@@ -97,7 +97,7 @@
                     <tr>
                         <td>{{ $sale->invoice_no }}</td>
                         <td>{{ $sale->customer?->name ?? '-' }}</td>
-                        <td>{{ $sale->invoice_date?->format('Y-m-d') }}</td>
+                        <td>@tenantDate($sale->invoice_date, 'Y-m-d', '')</td>
                         <td class="text-right">{{ number_format((float) $sale->balance_due, 2) }}</td>
                     </tr>
                 @empty
@@ -121,7 +121,7 @@
                     <tr>
                         <td>{{ $purchase->purchase_no }}</td>
                         <td>{{ $purchase->vendor?->name ?? '-' }}</td>
-                        <td>{{ $purchase->purchase_date?->format('Y-m-d') }}</td>
+                        <td>@tenantDate($purchase->purchase_date, 'Y-m-d', '')</td>
                         <td class="text-right">{{ number_format((float) $purchase->balance_due, 2) }}</td>
                     </tr>
                 @empty

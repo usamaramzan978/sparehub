@@ -353,7 +353,7 @@
                                     <tr>
                                         <td>{{ $sale->invoice_no }}</td>
                                         <td>{{ $sale->customer?->name ?? '-' }}</td>
-                                        <td>{{ $sale->invoice_date?->format('Y-m-d') }}</td>
+                                        <td>@tenantDate($sale->invoice_date, 'Y-m-d', '')</td>
                                         <td class="text-end">{{ $formatCurrency((float) $sale->grand_total) }}</td>
                                     </tr>
                                 @empty
@@ -392,7 +392,7 @@
                                     <tr>
                                         <td>{{ $purchase->purchase_no }}</td>
                                         <td>{{ $purchase->vendor?->name ?? '-' }}</td>
-                                        <td>{{ $purchase->purchase_date?->format('Y-m-d') }}</td>
+                                        <td>@tenantDate($purchase->purchase_date, 'Y-m-d', '')</td>
                                         <td class="text-end">{{ $formatCurrency((float) $purchase->grand_total) }}</td>
                                     </tr>
                                 @empty

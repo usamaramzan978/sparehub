@@ -60,7 +60,7 @@
             <label class="form-label" for="return_date">{{ __('Return Date') }}</label>
             <input type="date" name="return_date" id="return_date"
                 class="form-control @error('return_date') is-invalid @enderror"
-                value="{{ old('return_date', $currentPurchaseReturn?->return_date?->format('Y-m-d') ?? now()->toDateString()) }}" required>
+                value="{{ old('return_date', \App\Support\TenantDateTime::format($currentPurchaseReturn?->return_date ?? now(), 'Y-m-d', '')) }}" required>
             @error('return_date')
                 <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror
@@ -224,7 +224,7 @@
             <label class="form-label" for="posted_at">{{ __('Posted At') }}</label>
             <input type="datetime-local" name="posted_at" id="posted_at"
                 class="form-control @error('posted_at') is-invalid @enderror"
-                value="{{ old('posted_at', $currentPurchaseReturn?->posted_at?->format('Y-m-d\\TH:i')) }}">
+                value="{{ old('posted_at', \App\Support\TenantDateTime::format($currentPurchaseReturn?->posted_at, 'Y-m-d\\TH:i', '')) }}">
             @error('posted_at')
                 <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror

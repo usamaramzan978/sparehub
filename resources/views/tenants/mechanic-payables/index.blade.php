@@ -119,7 +119,7 @@
                                 @forelse ($items as $item)
                                     <tr>
                                         <td>{{ $item->sale?->invoice_no ?? '-' }}</td>
-                                        <td>{{ $item->sale?->invoice_date?->format('Y-m-d') ?? '-' }}</td>
+                                        <td>@tenantDate($item->sale?->invoice_date, 'Y-m-d')</td>
                                         <td>{{ $item->mechanic?->name ?? '-' }}</td>
                                         <td>{{ $item->description ?: ($item->serviceCatalog?->name ?? '-') }}</td>
                                         <td class="text-end">{{ $currency((float) $item->line_total) }}</td>

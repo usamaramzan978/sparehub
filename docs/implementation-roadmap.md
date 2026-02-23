@@ -33,9 +33,9 @@ Use this checklist to implement improvements step by step.
 
 ## Phase 3: Timezone & Date Consistency
 
-- [ ] Standardize date/time rendering with shared helper/component.
-- [ ] Ensure all blade screens use tenant-local timezone output.
-- [ ] Verify exports/reports respect tenant timezone boundaries.
+- [x] Standardize date/time rendering with shared helper/component.
+- [x] Ensure all blade screens use tenant-local timezone output.
+- [x] Verify exports/reports respect tenant timezone boundaries.
 
 ## Phase 4: UI Maintainability & Performance
 

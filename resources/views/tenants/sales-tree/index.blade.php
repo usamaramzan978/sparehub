@@ -156,7 +156,7 @@
                                                             @endforeach
                                                         </div>
                                                     </td>
-                                                    <td>{{ $sale->invoice_date?->format('Y-m-d') ?: '-' }}</td>
+                                                    <td>@tenantDate($sale->invoice_date, 'Y-m-d')</td>
                                                     <td>{{ ucfirst(str_replace('_', ' ', $sale->status->value)) }}</td>
                                                     <td class="text-end">{{ $invoiceRow['items_count'] }}</td>
                                                     <td class="text-end">{{ $qty($invoiceRow['qty_total']) }}</td>

@@ -53,7 +53,7 @@
                                 <td>{{ $ticket->ticket_no }}</td>
                                 <td>{{ $ticket->title }}</td>
                                 <td>{{ ucfirst(str_replace('_', ' ', $ticket->status->value)) }}</td>
-                                <td>{{ $ticket->created_at?->format('Y-m-d H:i') ?? '-' }}</td>
+                                <td>@tenantDate($ticket->created_at, 'Y-m-d H:i')</td>
                                 <td class="text-end">
                                     <div class="btn-list">
                                         <a href="{{ route('tenant.support-tickets.show', $ticket) }}"

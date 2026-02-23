@@ -49,11 +49,11 @@
                         </div>
                         <div class="col-md-6">
                             <div class="text-muted small">{{ __('Created At') }}</div>
-                            <div class="fw-semibold">{{ $user->created_at?->format('Y-m-d H:i') }}</div>
+                            <div class="fw-semibold">@tenantDate($user->created_at, 'Y-m-d H:i', '')</div>
                         </div>
                         <div class="col-md-6">
                             <div class="text-muted small">{{ __('Last Login') }}</div>
-                            <div class="fw-semibold">{{ $user->last_login_at?->format('Y-m-d H:i') ?: '-' }}</div>
+                            <div class="fw-semibold">@tenantDate($user->last_login_at, 'Y-m-d H:i')</div>
                         </div>
                         <div class="col-md-6">
                             <div class="text-muted small">{{ __('Last Login IP') }}</div>

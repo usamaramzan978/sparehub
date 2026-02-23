@@ -37,7 +37,7 @@
                 <div class="col-12 col-md-6 col-xl-3">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Paid At') }}</div>
-                        <div class="fw-semibold">{{ $salePayment->paid_at?->format('Y-m-d H:i') ?? '-' }}</div>
+                        <div class="fw-semibold">@tenantDate($salePayment->paid_at, 'Y-m-d H:i')</div>
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-xl-3">

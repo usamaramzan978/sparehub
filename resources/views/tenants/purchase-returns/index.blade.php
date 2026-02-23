@@ -43,7 +43,7 @@
                         @forelse ($items as $return)
                             <tr>
                                 <td>{{ $return->return_no }}</td>
-                                <td>{{ $return->return_date?->format('Y-m-d') }}</td>
+                                <td>@tenantDate($return->return_date, 'Y-m-d', '')</td>
                                 <td>{{ $return->vendor?->name ?? '-' }}</td>
                                 <td>{{ $return->purchase?->purchase_no ?? '-' }}</td>
                                 <td>{{ ucfirst(str_replace('_', ' ', $return->status->value)) }}</td>

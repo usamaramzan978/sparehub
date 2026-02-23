@@ -46,11 +46,11 @@
                         </div>
                         <div class="col-sm-6">
                             <div class="text-muted small">{{ __('Created At') }}</div>
-                            <div class="fw-semibold">{{ $branch->created_at?->format('Y-m-d H:i') }}</div>
+                            <div class="fw-semibold">@tenantDate($branch->created_at, 'Y-m-d H:i', '')</div>
                         </div>
                         <div class="col-sm-6">
                             <div class="text-muted small">{{ __('Updated At') }}</div>
-                            <div class="fw-semibold">{{ $branch->updated_at?->format('Y-m-d H:i') }}</div>
+                            <div class="fw-semibold">@tenantDate($branch->updated_at, 'Y-m-d H:i', '')</div>
                         </div>
                     </div>
                 </div>

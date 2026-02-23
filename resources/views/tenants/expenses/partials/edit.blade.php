@@ -58,7 +58,7 @@
                                 <label class="form-label" for="expense-date-{{ $expense->id }}">{{ __('Expense Date') }}</label>
                                 <input type="date" name="expense_date" id="expense-date-{{ $expense->id }}"
                                     class="form-control @error('expense_date') is-invalid @enderror"
-                                    value="{{ old('expense_date', $expense->expense_date?->format('Y-m-d')) }}" required>
+                                    value="{{ old('expense_date', \App\Support\TenantDateTime::format($expense->expense_date, 'Y-m-d', '')) }}" required>
                                 @error('expense_date')
                                     <span class="invalid-feedback d-block">{{ $message }}</span>
                                 @enderror

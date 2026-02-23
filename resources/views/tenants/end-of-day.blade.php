@@ -112,7 +112,7 @@
                             class="text-success">{{ $currency($summary['payroll_paid_total']) }}</strong></div>
                     <div class="d-flex justify-content-between py-1"><span>{{ __('Unpaid') }}</span><strong
                             class="text-warning">{{ $currency($summary['payroll_unpaid_total']) }}</strong></div>
-                    <a href="{{ route('tenant.employee-salaries.index', ['salary_month' => \Carbon\Carbon::parse($selectedDate)->format('Y-m')]) }}"
+                    <a href="{{ route('tenant.employee-salaries.index', ['salary_month' => \App\Support\TenantDateTime::format($selectedDate, 'Y-m', '')]) }}"
                         class="btn btn-outline-primary btn-sm mt-3">{{ __('Open Salaries') }}</a>
                 </div>
             </div>
@@ -139,7 +139,7 @@
                                 @forelse ($recentSales as $sale)
                                     <tr>
                                         <td>{{ $sale->invoice_no }}</td>
-                                        <td>{{ $sale->invoice_date?->format('Y-m-d') }}</td>
+                                        <td>@tenantDate($sale->invoice_date, 'Y-m-d', '')</td>
                                         <td class="text-end">{{ $currency((float) $sale->grand_total) }}</td>
                                     </tr>
                                 @empty
@@ -172,7 +172,7 @@
                                 @forelse ($recentPurchases as $purchase)
                                     <tr>
                                         <td>{{ $purchase->purchase_no }}</td>
-                                        <td>{{ $purchase->purchase_date?->format('Y-m-d') }}</td>
+                                        <td>@tenantDate($purchase->purchase_date, 'Y-m-d', '')</td>
                                         <td class="text-end">{{ $currency((float) $purchase->grand_total) }}</td>
                                     </tr>
                                 @empty

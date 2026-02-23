@@ -60,7 +60,7 @@
             <label class="form-label" for="purchase_date">{{ __('Purchase Date') }}</label>
             <input type="date" name="purchase_date" id="purchase_date"
                 class="form-control @error('purchase_date') is-invalid @enderror"
-                value="{{ old('purchase_date', $currentPurchase?->purchase_date?->format('Y-m-d') ?? now()->toDateString()) }}" required>
+                value="{{ old('purchase_date', \App\Support\TenantDateTime::format($currentPurchase?->purchase_date ?? now(), 'Y-m-d', '')) }}" required>
             @error('purchase_date')
                 <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror
@@ -70,7 +70,7 @@
             <label class="form-label" for="due_date">{{ __('Due Date') }}</label>
             <input type="date" name="due_date" id="due_date"
                 class="form-control @error('due_date') is-invalid @enderror"
-                value="{{ old('due_date', $currentPurchase?->due_date?->format('Y-m-d')) }}">
+                value="{{ old('due_date', \App\Support\TenantDateTime::format($currentPurchase?->due_date, 'Y-m-d', '')) }}">
             @error('due_date')
                 <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror
@@ -243,7 +243,7 @@
 
         <div class="col-md-6 mb-3">
             <label class="form-label" for="posted_at">{{ __('Posted At') }}</label>
-            <input type="datetime-local" name="posted_at" id="posted_at" class="form-control @error('posted_at') is-invalid @enderror" value="{{ old('posted_at', $currentPurchase?->posted_at?->format('Y-m-d\\TH:i')) }}">
+            <input type="datetime-local" name="posted_at" id="posted_at" class="form-control @error('posted_at') is-invalid @enderror" value="{{ old('posted_at', \App\Support\TenantDateTime::format($currentPurchase?->posted_at, 'Y-m-d\\TH:i', '')) }}">
             @error('posted_at')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
         </div>
 

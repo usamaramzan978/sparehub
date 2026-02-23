@@ -83,7 +83,7 @@
                     <tbody>
                         @forelse ($items as $expense)
                             <tr>
-                                <td>{{ $expense->expense_date?->format('Y-m-d') }}</td>
+                                <td>@tenantDate($expense->expense_date, 'Y-m-d', '')</td>
                                 <td>{{ $expense->title }}</td>
                                 <td>{{ $expense->category ?: '-' }}</td>
                                 <td>{{ ucfirst($expense->payment_method->value) }}</td>

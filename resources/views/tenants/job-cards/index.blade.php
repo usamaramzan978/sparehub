@@ -42,7 +42,7 @@
                         @forelse ($items as $jobCard)
                             <tr>
                                 <td>{{ $jobCard->job_no }}</td>
-                                <td>{{ $jobCard->job_date?->format('Y-m-d') }}</td>
+                                <td>@tenantDate($jobCard->job_date, 'Y-m-d', '')</td>
                                 <td>{{ $jobCard->customer?->name ?? '-' }}</td>
                                 <td>{{ $jobCard->vehicle?->registration_no ?? '-' }}</td>
                                 <td>{{ ucfirst(str_replace('_', ' ', $jobCard->status->value)) }}</td>

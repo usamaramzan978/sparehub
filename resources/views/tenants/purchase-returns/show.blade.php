@@ -24,7 +24,7 @@
                     <div class="text-muted small">{{ __('Return No') }}</div>
                     <h5 class="mb-1">{{ $purchaseReturn->return_no }}</h5>
                     <div class="text-muted small">{{ __('Date') }}:
-                        {{ $purchaseReturn->return_date?->format('Y-m-d') ?? '-' }}</div>
+                        @tenantDate($purchaseReturn->return_date, 'Y-m-d')</div>
                 </div>
                 <div class="text-end">
                     <div class="text-muted small">{{ __('Status') }}</div>

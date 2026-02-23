@@ -142,7 +142,7 @@
                         @forelse ($recentSales as $sale)
                             <tr>
                                 <td>{{ $sale->invoice_no }}</td>
-                                <td>{{ $sale->invoice_date?->format('Y-m-d') ?? '-' }}</td>
+                                <td>@tenantDate($sale->invoice_date, 'Y-m-d')</td>
                                 <td>{{ ucfirst($sale->status->value) }}</td>
                                 <td class="text-end">{{ number_format((float) $sale->grand_total, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) $sale->balance_due, 2) }}</td>
