@@ -240,10 +240,10 @@ final class ProductStockController extends Controller
                 'product_name' => (string) ($product?->name ?? ''),
                 'action' => $action,
                 'requested_qty' => $qty,
-                'move_qty' => (float) $adjustmentSummary['move_qty'],
+                'move_qty' => $adjustmentSummary['move_qty'],
                 'move_type' => $adjustmentSummary['move_type'],
-                'previous_qty' => (float) $adjustmentSummary['previous_qty'],
-                'new_qty' => (float) $adjustmentSummary['new_qty'],
+                'previous_qty' => $adjustmentSummary['previous_qty'],
+                'new_qty' => $adjustmentSummary['new_qty'],
                 'remarks' => $remarks,
             ],
         );

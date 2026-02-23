@@ -83,7 +83,7 @@ final class SaleController extends Controller
                     'sale_id' => (string) $createdSale->id,
                     'invoice_no' => $createdSale->invoice_no,
                     'grand_total' => (float) $createdSale->grand_total,
-                    'status' => (string) $createdSale->status,
+                    'status' => $createdSale->status->value,
                 ],
             );
         }

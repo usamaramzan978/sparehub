@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -21,8 +21,7 @@ final class ActivityTimelineController extends Controller
 
         $activities = collect();
         if (is_string($connection) && $connection !== '' && Schema::connection($connection)->hasTable($table)) {
-            $activities = DB::connection($connection)->table($table)
-                ->orderByDesc('created_at')
+            $activities = DB::connection($connection)->table($table)->latest()
                 ->limit(25)
                 ->get()
                 ->map(function (object $activity): array {
@@ -35,8 +34,8 @@ final class ActivityTimelineController extends Controller
                         'title' => $meta['title'],
                         'description' => $this->resolveDescription($event, $properties, (string) $activity->description),
                         'badge_class' => $meta['badge_class'],
-                        'time' => Carbon::parse((string) $activity->created_at)->format('h:i A'),
-                        'date' => Carbon::parse((string) $activity->created_at)->format('d M Y'),
+                        'time' => Date::parse((string) $activity->created_at)->format('h:i A'),
+                        'date' => Date::parse((string) $activity->created_at)->format('d M Y'),
                     ];
                 });
         }

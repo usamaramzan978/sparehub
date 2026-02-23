@@ -104,7 +104,7 @@ final class ProfileController extends Controller
 
         return view('tenants.profile.security', [
             'user' => $user,
-            'authenticatorEnabledForTenant' => (bool) ($settings?->two_factor_enabled && $settings->two_factor_method === TwoFactorMethod::AUTHENTICATOR),
+            'authenticatorEnabledForTenant' => $settings?->two_factor_enabled && $settings->two_factor_method === TwoFactorMethod::AUTHENTICATOR,
             'twoFactorMethod' => $settings?->two_factor_method,
             'setupData' => $this->buildAuthenticatorSetupData($user),
             'recentBackupCodes' => session('security.backup_codes'),
@@ -305,7 +305,7 @@ final class ProfileController extends Controller
         $google2fa = new Google2FA();
         $secret = $google2fa->generateSecretKey();
         $backupCodes = collect(range(1, 8))
-            ->map(fn (): string => mb_strtoupper(mb_substr((string) bin2hex(random_bytes(4)), 0, 4).'-'.mb_substr((string) bin2hex(random_bytes(4)), 0, 4)))
+            ->map(fn (): string => mb_strtoupper(mb_substr(bin2hex(random_bytes(4)), 0, 4).'-'.mb_substr(bin2hex(random_bytes(4)), 0, 4)))
             ->all();
         $hashedBackupCodes = collect($backupCodes)
             ->map(fn (string $code): string => Hash::make($this->normalizeBackupCode($code)))
@@ -321,7 +321,7 @@ final class ProfileController extends Controller
             ->where('branch_id', $this->currentBranchId())
             ->first();
 
-        return (bool) ($settings?->two_factor_enabled && $settings->two_factor_method === TwoFactorMethod::AUTHENTICATOR);
+        return $settings?->two_factor_enabled && $settings->two_factor_method === TwoFactorMethod::AUTHENTICATOR;
     }
 
     private function normalizeBackupCode(string $code): string

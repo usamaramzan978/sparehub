@@ -148,7 +148,7 @@ final class SupportTicketController extends Controller
     private function replaceTicketImages(SupportTicket $supportTicket, array|UploadedFile|null $uploadedImages): void
     {
         $images = is_array($uploadedImages) ? $uploadedImages : [$uploadedImages];
-        $images = array_values(array_filter($images, fn ($image): bool => $image instanceof UploadedFile));
+        $images = array_values(array_filter($images, fn (?UploadedFile $image): bool => $image instanceof UploadedFile));
 
         $this->deleteTicketImages($supportTicket);
 

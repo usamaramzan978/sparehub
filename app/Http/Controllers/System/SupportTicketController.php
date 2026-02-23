@@ -12,6 +12,7 @@ use App\Http\Requests\System\SupportTicketUpdateRequest;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketMessage;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,39 +30,40 @@ final class SupportTicketController extends Controller
 
         $tickets = [];
         if ($selectedTenant instanceof Tenant) {
-            $tickets = $selectedTenant->run(function () use ($search, $status, $priority): array {
-                return SupportTicket::query()
-                    ->with('reporter')
-                    ->when(
-                        $search !== '',
-                        fn ($query) => $query->where(function ($builder) use ($search): void {
-                            $builder
-                                ->where('ticket_no', 'like', sprintf('%%%s%%', $search))
-                                ->orWhere('title', 'like', sprintf('%%%s%%', $search))
-                                ->orWhere('description', 'like', sprintf('%%%s%%', $search));
-                        })
-                    )
-                    ->when($status !== '', fn ($query) => $query->where('status', $status))
-                    ->when($priority !== '', fn ($query) => $query->where('priority', $priority))
-                    ->latest()
-                    ->get()
-                    ->map(function (SupportTicket $ticket): array {
-                        $lastMessageAt = $ticket->messages()->latest()->first()?->created_at;
-
-                        return [
-                            'id' => $ticket->id,
-                            'ticket_no' => $ticket->ticket_no,
-                            'title' => $ticket->title,
-                            'priority' => $ticket->priority->value,
-                            'status' => $ticket->status->value,
-                            'reported_by' => $ticket->reporter?->name ?? '-',
-                            'created_at' => $ticket->created_at?->format('Y-m-d H:i') ?? '-',
-                            'last_message_at' => $lastMessageAt?->format('Y-m-d H:i') ?? '-',
-                        ];
+            $tickets = $selectedTenant->run(fn (): array => SupportTicket::query()
+                ->with('reporter')
+                ->when(
+                    $search !== '',
+                    fn ($query) => $query->where(function ($builder) use ($search): void {
+                        $builder
+                            ->where('ticket_no', 'like', sprintf('%%%s%%', $search))
+                            ->orWhere('title', 'like', sprintf('%%%s%%', $search))
+                            ->orWhere('description', 'like', sprintf('%%%s%%', $search));
                     })
-                    ->values()
-                    ->all();
-            });
+                )
+                ->when($status !== '', fn ($query) => $query->where('status', $status))
+                ->when($priority !== '', fn ($query) => $query->where('priority', $priority))
+                ->latest()
+                ->get()
+                ->map(function (SupportTicket $ticket): array {
+                    /** @var SupportTicketMessage|null $lastMessage */
+                    $lastMessage = $ticket->messages()->latest()->first();
+                    /** @var User|null $reporter */
+                    $reporter = $ticket->reporter;
+
+                    return [
+                        'id' => $ticket->id,
+                        'ticket_no' => $ticket->ticket_no,
+                        'title' => $ticket->title,
+                        'priority' => $ticket->priority->value,
+                        'status' => $ticket->status->value,
+                        'reported_by' => $reporter?->name ?? '-',
+                        'created_at' => $ticket->created_at?->format('Y-m-d H:i') ?? '-',
+                        'last_message_at' => $lastMessage?->created_at?->format('Y-m-d H:i') ?? '-',
+                    ];
+                })
+                ->values()
+                ->all());
         }
 
         return view('system.support-tickets.index', [
@@ -139,6 +141,8 @@ final class SupportTicketController extends Controller
         /** @var array<string, mixed> $ticketData */
         $ticketData = $tenant->run(function () use ($ticket): array {
             $supportTicket = SupportTicket::query()->with(['reporter', 'messages'])->findOrFail($ticket);
+            /** @var User|null $reporter */
+            $reporter = $supportTicket->reporter;
 
             return [
                 'id' => $supportTicket->id,
@@ -147,7 +151,7 @@ final class SupportTicketController extends Controller
                 'description' => $supportTicket->description,
                 'priority' => $supportTicket->priority->value,
                 'status' => $supportTicket->status->value,
-                'reported_by' => $supportTicket->reporter?->name ?? '-',
+                'reported_by' => $reporter?->name ?? '-',
                 'created_at' => $supportTicket->created_at?->format('Y-m-d H:i') ?? '-',
                 'image_paths' => is_array($supportTicket->image_paths) ? $supportTicket->image_paths : [],
                 'messages' => $supportTicket->messages

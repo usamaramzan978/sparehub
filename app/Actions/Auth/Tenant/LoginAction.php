@@ -134,10 +134,12 @@ final class LoginAction
 
             if ($status === 'failed') {
                 foreach (array_unique($tenantIds) as $tenantId) {
-                    if (! is_string($tenantId) || $tenantId === '') {
+                    if (! is_string($tenantId)) {
                         continue;
                     }
-
+                    if ($tenantId === '') {
+                        continue;
+                    }
                     AuditTimelineLogger::logForTenant(
                         tenantId: $tenantId,
                         event: 'auth_failure',

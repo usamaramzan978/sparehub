@@ -6,11 +6,13 @@ namespace App\Models;
 
 use App\Models\Concerns\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 final class SupportTicketMessage extends Model
 {
+    use HasFactory;
     use HasUuids;
     use UsesTenantConnection;
 

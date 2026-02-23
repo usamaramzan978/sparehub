@@ -27,6 +27,7 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Facades\Tenancy;
@@ -205,24 +206,24 @@ final class DashboardController extends Controller
             ->limit(8)
             ->get();
 
+        $lowStockProducts = InventoryStock::query()
+            ->where('branch_id', $branchId)
+            ->whereHas('product', fn ($query) => $query->where('track_stock', true))
+            ->selectRaw('product_id')
+            ->groupBy('product_id')
+            ->havingRaw('SUM(qty_on_hand) <= 5');
+
         $tenantId = (string) (tenant()?->getTenantKey() ?? '');
 
         $tenantHealth = [
-            'low_stock_count' => InventoryStock::query()
-                ->where('branch_id', $branchId)
-                ->whereHas('product', fn ($query) => $query->where('track_stock', true))
-                ->selectRaw('product_id')
-                ->groupBy('product_id')
-                ->havingRaw('SUM(qty_on_hand) <= 5')
-                ->get()
-                ->count(),
+            'low_stock_count' => DB::query()->fromSub($lowStockProducts, 'low_stock_products')->count(),
             'unpaid_vendors_count' => Purchase::query()
                 ->where('branch_id', $branchId)
                 ->whereNotNull('vendor_id')
                 ->where('balance_due', '>', 0)
                 ->distinct()
                 ->count('vendor_id'),
-            'open_job_cards_count' => (int) $summary['open_job_cards_count'],
+            'open_job_cards_count' => $summary['open_job_cards_count'],
             'failed_logins_count' => $this->countRecentFailedLogins($tenantId),
         ];
 
@@ -276,28 +277,26 @@ final class DashboardController extends Controller
             return 0;
         }
 
-        return (int) rescue(function () use ($tenantId, $hours): int {
-            return (int) Tenancy::central(function () use ($tenantId, $hours): int {
-                $centralConnection = (string) config('tenancy.database.central_connection', config('database.default'));
+        return (int) rescue(fn (): int => (int) Tenancy::central(function () use ($tenantId, $hours): int {
+            $centralConnection = (string) config('tenancy.database.central_connection', config('database.default'));
 
-                if (
-                    ! Schema::connection($centralConnection)->hasTable('login_attempts')
-                    || ! Schema::connection($centralConnection)->hasTable('login_maps')
-                ) {
-                    return 0;
-                }
+            if (
+                ! Schema::connection($centralConnection)->hasTable('login_attempts')
+                || ! Schema::connection($centralConnection)->hasTable('login_maps')
+            ) {
+                return 0;
+            }
 
-                return (int) LoginAttempt::query()
-                    ->where('status', 'failed')
-                    ->where('user_type', LoginUserType::USER->value)
-                    ->where('attempted_at', '>=', now()->subHours($hours))
-                    ->whereIn('email', LoginMap::query()
-                        ->where('tenant_id', $tenantId)
-                        ->where('type', LoginUserType::USER->value)
-                        ->select('email'))
-                    ->count();
-            });
-        }, 0, false);
+            return (int) LoginAttempt::query()
+                ->where('status', 'failed')
+                ->where('user_type', LoginUserType::USER->value)
+                ->where('attempted_at', '>=', now()->subHours($hours))
+                ->whereIn('email', LoginMap::query()
+                    ->where('tenant_id', $tenantId)
+                    ->where('type', LoginUserType::USER->value)
+                    ->select('email'))
+                ->count();
+        }), 0, false);
     }
 
     /**

@@ -6,11 +6,12 @@ namespace Database\Factories;
 
 use App\Enums\SupportTicketPriority;
 use App\Enums\SupportTicketStatus;
+use App\Models\SupportTicket;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends Factory<\App\Models\SupportTicket>
+ * @extends Factory<SupportTicket>
  */
 final class SupportTicketFactory extends Factory
 {

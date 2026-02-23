@@ -35,6 +35,7 @@ final class SettingController extends Controller
 
         $settings = TenantSetting::query()->firstOrNew(['branch_id' => $branchId]);
         $settings->branch_id = $branchId;
+
         $previousTwoFactorEnabled = (bool) $settings->two_factor_enabled;
         $previousTwoFactorMethod = $settings->two_factor_method?->value;
 

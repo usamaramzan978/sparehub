@@ -55,7 +55,7 @@ it('provisions baseline permissions for sales purchases settings and users modul
 
     foreach ($requiredPermissions as $permissionName) {
         expect(Permission::query()->where('name', $permissionName)->exists())
-            ->toBeTrue("Missing permission: {$permissionName}");
+            ->toBeTrue('Missing permission: '.$permissionName);
     }
 });
 

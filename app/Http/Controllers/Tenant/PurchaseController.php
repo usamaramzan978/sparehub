@@ -84,7 +84,7 @@ final class PurchaseController extends Controller
                     'purchase_id' => (string) $createdPurchase->id,
                     'purchase_no' => $createdPurchase->purchase_no,
                     'grand_total' => (float) $createdPurchase->grand_total,
-                    'status' => (string) $createdPurchase->status,
+                    'status' => $createdPurchase->status->value,
                 ],
             );
         }

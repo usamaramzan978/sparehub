@@ -97,6 +97,7 @@ it('applies fallback branch and tenant timezone on first authenticated request',
     $response = $this->get(contextTenantRoute('dashboard'));
 
     $response->assertSuccessful();
+
     expect(session('tenant.current_branch_id'))->toBe($fixture['primary']->id);
     expect(config('app.timezone'))->toBe('Asia/Karachi');
 });
@@ -211,6 +212,7 @@ it('scopes reports by branch context and applies that branch timezone', function
     $response = $this->get(contextTenantRoute('reports.index'));
 
     $response->assertSuccessful();
+
     $summary = $response->viewData('summary');
 
     expect((float) $summary['sales_total'])->toBe(300.0);

@@ -97,7 +97,7 @@ final class TenantDemoSeeder extends Seeder
             ]
         );
 
-        $unit = Unit::query()->firstOrCreate(
+        Unit::query()->firstOrCreate(
             ['code' => 'PCS'],
             ['name' => 'Pieces', 'is_fractional' => false, 'status' => RecordStatus::ACTIVE->value]
         );

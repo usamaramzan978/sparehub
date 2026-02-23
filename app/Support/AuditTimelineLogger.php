@@ -118,9 +118,9 @@ final class AuditTimelineLogger
         DB::connection($connection)->table(self::TABLE)->insert([
             'event' => $event,
             'description' => $description,
-            'subject_type' => $subject ? $subject::class : null,
+            'subject_type' => $subject instanceof Model ? $subject::class : null,
             'subject_id' => $subject?->getKey(),
-            'causer_type' => $causer ? $causer::class : null,
+            'causer_type' => $causer instanceof Model ? $causer::class : null,
             'causer_id' => $causer?->getKey(),
             'branch_id' => session('tenant.current_branch_id'),
             'properties' => json_encode(array_merge($contextProperties, $properties), JSON_THROW_ON_ERROR),
