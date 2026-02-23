@@ -4,25 +4,24 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\Sale\CreateSaleAction;
+use App\Actions\Tenant\Sale\DeleteSaleAction;
+use App\Actions\Tenant\Sale\EnsureSaleInBranchAction;
+use App\Actions\Tenant\Sale\UpdateSaleAction;
 use App\Enums\InvoiceType;
 use App\Enums\SaleStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\SaleRequest;
 use App\Models\Customer;
-use App\Models\InventoryStock;
 use App\Models\JobCard;
 use App\Models\Product;
 use App\Models\Sale;
-use App\Models\SaleItem;
 use App\Models\ServiceCatalog;
 use App\Models\User;
-use App\Support\AuditTimelineLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 
 final class SaleController extends Controller
 {
@@ -56,44 +55,16 @@ final class SaleController extends Controller
         return view('tenants.sales.create', $this->formOptions());
     }
 
-    public function store(SaleRequest $request): RedirectResponse
+    public function store(SaleRequest $request, CreateSaleAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $branchId = $this->currentBranchId();
-        $items = $payload['items'];
-        unset($payload['items']);
-
-        $payload['branch_id'] = $branchId;
-        $payload['created_by'] = auth('user')->id();
-        $createdSale = null;
-
-        Sale::query()->getConnection()->transaction(function () use ($payload, $items, $branchId, &$createdSale): void {
-            $sale = Sale::query()->create($payload);
-            $this->syncSaleItems($sale, $items, $branchId);
-            $createdSale = $sale;
-        });
-
-        if ($createdSale instanceof Sale) {
-            AuditTimelineLogger::log(
-                event: 'sale_created',
-                description: 'Sale invoice created.',
-                causer: Auth::guard('user')->user(),
-                subject: $createdSale,
-                properties: [
-                    'sale_id' => (string) $createdSale->id,
-                    'invoice_no' => $createdSale->invoice_no,
-                    'grand_total' => (float) $createdSale->grand_total,
-                    'status' => $createdSale->status->value,
-                ],
-            );
-        }
+        $action->handle($request->validated(), $this->currentBranchId(), auth('user')->id());
 
         return to_route('tenant.sales.index')->with('status', 'Created.');
     }
 
-    public function show(Sale $sale): View
+    public function show(Sale $sale, EnsureSaleInBranchAction $ensureSaleInBranchAction): View
     {
-        $this->ensureSaleInCurrentBranch($sale);
+        $sale = $ensureSaleInBranchAction->handle($sale, $this->currentBranchId());
 
         $sale->load([
             'customer',
@@ -111,9 +82,9 @@ final class SaleController extends Controller
         ]);
     }
 
-    public function print(Sale $sale): View
+    public function print(Sale $sale, EnsureSaleInBranchAction $ensureSaleInBranchAction): View
     {
-        $this->ensureSaleInCurrentBranch($sale);
+        $sale = $ensureSaleInBranchAction->handle($sale, $this->currentBranchId());
 
         $sale->load([
             'branch',
@@ -128,9 +99,9 @@ final class SaleController extends Controller
         ]);
     }
 
-    public function edit(Sale $sale): View
+    public function edit(Sale $sale, EnsureSaleInBranchAction $ensureSaleInBranchAction): View
     {
-        $this->ensureSaleInCurrentBranch($sale);
+        $sale = $ensureSaleInBranchAction->handle($sale, $this->currentBranchId());
         $sale->load('items');
 
         return view('tenants.sales.edit', array_merge(
@@ -139,62 +110,27 @@ final class SaleController extends Controller
         ));
     }
 
-    public function update(SaleRequest $request, Sale $sale): RedirectResponse
-    {
-        $this->ensureSaleInCurrentBranch($sale);
-
-        $payload = $request->validated();
-        $branchId = $this->currentBranchId();
-        $items = $payload['items'];
-        unset($payload['items']);
-
-        $payload['branch_id'] = $branchId;
-
-        Sale::query()->getConnection()->transaction(function () use ($sale, $payload, $items, $branchId): void {
-            $sale->update($payload);
-            $this->syncSaleItems($sale, $items, $branchId);
-        });
-
-        AuditTimelineLogger::log(
-            event: 'sale_updated',
-            description: 'Sale invoice updated.',
-            causer: Auth::guard('user')->user(),
-            subject: $sale,
-            properties: [
-                'sale_id' => (string) $sale->id,
-                'invoice_no' => $sale->invoice_no,
-                'changed_attributes' => array_keys($payload),
-            ],
-        );
+    public function update(
+        SaleRequest $request,
+        Sale $sale,
+        UpdateSaleAction $action,
+        EnsureSaleInBranchAction $ensureSaleInBranchAction
+    ): RedirectResponse {
+        $sale = $ensureSaleInBranchAction->handle($sale, $this->currentBranchId());
+        $action->handle($sale, $request->validated(), $this->currentBranchId());
 
         return to_route('tenant.sales.index')->with('status', 'Updated.');
     }
 
-    public function destroy(Sale $sale): RedirectResponse
-    {
-        $this->ensureSaleInCurrentBranch($sale);
-        $snapshot = [
-            'sale_id' => (string) $sale->id,
-            'invoice_no' => $sale->invoice_no,
-            'grand_total' => (float) $sale->grand_total,
-        ];
-        $this->syncStockForSaleItems($sale->items()->get(), $sale->branch_id, reverse: true);
-        $sale->delete();
-
-        AuditTimelineLogger::log(
-            event: 'sale_deleted',
-            description: 'Sale invoice deleted.',
-            causer: Auth::guard('user')->user(),
-            subject: $sale,
-            properties: $snapshot,
-        );
+    public function destroy(
+        Sale $sale,
+        DeleteSaleAction $action,
+        EnsureSaleInBranchAction $ensureSaleInBranchAction
+    ): RedirectResponse {
+        $sale = $ensureSaleInBranchAction->handle($sale, $this->currentBranchId());
+        $action->handle($sale);
 
         return to_route('tenant.sales.index')->with('status', 'Deleted.');
-    }
-
-    private function ensureSaleInCurrentBranch(Sale $sale): void
-    {
-        abort_if($sale->branch_id !== $this->currentBranchId(), 404);
     }
 
     /**
@@ -213,111 +149,5 @@ final class SaleController extends Controller
             'statuses' => SaleStatus::cases(),
             'invoiceTypes' => InvoiceType::cases(),
         ];
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $items
-     */
-    private function syncSaleItems(Sale $sale, array $items, string $branchId): void
-    {
-        $existingItems = $sale->items()->get();
-        $this->syncStockForSaleItems($existingItems, $branchId, reverse: true);
-        $sale->items()->delete();
-
-        foreach ($items as $item) {
-            $qty = (float) $item['qty'];
-            $unitPrice = (float) $item['unit_price'];
-            $discountAmount = (float) ($item['discount_amount'] ?? 0);
-            $taxAmount = (float) ($item['tax_amount'] ?? 0);
-            $lineTotal = ($qty * $unitPrice) - $discountAmount + $taxAmount;
-
-            $lineType = (string) $item['line_type'];
-            $productId = $lineType === 'product' ? $item['product_id'] : null;
-            $serviceCatalogId = $lineType === 'service' ? $item['service_catalog_id'] : null;
-            $mechanicId = $lineType === 'service' ? ($item['mechanic_id'] ?? null) : null;
-            $mechanicCharge = $lineType === 'service' ? (float) ($item['mechanic_charge'] ?? 0) : 0.0;
-
-            SaleItem::query()->create([
-                'sale_id' => $sale->id,
-                'branch_id' => $branchId,
-                'product_id' => $productId,
-                'service_catalog_id' => $serviceCatalogId,
-                'job_card_service_id' => null,
-                'mechanic_id' => $mechanicId,
-                'line_type' => $lineType,
-                'description' => $item['description'] ?? null,
-                'qty' => $qty,
-                'unit_price' => $unitPrice,
-                'discount_amount' => $discountAmount,
-                'tax_amount' => $taxAmount,
-                'mechanic_charge' => $mechanicCharge,
-                'line_total' => $lineTotal,
-            ]);
-        }
-
-        $createdItems = $sale->items()->get();
-        $this->syncStockForSaleItems($createdItems, $branchId);
-        $subTotal = (float) $createdItems->sum(fn (SaleItem $item): float => (float) $item->qty * (float) $item->unit_price);
-        $discountTotal = (float) $createdItems->sum(fn (SaleItem $item): float => (float) $item->discount_amount);
-        $taxTotal = (float) $createdItems->sum(fn (SaleItem $item): float => (float) $item->tax_amount);
-        $grandTotal = (float) $createdItems->sum(fn (SaleItem $item): float => (float) $item->line_total);
-
-        $sale->update([
-            'sub_total' => $subTotal,
-            'discount_total' => $discountTotal,
-            'tax_total' => $taxTotal,
-            'grand_total' => $grandTotal,
-            'balance_due' => $grandTotal - (float) $sale->paid_total,
-        ]);
-    }
-
-    /**
-     * @param  Collection<int, SaleItem>  $saleItems
-     */
-    private function syncStockForSaleItems(Collection $saleItems, string $branchId, bool $reverse = false): void
-    {
-        $qtyByProduct = $saleItems
-            ->filter(fn (SaleItem $item): bool => $item->product_id !== null)
-            ->groupBy('product_id')
-            ->map(fn (Collection $items): float => (float) $items->sum('qty'));
-
-        if ($qtyByProduct->isEmpty()) {
-            return;
-        }
-
-        $trackedProductIds = Product::query()
-            ->whereIn('id', $qtyByProduct->keys()->all())
-            ->where('track_stock', true)
-            ->pluck('id')
-            ->all();
-
-        if ($trackedProductIds === []) {
-            return;
-        }
-
-        foreach ($trackedProductIds as $productId) {
-            $qty = (float) ($qtyByProduct->get($productId) ?? 0);
-            if ($qty <= 0) {
-                continue;
-            }
-
-            $stockRow = InventoryStock::query()
-                ->where('branch_id', $branchId)
-                ->where('product_id', $productId)
-                ->oldest('updated_at')
-                ->first();
-
-            if (! $stockRow instanceof InventoryStock) {
-                continue;
-            }
-
-            $adjustedQty = $reverse
-                ? (float) $stockRow->qty_on_hand + $qty
-                : (float) $stockRow->qty_on_hand - $qty;
-
-            $stockRow->update([
-                'qty_on_hand' => $adjustedQty,
-            ]);
-        }
     }
 }

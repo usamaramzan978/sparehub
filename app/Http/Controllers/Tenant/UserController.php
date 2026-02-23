@@ -4,22 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
-use App\Enums\LoginUserType;
+use App\Actions\Tenant\User\CreateUserAction;
+use App\Actions\Tenant\User\DeleteUserAction;
+use App\Actions\Tenant\User\UpdateUserAction;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\UserRequest;
 use App\Models\Branch;
-use App\Models\LoginMap;
 use App\Models\User;
-use App\Support\AuditTimelineLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class UserController extends Controller
 {
@@ -72,27 +69,9 @@ final class UserController extends Controller
         return view('tenants.users.show', ['user' => $user]);
     }
 
-    public function store(UserRequest $request): RedirectResponse
+    public function store(UserRequest $request, CreateUserAction $action): RedirectResponse
     {
-        $data = $request->validated();
-        $data['branch_id'] = $this->currentBranchId();
-        $data['email'] = mb_strtolower((string) $data['email']);
-        $data['password'] = Hash::make($data['password']);
-
-        $user = User::query()->create($data);
-        $this->syncLoginMap($user);
-
-        AuditTimelineLogger::log(
-            event: 'user_created',
-            description: 'Tenant user created.',
-            causer: Auth::guard('user')->user(),
-            subject: $user,
-            properties: [
-                'user_id' => (string) $user->id,
-                'user_email' => $user->email,
-                'branch_id' => (string) $user->branch_id,
-            ],
-        );
+        $action->handle($request->validated(), $this->currentBranchId());
 
         return to_route('tenant.users.index')
             ->with('status', 'Created.');
@@ -112,97 +91,23 @@ final class UserController extends Controller
         ]);
     }
 
-    public function update(UserRequest $request, User $user): RedirectResponse
+    public function update(UserRequest $request, User $user, UpdateUserAction $action): RedirectResponse
     {
         $this->ensureUserInCurrentBranch($user);
 
-        $data = $request->validated();
-        $data['branch_id'] = $this->currentBranchId();
-        $data['email'] = mb_strtolower((string) $data['email']);
-
-        if (empty($data['password'])) {
-            $data = Arr::except($data, ['password']);
-        } else {
-            $data['password'] = Hash::make($data['password']);
-        }
-
-        $user->update($data);
-        $this->syncLoginMap($user->refresh());
-
-        AuditTimelineLogger::log(
-            event: 'user_updated',
-            description: 'Tenant user updated.',
-            causer: Auth::guard('user')->user(),
-            subject: $user,
-            properties: [
-                'user_id' => (string) $user->id,
-                'user_email' => $user->email,
-                'changed_attributes' => array_keys($data),
-            ],
-        );
+        $action->handle($user, $request->validated(), $this->currentBranchId());
 
         return to_route('tenant.users.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(User $user): RedirectResponse
+    public function destroy(User $user, DeleteUserAction $action): RedirectResponse
     {
         $this->ensureUserInCurrentBranch($user);
 
-        $userSnapshot = [
-            'user_id' => (string) $user->id,
-            'user_email' => $user->email,
-            'branch_id' => (string) $user->branch_id,
-        ];
-
-        $this->deleteLoginMap($user);
-        $user->delete();
-
-        AuditTimelineLogger::log(
-            event: 'user_deleted',
-            description: 'Tenant user deleted.',
-            causer: Auth::guard('user')->user(),
-            subject: $user,
-            properties: $userSnapshot,
-        );
+        $action->handle($user);
 
         return to_route('tenant.users.index')
             ->with('status', 'Deleted.');
-    }
-
-    private function syncLoginMap(User $user): void
-    {
-        $tenantId = (string) tenant('id');
-        $userStatus = $user->status instanceof UserStatus ? $user->status->value : (string) $user->status;
-
-        throw_if($tenantId === '', HttpException::class, 422, 'Invalid tenant context.');
-
-        LoginMap::query()->updateOrCreate(
-            [
-                'tenant_id' => $tenantId,
-                'type' => LoginUserType::USER->value,
-                'type_id' => $user->id,
-            ],
-            [
-                'email' => mb_strtolower($user->email),
-                'password' => $user->password,
-                'status' => $userStatus === UserStatus::ACTIVE->value,
-            ]
-        );
-    }
-
-    private function deleteLoginMap(User $user): void
-    {
-        $tenantId = (string) tenant('id');
-
-        if ($tenantId === '') {
-            return;
-        }
-
-        LoginMap::query()
-            ->where('tenant_id', $tenantId)
-            ->where('type', LoginUserType::USER->value)
-            ->where('type_id', $user->id)
-            ->delete();
     }
 }

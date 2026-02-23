@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\PurchaseReturnItem\DeletePurchaseReturnItemAction;
+use App\Actions\Tenant\PurchaseReturnItem\EnsurePurchaseReturnItemInBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\PurchaseReturnStatus;
 use App\Enums\PurchaseStatus;
@@ -287,7 +289,11 @@ it('deletes purchase return item and recalculates return totals', function (): v
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new PurchaseReturnItemController())->destroy($item);
+    $response = (new PurchaseReturnItemController())->destroy(
+        $item,
+        app(DeletePurchaseReturnItemAction::class),
+        new EnsurePurchaseReturnItemInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(purchaseReturnItemsTenantRoute('purchase-return-items.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -337,5 +343,5 @@ it('throws not found when showing purchase return item outside current branch', 
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new PurchaseReturnItemController())->show($foreignItem);
+    (new PurchaseReturnItemController())->show($foreignItem, new EnsurePurchaseReturnItemInBranchAction());
 });

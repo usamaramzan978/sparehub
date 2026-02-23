@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 final class BranchSwitchController extends Controller
 {
-    public function store(BranchSwitchRequest $request): RedirectResponse
+    public function __invoke(BranchSwitchRequest $request): RedirectResponse
     {
         $payload = $request->validated();
         $previousBranchId = (string) $request->session()->get('tenant.current_branch_id', '');

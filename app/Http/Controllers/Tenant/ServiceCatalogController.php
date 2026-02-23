@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\ServiceCatalog\CreateServiceCatalogAction;
+use App\Actions\Tenant\ServiceCatalog\DeleteServiceCatalogAction;
+use App\Actions\Tenant\ServiceCatalog\UpdateServiceCatalogAction;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\ServiceCatalogRequest;
@@ -44,12 +47,9 @@ final class ServiceCatalogController extends Controller
         ]);
     }
 
-    public function store(ServiceCatalogRequest $request): RedirectResponse
+    public function store(ServiceCatalogRequest $request, CreateServiceCatalogAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-
-        ServiceCatalog::query()->create($payload);
+        $action->handle($request->validated(), $this->currentBranchId());
 
         return to_route('tenant.service-catalog.index')
             ->with('status', 'Created.');
@@ -82,24 +82,24 @@ final class ServiceCatalogController extends Controller
         ]);
     }
 
-    public function update(ServiceCatalogRequest $request, ServiceCatalog $serviceCatalog): RedirectResponse
-    {
+    public function update(
+        ServiceCatalogRequest $request,
+        ServiceCatalog $serviceCatalog,
+        UpdateServiceCatalogAction $action
+    ): RedirectResponse {
         $this->ensureServiceInCurrentBranch($serviceCatalog);
 
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-
-        $serviceCatalog->update($payload);
+        $action->handle($serviceCatalog, $request->validated(), $this->currentBranchId());
 
         return to_route('tenant.service-catalog.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(ServiceCatalog $serviceCatalog): RedirectResponse
+    public function destroy(ServiceCatalog $serviceCatalog, DeleteServiceCatalogAction $action): RedirectResponse
     {
         $this->ensureServiceInCurrentBranch($serviceCatalog);
 
-        $serviceCatalog->delete();
+        $action->handle($serviceCatalog);
 
         return to_route('tenant.service-catalog.index')
             ->with('status', 'Deleted.');

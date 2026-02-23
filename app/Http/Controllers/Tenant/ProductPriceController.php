@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\ProductPrice\CreateProductPriceAction;
+use App\Actions\Tenant\ProductPrice\DeleteProductPriceAction;
+use App\Actions\Tenant\ProductPrice\EnsureProductPriceInBranchAction;
+use App\Actions\Tenant\ProductPrice\UpdateProductPriceAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\ProductPriceRequest;
 use App\Models\Product;
@@ -35,20 +39,17 @@ final class ProductPriceController extends Controller
         ]);
     }
 
-    public function store(ProductPriceRequest $request): RedirectResponse
+    public function store(ProductPriceRequest $request, CreateProductPriceAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-
-        ProductPrice::query()->create($payload);
+        $action->handle($request->validated(), $this->currentBranchId());
 
         return to_route('tenant.product-prices.index')
             ->with('status', 'Created.');
     }
 
-    public function show(ProductPrice $productPrice): View
+    public function show(ProductPrice $productPrice, EnsureProductPriceInBranchAction $ensureProductPriceInBranchAction): View
     {
-        $this->ensurePriceInCurrentBranch($productPrice);
+        $productPrice = $ensureProductPriceInBranchAction->handle($productPrice, $this->currentBranchId());
 
         $productPrice->load(['product', 'branch']);
 
@@ -57,31 +58,28 @@ final class ProductPriceController extends Controller
         ]);
     }
 
-    public function update(ProductPriceRequest $request, ProductPrice $productPrice): RedirectResponse
-    {
-        $this->ensurePriceInCurrentBranch($productPrice);
-
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-
-        $productPrice->update($payload);
+    public function update(
+        ProductPriceRequest $request,
+        ProductPrice $productPrice,
+        UpdateProductPriceAction $action,
+        EnsureProductPriceInBranchAction $ensureProductPriceInBranchAction
+    ): RedirectResponse {
+        $productPrice = $ensureProductPriceInBranchAction->handle($productPrice, $this->currentBranchId());
+        $action->handle($productPrice, $request->validated(), $this->currentBranchId());
 
         return to_route('tenant.product-prices.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(ProductPrice $productPrice): RedirectResponse
-    {
-        $this->ensurePriceInCurrentBranch($productPrice);
-
-        $productPrice->delete();
+    public function destroy(
+        ProductPrice $productPrice,
+        DeleteProductPriceAction $action,
+        EnsureProductPriceInBranchAction $ensureProductPriceInBranchAction
+    ): RedirectResponse {
+        $productPrice = $ensureProductPriceInBranchAction->handle($productPrice, $this->currentBranchId());
+        $action->handle($productPrice);
 
         return to_route('tenant.product-prices.index')
             ->with('status', 'Deleted.');
-    }
-
-    private function ensurePriceInCurrentBranch(ProductPrice $productPrice): void
-    {
-        abort_if($productPrice->branch_id !== $this->currentBranchId(), 404);
     }
 }

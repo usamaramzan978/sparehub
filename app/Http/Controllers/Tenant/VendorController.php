@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\Vendor\CreateVendorAction;
+use App\Actions\Tenant\Vendor\DeleteVendorAction;
+use App\Actions\Tenant\Vendor\EnsureVendorInBranchAction;
+use App\Actions\Tenant\Vendor\UpdateVendorAction;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\VendorRequest;
@@ -47,20 +51,17 @@ final class VendorController extends Controller
         ]);
     }
 
-    public function store(VendorRequest $request): RedirectResponse
+    public function store(VendorRequest $request, CreateVendorAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-
-        Vendor::query()->create($payload);
+        $action->handle($request->validated(), $this->currentBranchId());
 
         return to_route('tenant.vendors.index')
             ->with('status', 'Created.');
     }
 
-    public function show(Vendor $vendor): View
+    public function show(Vendor $vendor, EnsureVendorInBranchAction $ensureVendorInBranchAction): View
     {
-        $this->ensureVendorInCurrentBranch($vendor);
+        $vendor = $ensureVendorInBranchAction->handle($vendor, $this->currentBranchId());
 
         $vendor->load('branch');
 
@@ -69,9 +70,9 @@ final class VendorController extends Controller
         ]);
     }
 
-    public function edit(Vendor $vendor): View
+    public function edit(Vendor $vendor, EnsureVendorInBranchAction $ensureVendorInBranchAction): View
     {
-        $this->ensureVendorInCurrentBranch($vendor);
+        $vendor = $ensureVendorInBranchAction->handle($vendor, $this->currentBranchId());
 
         return view('tenants.vendors.edit', [
             'vendor' => $vendor,
@@ -79,31 +80,28 @@ final class VendorController extends Controller
         ]);
     }
 
-    public function update(VendorRequest $request, Vendor $vendor): RedirectResponse
-    {
-        $this->ensureVendorInCurrentBranch($vendor);
-
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-
-        $vendor->update($payload);
+    public function update(
+        VendorRequest $request,
+        Vendor $vendor,
+        UpdateVendorAction $action,
+        EnsureVendorInBranchAction $ensureVendorInBranchAction
+    ): RedirectResponse {
+        $vendor = $ensureVendorInBranchAction->handle($vendor, $this->currentBranchId());
+        $action->handle($vendor, $request->validated(), $this->currentBranchId());
 
         return to_route('tenant.vendors.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(Vendor $vendor): RedirectResponse
-    {
-        $this->ensureVendorInCurrentBranch($vendor);
-
-        $vendor->delete();
+    public function destroy(
+        Vendor $vendor,
+        DeleteVendorAction $action,
+        EnsureVendorInBranchAction $ensureVendorInBranchAction
+    ): RedirectResponse {
+        $vendor = $ensureVendorInBranchAction->handle($vendor, $this->currentBranchId());
+        $action->handle($vendor);
 
         return to_route('tenant.vendors.index')
             ->with('status', 'Deleted.');
-    }
-
-    private function ensureVendorInCurrentBranch(Vendor $vendor): void
-    {
-        abort_if($vendor->branch_id !== $this->currentBranchId(), 404);
     }
 }

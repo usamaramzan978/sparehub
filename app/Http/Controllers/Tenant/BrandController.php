@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\Brand\CreateBrandAction;
+use App\Actions\Tenant\Brand\DeleteBrandAction;
+use App\Actions\Tenant\Brand\UpdateBrandAction;
 use App\Enums\BrandStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\BrandRequest;
@@ -12,7 +15,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 final class BrandController extends Controller
 {
@@ -38,57 +40,27 @@ final class BrandController extends Controller
         ]);
     }
 
-    public function store(BrandRequest $request): RedirectResponse
+    public function store(BrandRequest $request, CreateBrandAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['slug'] = $this->buildUniqueSlug((string) $payload['name']);
-
-        Brand::query()->create($payload);
+        $action->handle($request->validated());
 
         return to_route('tenant.brands.index')
             ->with('status', 'Created.');
     }
 
-    public function update(BrandRequest $request, Brand $brand): RedirectResponse
+    public function update(BrandRequest $request, Brand $brand, UpdateBrandAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['slug'] = $this->buildUniqueSlug((string) $payload['name'], $brand->id);
-
-        $brand->update($payload);
+        $action->handle($brand, $request->validated());
 
         return to_route('tenant.brands.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(Brand $brand): RedirectResponse
+    public function destroy(Brand $brand, DeleteBrandAction $action): RedirectResponse
     {
-        $brand->delete();
+        $action->handle($brand);
 
         return to_route('tenant.brands.index')
             ->with('status', 'Deleted.');
-    }
-
-    private function buildUniqueSlug(string $name, ?string $ignoreBrandId = null): string
-    {
-        $baseSlug = Str::slug($name);
-        $baseSlug = $baseSlug !== '' ? $baseSlug : 'brand';
-
-        $candidateSlug = $baseSlug;
-        $suffix = 2;
-
-        while ($this->slugExists($candidateSlug, $ignoreBrandId)) {
-            $candidateSlug = sprintf('%s-%d', $baseSlug, $suffix);
-            $suffix++;
-        }
-
-        return $candidateSlug;
-    }
-
-    private function slugExists(string $slug, ?string $ignoreBrandId = null): bool
-    {
-        return Brand::query()
-            ->where('slug', $slug)
-            ->when($ignoreBrandId !== null, fn (Builder $query) => $query->whereKeyNot($ignoreBrandId))
-            ->exists();
     }
 }

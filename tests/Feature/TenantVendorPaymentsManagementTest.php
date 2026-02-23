@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\VendorPayment\DeleteVendorPaymentAction;
+use App\Actions\Tenant\VendorPayment\EnsureVendorPaymentInBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\PaymentMethodType;
 use App\Enums\PurchaseStatus;
@@ -202,7 +204,11 @@ it('deletes vendor payment and recalculates purchase totals', function (): void 
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new VendorPaymentController())->destroy($payment);
+    $response = (new VendorPaymentController())->destroy(
+        $payment,
+        app(DeleteVendorPaymentAction::class),
+        new EnsureVendorPaymentInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(vendorPaymentsTenantRoute('vendor-payments.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -227,5 +233,5 @@ it('throws not found when showing vendor payment outside current branch', functi
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new VendorPaymentController())->show($foreignPayment);
+    (new VendorPaymentController())->show($foreignPayment, new EnsureVendorPaymentInBranchAction());
 });

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\SaleItem\CreateSaleItemAction;
+use App\Actions\Tenant\SaleItem\DeleteSaleItemAction;
+use App\Actions\Tenant\SaleItem\EnsureSaleItemInBranchAction;
+use App\Actions\Tenant\SaleItem\UpdateSaleItemAction;
 use App\Enums\SaleLineType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\SaleItemRequest;
-use App\Models\InventoryStock;
 use App\Models\JobCardService;
 use App\Models\Product;
 use App\Models\Sale;
@@ -17,7 +20,6 @@ use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 final class SaleItemController extends Controller
 {
@@ -42,28 +44,16 @@ final class SaleItemController extends Controller
         return view('tenants.sale-items.create', $this->formOptions());
     }
 
-    public function store(SaleItemRequest $request): RedirectResponse
+    public function store(SaleItemRequest $request, CreateSaleItemAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-        if (($payload['line_type'] ?? null) !== SaleLineType::SERVICE->value) {
-            $payload['mechanic_id'] = null;
-            $payload['mechanic_charge'] = 0;
-        }
-
-        $payload['mechanic_charge'] = (float) ($payload['mechanic_charge'] ?? 0);
-        $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_price']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
-
-        $saleItem = SaleItem::query()->create($payload);
-        $this->syncStockForSaleItems(collect([$saleItem]), $payload['branch_id']);
-        $this->recalculateSaleTotals($saleItem->sale);
+        $action->handle($request->validated(), $this->currentBranchId());
 
         return to_route('tenant.sale-items.index')->with('status', 'Created.');
     }
 
-    public function show(SaleItem $saleItem): View
+    public function show(SaleItem $saleItem, EnsureSaleItemInBranchAction $ensureSaleItemInBranchAction): View
     {
-        $this->ensureSaleItemInCurrentBranch($saleItem);
+        $saleItem = $ensureSaleItemInBranchAction->handle($saleItem, $this->currentBranchId());
 
         $saleItem->load(['sale.customer', 'product', 'serviceCatalog', 'jobCardService']);
         $saleItem->load('mechanic');
@@ -73,9 +63,9 @@ final class SaleItemController extends Controller
         ]);
     }
 
-    public function edit(SaleItem $saleItem): View
+    public function edit(SaleItem $saleItem, EnsureSaleItemInBranchAction $ensureSaleItemInBranchAction): View
     {
-        $this->ensureSaleItemInCurrentBranch($saleItem);
+        $saleItem = $ensureSaleItemInBranchAction->handle($saleItem, $this->currentBranchId());
 
         return view('tenants.sale-items.edit', array_merge(
             ['saleItem' => $saleItem],
@@ -83,116 +73,27 @@ final class SaleItemController extends Controller
         ));
     }
 
-    public function update(SaleItemRequest $request, SaleItem $saleItem): RedirectResponse
-    {
-        $this->ensureSaleItemInCurrentBranch($saleItem);
-
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-        if (($payload['line_type'] ?? null) !== SaleLineType::SERVICE->value) {
-            $payload['mechanic_id'] = null;
-            $payload['mechanic_charge'] = 0;
-        }
-
-        $payload['mechanic_charge'] = (float) ($payload['mechanic_charge'] ?? 0);
-        $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_price']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
-
-        $originalItem = clone $saleItem;
-        $this->syncStockForSaleItems(collect([$originalItem]), $payload['branch_id'], reverse: true);
-        $saleItem->update($payload);
-        $this->syncStockForSaleItems(collect([$saleItem]), $payload['branch_id']);
-        $this->recalculateSaleTotals($saleItem->sale);
+    public function update(
+        SaleItemRequest $request,
+        SaleItem $saleItem,
+        UpdateSaleItemAction $action,
+        EnsureSaleItemInBranchAction $ensureSaleItemInBranchAction
+    ): RedirectResponse {
+        $saleItem = $ensureSaleItemInBranchAction->handle($saleItem, $this->currentBranchId());
+        $action->handle($saleItem, $request->validated(), $this->currentBranchId());
 
         return to_route('tenant.sale-items.index')->with('status', 'Updated.');
     }
 
-    public function destroy(SaleItem $saleItem): RedirectResponse
-    {
-        $this->ensureSaleItemInCurrentBranch($saleItem);
-        $sale = $saleItem->sale;
-        $this->syncStockForSaleItems(collect([$saleItem]), $saleItem->branch_id, reverse: true);
-        $saleItem->delete();
-        $this->recalculateSaleTotals($sale);
+    public function destroy(
+        SaleItem $saleItem,
+        DeleteSaleItemAction $action,
+        EnsureSaleItemInBranchAction $ensureSaleItemInBranchAction
+    ): RedirectResponse {
+        $saleItem = $ensureSaleItemInBranchAction->handle($saleItem, $this->currentBranchId());
+        $action->handle($saleItem);
 
         return to_route('tenant.sale-items.index')->with('status', 'Deleted.');
-    }
-
-    private function ensureSaleItemInCurrentBranch(SaleItem $saleItem): void
-    {
-        abort_if($saleItem->branch_id !== $this->currentBranchId(), 404);
-    }
-
-    private function recalculateSaleTotals(?Sale $sale): void
-    {
-        if (! $sale instanceof Sale) {
-            return;
-        }
-
-        $items = $sale->items()->get();
-        $subTotal = (float) $items->sum(fn (SaleItem $item): float => (float) $item->qty * (float) $item->unit_price);
-        $discountTotal = (float) $items->sum(fn (SaleItem $item): float => (float) $item->discount_amount);
-        $taxTotal = (float) $items->sum(fn (SaleItem $item): float => (float) $item->tax_amount);
-        $grandTotal = (float) $items->sum(fn (SaleItem $item): float => (float) $item->line_total);
-        $paidTotal = (float) $sale->payments()->sum('amount');
-
-        $sale->update([
-            'sub_total' => $subTotal,
-            'discount_total' => $discountTotal,
-            'tax_total' => $taxTotal,
-            'grand_total' => $grandTotal,
-            'paid_total' => $paidTotal,
-            'balance_due' => $grandTotal - $paidTotal,
-        ]);
-    }
-
-    /**
-     * @param  Collection<int, SaleItem>  $saleItems
-     */
-    private function syncStockForSaleItems(Collection $saleItems, string $branchId, bool $reverse = false): void
-    {
-        $qtyByProduct = $saleItems
-            ->filter(fn (SaleItem $item): bool => $item->product_id !== null)
-            ->groupBy('product_id')
-            ->map(fn (Collection $items): float => (float) $items->sum('qty'));
-
-        if ($qtyByProduct->isEmpty()) {
-            return;
-        }
-
-        $trackedProductIds = Product::query()
-            ->whereIn('id', $qtyByProduct->keys()->all())
-            ->where('track_stock', true)
-            ->pluck('id')
-            ->all();
-
-        if ($trackedProductIds === []) {
-            return;
-        }
-
-        foreach ($trackedProductIds as $productId) {
-            $qty = (float) ($qtyByProduct->get($productId) ?? 0);
-            if ($qty <= 0) {
-                continue;
-            }
-
-            $stockRow = InventoryStock::query()
-                ->where('branch_id', $branchId)
-                ->where('product_id', $productId)
-                ->oldest('updated_at')
-                ->first();
-
-            if (! $stockRow instanceof InventoryStock) {
-                continue;
-            }
-
-            $adjustedQty = $reverse
-                ? (float) $stockRow->qty_on_hand + $qty
-                : (float) $stockRow->qty_on_hand - $qty;
-
-            $stockRow->update([
-                'qty_on_hand' => $adjustedQty,
-            ]);
-        }
     }
 
     /**

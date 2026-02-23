@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\SalePayment\DeleteSalePaymentAction;
+use App\Actions\Tenant\SalePayment\EnsureSalePaymentInBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\InvoiceType;
 use App\Enums\PaymentMethodType;
@@ -208,7 +210,11 @@ it('deletes sale payment and recalculates sale totals', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new SalePaymentController())->destroy($payment);
+    $response = (new SalePaymentController())->destroy(
+        $payment,
+        app(DeleteSalePaymentAction::class),
+        new EnsureSalePaymentInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(salePaymentsTenantRoute('sale-payments.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -242,5 +248,5 @@ it('throws not found when showing payment outside current branch', function (): 
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new SalePaymentController())->show($foreignPayment);
+    (new SalePaymentController())->show($foreignPayment, new EnsureSalePaymentInBranchAction());
 });

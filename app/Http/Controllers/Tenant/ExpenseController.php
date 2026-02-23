@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\Expense\CreateExpenseAction;
+use App\Actions\Tenant\Expense\DeleteExpenseAction;
+use App\Actions\Tenant\Expense\UpdateExpenseAction;
 use App\Enums\PaymentMethodType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\ExpenseRequest;
 use App\Models\Expense;
-use App\Support\AuditTimelineLogger;
-use BackedEnum;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 final class ExpenseController extends Controller
 {
@@ -58,93 +58,32 @@ final class ExpenseController extends Controller
         ]);
     }
 
-    public function store(ExpenseRequest $request): RedirectResponse
+    public function store(ExpenseRequest $request, CreateExpenseAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-        $payload['created_by'] = auth('user')->id();
-
-        $expense = Expense::query()->create($payload);
-
-        AuditTimelineLogger::log(
-            event: 'expense_created',
-            description: 'Expense recorded.',
-            causer: Auth::guard('user')->user(),
-            subject: $expense,
-            properties: [
-                'expense_id' => (string) $expense->id,
-                'title' => (string) $expense->title,
-                'amount' => (float) $expense->amount,
-                'method' => $this->paymentMethodValue($expense->payment_method),
-            ],
-        );
+        $action->handle($request->validated(), $this->currentBranchId(), auth('user')->id());
 
         return to_route('tenant.expenses.index')->with('status', 'Created.');
     }
 
-    public function update(ExpenseRequest $request, string $tenant, string $expense): RedirectResponse
-    {
+    public function update(
+        ExpenseRequest $request,
+        string $tenant,
+        string $expense,
+        UpdateExpenseAction $action
+    ): RedirectResponse {
         unset($tenant);
-        $expense = $this->resolveExpense($expense);
-        $this->ensureExpenseInCurrentBranch($expense);
-        $payload = $request->validated();
-        $expense->update($payload);
 
-        AuditTimelineLogger::log(
-            event: 'expense_updated',
-            description: 'Expense updated.',
-            causer: Auth::guard('user')->user(),
-            subject: $expense,
-            properties: [
-                'expense_id' => (string) $expense->id,
-                'title' => (string) $expense->title,
-                'amount' => (float) $expense->amount,
-                'changed_attributes' => array_keys($payload),
-            ],
-        );
+        $action->handle($expense, $request->validated(), $this->currentBranchId());
 
         return to_route('tenant.expenses.index')->with('status', 'Updated.');
     }
 
-    public function destroy(string $tenant, string $expense): RedirectResponse
+    public function destroy(string $tenant, string $expense, DeleteExpenseAction $action): RedirectResponse
     {
         unset($tenant);
-        $expense = $this->resolveExpense($expense);
-        $this->ensureExpenseInCurrentBranch($expense);
-        $snapshot = [
-            'expense_id' => (string) $expense->id,
-            'title' => (string) $expense->title,
-            'amount' => (float) $expense->amount,
-        ];
-        $expense->delete();
 
-        AuditTimelineLogger::log(
-            event: 'expense_deleted',
-            description: 'Expense deleted.',
-            causer: Auth::guard('user')->user(),
-            subject: $expense,
-            properties: $snapshot,
-        );
+        $action->handle($expense, $this->currentBranchId());
 
         return to_route('tenant.expenses.index')->with('status', 'Deleted.');
-    }
-
-    private function paymentMethodValue(mixed $method): string
-    {
-        if ($method instanceof BackedEnum) {
-            return (string) $method->value;
-        }
-
-        return (string) $method;
-    }
-
-    private function ensureExpenseInCurrentBranch(Expense $expense): void
-    {
-        abort_if($expense->branch_id !== $this->currentBranchId(), 404);
-    }
-
-    private function resolveExpense(string $expenseId): Expense
-    {
-        return Expense::query()->withoutGlobalScopes()->findOrFail($expenseId);
     }
 }

@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\Brand\DeleteBrandAction;
+use App\Actions\Tenant\Brand\GenerateUniqueBrandSlugAction;
+use App\Actions\Tenant\Brand\UpdateBrandAction;
 use App\Enums\BranchStatus;
 use App\Enums\BrandStatus;
 use App\Models\Branch;
@@ -216,4 +219,49 @@ it('clamps brands pagination limits', function (): void {
 
     expect($minResponse->viewData('items')->perPage())->toBe(5);
     expect($maxResponse->viewData('items')->perPage())->toBe(100);
+});
+
+it('updates a brand and regenerates unique slug via action', function (): void {
+    authenticateBrandUser();
+
+    Brand::query()->create([
+        'name' => 'Mazda',
+        'slug' => 'mazda',
+        'status' => BrandStatus::ACTIVE->value,
+    ]);
+
+    $brand = Brand::query()->create([
+        'name' => 'Mazda Pro',
+        'slug' => 'mazda-pro',
+        'status' => BrandStatus::ACTIVE->value,
+    ]);
+
+    $updated = (new UpdateBrandAction(new GenerateUniqueBrandSlugAction()))->handle($brand, [
+        'name' => 'Mazda',
+        'status' => BrandStatus::INACTIVE->value,
+    ]);
+
+    expect($updated)->toBeTrue();
+
+    $this->assertDatabaseHas('brands', [
+        'id' => $brand->id,
+        'name' => 'Mazda',
+        'slug' => 'mazda-2',
+        'status' => BrandStatus::INACTIVE->value,
+    ], 'tenant');
+});
+
+it('deletes a brand via action', function (): void {
+    authenticateBrandUser();
+
+    $brand = Brand::query()->create([
+        'name' => 'Delete Brand',
+        'slug' => 'delete-brand',
+        'status' => BrandStatus::ACTIVE->value,
+    ]);
+
+    $deleted = (new DeleteBrandAction())->handle($brand);
+
+    expect($deleted)->toBeTrue();
+    $this->assertDatabaseMissing('brands', ['id' => $brand->id], 'tenant');
 });

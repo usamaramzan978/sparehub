@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\Warehouse\DeleteWarehouseAction;
+use App\Actions\Tenant\Warehouse\UpdateWarehouseAction;
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Tenant\WarehouseController;
@@ -202,12 +204,37 @@ it('deletes warehouse', function (): void {
 
     session()->put('tenant.current_branch_id', $fixture['branch']->id);
 
-    $response = (new WarehouseController())->destroy($warehouse);
+    $response = (new WarehouseController())->destroy($warehouse, new DeleteWarehouseAction());
 
     expect($response->getTargetUrl())->toBe(warehouseTenantRoute('warehouses.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
 
     $this->assertDatabaseMissing('warehouses', ['id' => $warehouse->id], 'tenant');
+});
+
+it('updates warehouse via action', function (): void {
+    $fixture = createAuthenticatedWarehouseUser();
+
+    $warehouse = Warehouse::query()->create([
+        'branch_id' => $fixture['branch']->id,
+        'code' => 'WH-UPD',
+        'name' => 'Before Update',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $updated = (new UpdateWarehouseAction())->handle($warehouse, [
+        'branch_id' => $fixture['branch']->id,
+        'code' => 'WH-UPD',
+        'name' => 'After Update',
+        'status' => RecordStatus::INACTIVE->value,
+    ]);
+
+    expect($updated)->toBeTrue();
+    $this->assertDatabaseHas('warehouses', [
+        'id' => $warehouse->id,
+        'name' => 'After Update',
+        'status' => RecordStatus::INACTIVE->value,
+    ], 'tenant');
 });
 
 it('clamps warehouse pagination to minimum and maximum per-page limits', function (): void {

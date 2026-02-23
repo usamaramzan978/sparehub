@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\Tax\DeleteTaxAction;
+use App\Actions\Tenant\Tax\UpdateTaxAction;
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
 use App\Models\Branch;
@@ -181,4 +183,52 @@ it('clamps taxes pagination limits', function (): void {
 
     expect($minResponse->viewData('items')->perPage())->toBe(5);
     expect($maxResponse->viewData('items')->perPage())->toBe(100);
+});
+
+it('updates tax via action', function (): void {
+    authenticateTaxUser();
+
+    $tax = Tax::query()->create([
+        'code' => 'TAX10',
+        'name' => 'Tax 10%',
+        'rate' => 10,
+        'is_inclusive' => false,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $updated = (new UpdateTaxAction())->handle($tax, [
+        'code' => 'TAX11',
+        'name' => 'Tax 11%',
+        'rate' => 11,
+        'is_inclusive' => true,
+        'status' => RecordStatus::INACTIVE->value,
+    ]);
+
+    expect($updated)->toBeTrue();
+
+    $this->assertDatabaseHas('taxes', [
+        'id' => $tax->id,
+        'code' => 'TAX11',
+        'name' => 'Tax 11%',
+        'rate' => 11,
+        'is_inclusive' => 1,
+        'status' => RecordStatus::INACTIVE->value,
+    ], 'tenant');
+});
+
+it('deletes tax via action', function (): void {
+    authenticateTaxUser();
+
+    $tax = Tax::query()->create([
+        'code' => 'DEL5',
+        'name' => 'Delete Tax 5%',
+        'rate' => 5,
+        'is_inclusive' => false,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $deleted = (new DeleteTaxAction())->handle($tax);
+
+    expect($deleted)->toBeTrue();
+    $this->assertDatabaseMissing('taxes', ['id' => $tax->id], 'tenant');
 });

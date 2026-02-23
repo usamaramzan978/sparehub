@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\ProductPrice\DeleteProductPriceAction;
+use App\Actions\Tenant\ProductPrice\EnsureProductPriceInBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Tenant\ProductPriceController;
@@ -264,7 +266,7 @@ it('shows product price details for current branch', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $branches['current']->id);
-    $response = (new ProductPriceController())->show($price);
+    $response = (new ProductPriceController())->show($price, new EnsureProductPriceInBranchAction());
 
     expect($response->name())->toBe('tenants.product-prices.show');
     expect($response->getData()['productPrice']->id)->toBe($price->id);
@@ -285,7 +287,11 @@ it('deletes product price', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $branches['current']->id);
-    $response = (new ProductPriceController())->destroy($price);
+    $response = (new ProductPriceController())->destroy(
+        $price,
+        new DeleteProductPriceAction(),
+        new EnsureProductPriceInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(productPricesTenantRoute('product-prices.index'));
     $this->assertDatabaseMissing('product_prices', ['id' => $price->id], 'tenant');
@@ -306,5 +312,5 @@ it('throws not found when accessing price from another branch', function (): voi
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new ProductPriceController())->show($foreignPrice);
+    (new ProductPriceController())->show($foreignPrice, new EnsureProductPriceInBranchAction());
 });

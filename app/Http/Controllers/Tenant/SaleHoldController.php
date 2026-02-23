@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\SaleHold\CreateSaleHoldAction;
+use App\Actions\Tenant\SaleHold\DeleteSaleHoldAction;
+use App\Actions\Tenant\SaleHold\EnsureSaleHoldInBranchAction;
+use App\Actions\Tenant\SaleHold\UpdateSaleHoldAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\SaleHoldRequest;
 use App\Models\Customer;
@@ -41,21 +45,16 @@ final class SaleHoldController extends Controller
         ]);
     }
 
-    public function store(SaleHoldRequest $request): RedirectResponse
+    public function store(SaleHoldRequest $request, CreateSaleHoldAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-        $payload['created_by'] = auth('user')->id();
-        $payload['payload'] = json_decode((string) $payload['payload'], true, 512, JSON_THROW_ON_ERROR);
-
-        SaleHold::query()->create($payload);
+        $action->handle($request->validated(), $this->currentBranchId(), auth('user')->id());
 
         return to_route('tenant.sale-holds.index')->with('status', 'Created.');
     }
 
-    public function show(SaleHold $saleHold): View
+    public function show(SaleHold $saleHold, EnsureSaleHoldInBranchAction $ensureSaleHoldInBranchAction): View
     {
-        $this->ensureSaleHoldInCurrentBranch($saleHold);
+        $saleHold = $ensureSaleHoldInBranchAction->handle($saleHold, $this->currentBranchId());
 
         $saleHold->load(['customer', 'creator', 'branch']);
 
@@ -64,29 +63,26 @@ final class SaleHoldController extends Controller
         ]);
     }
 
-    public function update(SaleHoldRequest $request, SaleHold $saleHold): RedirectResponse
-    {
-        $this->ensureSaleHoldInCurrentBranch($saleHold);
-
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-        $payload['payload'] = json_decode((string) $payload['payload'], true, 512, JSON_THROW_ON_ERROR);
-
-        $saleHold->update($payload);
+    public function update(
+        SaleHoldRequest $request,
+        SaleHold $saleHold,
+        UpdateSaleHoldAction $action,
+        EnsureSaleHoldInBranchAction $ensureSaleHoldInBranchAction
+    ): RedirectResponse {
+        $saleHold = $ensureSaleHoldInBranchAction->handle($saleHold, $this->currentBranchId());
+        $action->handle($saleHold, $request->validated(), $this->currentBranchId());
 
         return to_route('tenant.sale-holds.index')->with('status', 'Updated.');
     }
 
-    public function destroy(SaleHold $saleHold): RedirectResponse
-    {
-        $this->ensureSaleHoldInCurrentBranch($saleHold);
-        $saleHold->delete();
+    public function destroy(
+        SaleHold $saleHold,
+        DeleteSaleHoldAction $action,
+        EnsureSaleHoldInBranchAction $ensureSaleHoldInBranchAction
+    ): RedirectResponse {
+        $saleHold = $ensureSaleHoldInBranchAction->handle($saleHold, $this->currentBranchId());
+        $action->handle($saleHold);
 
         return to_route('tenant.sale-holds.index')->with('status', 'Deleted.');
-    }
-
-    private function ensureSaleHoldInCurrentBranch(SaleHold $saleHold): void
-    {
-        abort_if($saleHold->branch_id !== $this->currentBranchId(), 404);
     }
 }

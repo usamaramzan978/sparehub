@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\SaleItem\DeleteSaleItemAction;
+use App\Actions\Tenant\SaleItem\EnsureSaleItemInBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\InvoiceType;
 use App\Enums\RecordStatus;
@@ -323,7 +325,11 @@ it('deletes sale item and recalculates parent sale totals', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new SaleItemController())->destroy($item);
+    $response = (new SaleItemController())->destroy(
+        $item,
+        app(DeleteSaleItemAction::class),
+        new EnsureSaleItemInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(saleItemsTenantRoute('sale-items.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -397,5 +403,5 @@ it('throws not found when showing sale item outside current branch', function ()
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new SaleItemController())->show($foreignItem);
+    (new SaleItemController())->show($foreignItem, new EnsureSaleItemInBranchAction());
 });

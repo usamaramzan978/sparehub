@@ -4,23 +4,26 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\CodeGenerator\DeleteProductBarcodeAction;
+use App\Actions\Tenant\CodeGenerator\DeleteProductQrAction;
+use App\Actions\Tenant\CodeGenerator\RenderCodeImageAction;
+use App\Actions\Tenant\CodeGenerator\ResolveCodePayloadAction;
+use App\Actions\Tenant\CodeGenerator\UpdateProductBarcodeAction;
+use App\Actions\Tenant\CodeGenerator\UpdateProductQrAction;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
-use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
-use Picqer\Barcode\BarcodeGeneratorPNG;
 
 final class CodeGeneratorController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, ResolveCodePayloadAction $resolveCodePayloadAction): View
     {
         $tenantKey = $request->route('tenant') ?? (function_exists('tenant') ? tenant()?->getTenantKey() : null);
-        $payload = $this->resolvePayload($request) ?? [];
+        $payload = $resolveCodePayloadAction->handle($request) ?? [];
         $products = Product::query()
             ->where(function ($query): void {
                 $query->whereNotNull('barcode')->orWhereNotNull('qrcode');
@@ -41,9 +44,9 @@ final class CodeGeneratorController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, ResolveCodePayloadAction $resolveCodePayloadAction): RedirectResponse
     {
-        $payload = $this->resolvePayload($request);
+        $payload = $resolveCodePayloadAction->handle($request);
         if (! $payload) {
             return to_route('tenant.codes.index');
         }
@@ -51,44 +54,22 @@ final class CodeGeneratorController extends Controller
         return to_route('tenant.codes.index', array_filter($payload));
     }
 
-    public function render(Request $request): Response
+    public function render(Request $request, ResolveCodePayloadAction $resolveCodePayloadAction, RenderCodeImageAction $renderCodeImageAction): Response
     {
-        $payload = $this->resolvePayload($request);
+        $payload = $resolveCodePayloadAction->handle($request);
         abort_unless($payload, 404);
 
-        if ($payload['type'] === 'qr') {
-            $qrCode = new QrCode(
-                $payload['value'],
-                size: (int) $payload['size'],
-                margin: (int) $payload['margin']
-            );
+        $image = $renderCodeImageAction->handle($payload);
 
-            $writer = new PngWriter();
-            $result = $writer->write($qrCode);
-
-            return response($result->getString(), 200, [
-                'Content-Type' => 'image/png',
-                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-            ]);
-        }
-
-        $generator = new BarcodeGeneratorPNG();
-        $barcode = $generator->getBarcode(
-            $payload['value'],
-            $this->barcodeType($payload['format']),
-            (int) $payload['scale'],
-            (int) $payload['height']
-        );
-
-        return response($barcode, 200, [
+        return response($image, 200, [
             'Content-Type' => 'image/png',
             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
         ]);
     }
 
-    public function print(Request $request): View
+    public function print(Request $request, ResolveCodePayloadAction $resolveCodePayloadAction): View
     {
-        $payload = $this->resolvePayload($request);
+        $payload = $resolveCodePayloadAction->handle($request);
         abort_unless($payload, 404);
 
         $tenantKey = $request->route('tenant') ?? (function_exists('tenant') ? tenant()?->getTenantKey() : null);
@@ -106,7 +87,7 @@ final class CodeGeneratorController extends Controller
         return to_route('tenant.codes.index');
     }
 
-    public function updateBarcode(Request $request, Product $product): RedirectResponse
+    public function updateBarcode(Request $request, Product $product, UpdateProductBarcodeAction $updateProductBarcodeAction): RedirectResponse
     {
         $validated = $request->validate([
             'value' => [
@@ -117,23 +98,19 @@ final class CodeGeneratorController extends Controller
             ],
         ]);
 
-        $product->update([
-            'barcode' => $validated['value'],
-        ]);
+        $updateProductBarcodeAction->handle($product, (string) $validated['value']);
 
         return back()->with('status', 'Barcode updated.');
     }
 
-    public function deleteBarcode(Product $product): RedirectResponse
+    public function deleteBarcode(Product $product, DeleteProductBarcodeAction $deleteProductBarcodeAction): RedirectResponse
     {
-        $product->update([
-            'barcode' => null,
-        ]);
+        $deleteProductBarcodeAction->handle($product);
 
         return back()->with('status', 'Barcode deleted.');
     }
 
-    public function updateQr(Request $request, Product $product): RedirectResponse
+    public function updateQr(Request $request, Product $product, UpdateProductQrAction $updateProductQrAction): RedirectResponse
     {
         $validated = $request->validate([
             'value' => [
@@ -144,78 +121,15 @@ final class CodeGeneratorController extends Controller
             ],
         ]);
 
-        $product->update([
-            'qrcode' => $validated['value'],
-        ]);
+        $updateProductQrAction->handle($product, (string) $validated['value']);
 
         return back()->with('status', 'QR code updated.');
     }
 
-    public function deleteQr(Product $product): RedirectResponse
+    public function deleteQr(Product $product, DeleteProductQrAction $deleteProductQrAction): RedirectResponse
     {
-        $product->update([
-            'qrcode' => null,
-        ]);
+        $deleteProductQrAction->handle($product);
 
         return back()->with('status', 'QR code deleted.');
-    }
-
-    private function resolvePayload(Request $request): ?array
-    {
-        $data = $request->validate([
-            'type' => ['nullable', 'in:barcode,qr'],
-            'product_id' => ['nullable', 'uuid', Rule::exists('products', 'id')],
-            'value' => ['nullable', 'string', 'max:128'],
-            'label' => ['nullable', 'string', 'max:120'],
-            'format' => ['nullable', 'in:C128,C39,EAN13,EAN8,UPC'],
-            'scale' => ['nullable', 'integer', 'min:1', 'max:6'],
-            'height' => ['nullable', 'integer', 'min:20', 'max:200'],
-            'size' => ['nullable', 'integer', 'min:120', 'max:600'],
-            'margin' => ['nullable', 'integer', 'min:0', 'max:20'],
-            'qty' => ['nullable', 'integer', 'min:1', 'max:200'],
-        ]);
-
-        /** @var Product|null $product */
-        $product = null;
-        if (! empty($data['product_id'])) {
-            $product = Product::query()->find($data['product_id']);
-        }
-
-        $type = $data['type'] ?? 'barcode';
-        $fallbackValue = $type === 'qr'
-            ? ($product?->qrcode ?? $product?->barcode ?? $product?->sku)
-            : ($product?->barcode ?? $product?->sku);
-        $value = $data['value'] ?? $fallbackValue;
-        if (! $value) {
-            return null;
-        }
-
-        $label = $data['label']
-            ?? $product?->name
-            ?? $value;
-
-        return [
-            'type' => $type,
-            'product_id' => $product?->id,
-            'value' => $value,
-            'label' => $label,
-            'format' => $data['format'] ?? 'C128',
-            'scale' => $data['scale'] ?? 2,
-            'height' => $data['height'] ?? 80,
-            'size' => $data['size'] ?? 240,
-            'margin' => $data['margin'] ?? 10,
-            'qty' => $data['qty'] ?? 1,
-        ];
-    }
-
-    private function barcodeType(string $format): string
-    {
-        return match ($format) {
-            'C39' => BarcodeGeneratorPNG::TYPE_CODE_39,
-            'EAN13' => BarcodeGeneratorPNG::TYPE_EAN_13,
-            'EAN8' => BarcodeGeneratorPNG::TYPE_EAN_8,
-            'UPC' => BarcodeGeneratorPNG::TYPE_UPC_A,
-            default => BarcodeGeneratorPNG::TYPE_CODE_128,
-        };
     }
 }

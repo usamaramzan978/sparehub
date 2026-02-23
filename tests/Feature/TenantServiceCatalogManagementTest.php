@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\ServiceCatalog\DeleteServiceCatalogAction;
+use App\Actions\Tenant\ServiceCatalog\UpdateServiceCatalogAction;
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Tenant\ServiceCatalogController;
@@ -339,10 +341,57 @@ it('deletes service catalog in current branch', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $branches['current']->id);
-    $response = (new ServiceCatalogController())->destroy($service);
+    $response = (new ServiceCatalogController())->destroy($service, new DeleteServiceCatalogAction());
 
     expect($response->getTargetUrl())->toBe(serviceCatalogTenantRoute('service-catalog.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
+    $this->assertDatabaseMissing('service_catalog', ['id' => $service->id], 'tenant');
+});
+
+it('updates service catalog via action', function (): void {
+    $branches = authenticateServiceCatalogUser();
+
+    $service = ServiceCatalog::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branches['current']->id,
+        'code' => 'SRV-UPD',
+        'name' => 'Before Update',
+        'base_price' => 120,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $updated = (new UpdateServiceCatalogAction())->handle($service, [
+        'code' => 'SRV-UPD',
+        'name' => 'After Update',
+        'base_price' => 150,
+        'duration_minutes' => 60,
+        'status' => RecordStatus::INACTIVE->value,
+    ], $branches['current']->id);
+
+    expect($updated)->toBeTrue();
+
+    $this->assertDatabaseHas('service_catalog', [
+        'id' => $service->id,
+        'name' => 'After Update',
+        'base_price' => 150,
+        'duration_minutes' => 60,
+        'status' => RecordStatus::INACTIVE->value,
+    ], 'tenant');
+});
+
+it('deletes service catalog via action', function (): void {
+    $branches = authenticateServiceCatalogUser();
+
+    $service = ServiceCatalog::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branches['current']->id,
+        'code' => 'SRV-ACT-DEL',
+        'name' => 'Action Delete Service',
+        'base_price' => 210,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $deleted = (new DeleteServiceCatalogAction())->handle($service);
+
+    expect($deleted)->toBeTrue();
     $this->assertDatabaseMissing('service_catalog', ['id' => $service->id], 'tenant');
 });
 

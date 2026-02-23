@@ -85,7 +85,7 @@ Route::middleware([
         Route::post('employee-attendances', [EmployeeAttendanceController::class, 'store'])->name('employee-attendances.store');
         Route::get('employee-salaries', [EmployeeSalaryController::class, 'index'])->name('employee-salaries.index');
         Route::post('employee-salaries', [EmployeeSalaryController::class, 'store'])->name('employee-salaries.store');
-        Route::get('mechanic-payables', [MechanicPayableController::class, 'index'])->name('mechanic-payables.index');
+        Route::get('mechanic-payables', MechanicPayableController::class)->name('mechanic-payables.index');
 
         Route::controller(TenantAuthController::class)->group(function (): void {
             Route::get('two-step', 'showTwoStep')->name('two-step');
@@ -93,7 +93,7 @@ Route::middleware([
             Route::post('logout', 'logout')->name('logout');
         });
 
-        Route::post('branch/switch', [BranchSwitchController::class, 'store'])
+        Route::post('branch/switch', BranchSwitchController::class)
             ->name('branch.switch');
 
         Route::controller(ProfileController::class)->group(function (): void {

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\Category\CreateCategoryAction;
+use App\Actions\Tenant\Category\DeleteCategoryAction;
+use App\Actions\Tenant\Category\UpdateCategoryAction;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\CategoryRequest;
@@ -12,7 +15,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 final class CategoryController extends Controller
 {
@@ -41,57 +43,27 @@ final class CategoryController extends Controller
         ]);
     }
 
-    public function store(CategoryRequest $request): RedirectResponse
+    public function store(CategoryRequest $request, CreateCategoryAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['slug'] = $this->buildUniqueSlug((string) $payload['name']);
-
-        Category::query()->create($payload);
+        $action->handle($request->validated());
 
         return to_route('tenant.categories.index')
             ->with('status', 'Created.');
     }
 
-    public function update(CategoryRequest $request, Category $category): RedirectResponse
+    public function update(CategoryRequest $request, Category $category, UpdateCategoryAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['slug'] = $this->buildUniqueSlug((string) $payload['name'], $category->id);
-
-        $category->update($payload);
+        $action->handle($category, $request->validated());
 
         return to_route('tenant.categories.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(Category $category): RedirectResponse
+    public function destroy(Category $category, DeleteCategoryAction $action): RedirectResponse
     {
-        $category->delete();
+        $action->handle($category);
 
         return to_route('tenant.categories.index')
             ->with('status', 'Deleted.');
-    }
-
-    private function buildUniqueSlug(string $name, ?string $ignoreCategoryId = null): string
-    {
-        $baseSlug = Str::slug($name);
-        $baseSlug = $baseSlug !== '' ? $baseSlug : 'category';
-
-        $candidateSlug = $baseSlug;
-        $suffix = 2;
-
-        while ($this->slugExists($candidateSlug, $ignoreCategoryId)) {
-            $candidateSlug = sprintf('%s-%d', $baseSlug, $suffix);
-            $suffix++;
-        }
-
-        return $candidateSlug;
-    }
-
-    private function slugExists(string $slug, ?string $ignoreCategoryId = null): bool
-    {
-        return Category::query()
-            ->where('slug', $slug)
-            ->when($ignoreCategoryId !== null, fn (Builder $query) => $query->whereKeyNot($ignoreCategoryId))
-            ->exists();
     }
 }

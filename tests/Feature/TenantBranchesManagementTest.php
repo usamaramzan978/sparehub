@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\Branch\DeleteBranchAction;
+use App\Actions\Tenant\Branch\UpdateBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Tenant\BranchController;
@@ -189,7 +191,7 @@ it('prevents deleting the last remaining branch', function (): void {
 
     session()->put('tenant.current_branch_id', $fixture['branch']->id);
 
-    $response = (new BranchController())->destroy($fixture['branch']);
+    $response = (new BranchController())->destroy($fixture['branch'], new DeleteBranchAction());
 
     expect($response->getTargetUrl())->toBe(tenantRoute('branches.index'));
     expect($response->getSession()->get('error'))->toBe('At least one branch must remain.');
@@ -208,7 +210,7 @@ it('prevents deleting the currently selected branch', function (): void {
 
     session()->put('tenant.current_branch_id', $fixture['branch']->id);
 
-    $response = (new BranchController())->destroy($fixture['branch']);
+    $response = (new BranchController())->destroy($fixture['branch'], new DeleteBranchAction());
 
     expect($response->getTargetUrl())->toBe(tenantRoute('branches.index'));
     expect($response->getSession()->get('error'))->toBe('You cannot delete the currently selected branch.');
@@ -228,7 +230,7 @@ it('deletes branch when it is not the selected branch and at least one branch re
 
     session()->put('tenant.current_branch_id', $fixture['branch']->id);
 
-    $response = (new BranchController())->destroy($deletableBranch);
+    $response = (new BranchController())->destroy($deletableBranch, new DeleteBranchAction());
 
     expect($response->getTargetUrl())->toBe(tenantRoute('branches.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -239,6 +241,47 @@ it('deletes branch when it is not the selected branch and at least one branch re
     $event = DB::connection('tenant')
         ->table('tenant_activity_timelines')
         ->where('event', 'branch_deleted')
+        ->latest('id')
+        ->first();
+
+    expect($event)->not->toBeNull();
+});
+
+it('updates a branch via action', function (): void {
+    $fixture = createAuthenticatedTenantUser();
+
+    $branch = Branch::query()->create([
+        'code' => 'BR-UPD',
+        'name' => 'Before Update',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    $warehouse = Warehouse::query()->create([
+        'code' => 'WH-UPD',
+        'name' => 'Update Warehouse',
+        'status' => RecordStatus::ACTIVE->value,
+        'branch_id' => $fixture['branch']->id,
+    ]);
+
+    $updated = (new UpdateBranchAction())->handle($branch, [
+        'code' => 'BR-UPD',
+        'name' => 'After Update',
+        'warehouse_id' => $warehouse->id,
+        'status' => BranchStatus::INACTIVE->value,
+    ]);
+
+    expect($updated)->toBeTrue();
+
+    $this->assertDatabaseHas('branches', [
+        'id' => $branch->id,
+        'name' => 'After Update',
+        'warehouse_id' => $warehouse->id,
+        'status' => BranchStatus::INACTIVE->value,
+    ], 'tenant');
+
+    $event = DB::connection('tenant')
+        ->table('tenant_activity_timelines')
+        ->where('event', 'branch_updated')
         ->latest('id')
         ->first();
 

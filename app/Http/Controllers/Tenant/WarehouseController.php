@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\Warehouse\CreateWarehouseAction;
+use App\Actions\Tenant\Warehouse\DeleteWarehouseAction;
+use App\Actions\Tenant\Warehouse\UpdateWarehouseAction;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\WarehouseRequest;
@@ -39,25 +42,25 @@ final class WarehouseController extends Controller
         ]);
     }
 
-    public function store(WarehouseRequest $request): RedirectResponse
+    public function store(WarehouseRequest $request, CreateWarehouseAction $action): RedirectResponse
     {
-        Warehouse::query()->create($request->validated());
+        $action->handle($request->validated());
 
         return to_route('tenant.warehouses.index')
             ->with('status', 'Created.');
     }
 
-    public function update(WarehouseRequest $request, Warehouse $warehouse): RedirectResponse
+    public function update(WarehouseRequest $request, Warehouse $warehouse, UpdateWarehouseAction $action): RedirectResponse
     {
-        $warehouse->update($request->validated());
+        $action->handle($warehouse, $request->validated());
 
         return to_route('tenant.warehouses.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(Warehouse $warehouse): RedirectResponse
+    public function destroy(Warehouse $warehouse, DeleteWarehouseAction $action): RedirectResponse
     {
-        $warehouse->delete();
+        $action->handle($warehouse);
 
         return to_route('tenant.warehouses.index')
             ->with('status', 'Deleted.');

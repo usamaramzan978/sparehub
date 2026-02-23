@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\JobCard\DeleteJobCardAction;
+use App\Actions\Tenant\JobCard\EnsureJobCardInBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\CustomerStatus;
 use App\Enums\JobCardStatus;
@@ -358,7 +360,7 @@ it('shows job card details in current branch', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new JobCardController())->show($jobCard);
+    $response = (new JobCardController())->show($jobCard, new EnsureJobCardInBranchAction());
 
     expect($response->name())->toBe('tenants.job-cards.show');
     expect($response->getData()['jobCard']->id)->toBe($jobCard->id);
@@ -378,7 +380,7 @@ it('shows edit job card page for current branch record', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new JobCardController())->edit($jobCard);
+    $response = (new JobCardController())->edit($jobCard, new EnsureJobCardInBranchAction());
 
     expect($response->name())->toBe('tenants.job-cards.edit');
     expect($response->getData()['jobCard']->id)->toBe($jobCard->id);
@@ -424,7 +426,11 @@ it('deletes job card', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new JobCardController())->destroy($jobCard);
+    $response = (new JobCardController())->destroy(
+        $jobCard,
+        new DeleteJobCardAction(),
+        new EnsureJobCardInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(jobCardsTenantRoute('job-cards.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -444,5 +450,5 @@ it('throws not found when showing job card outside current branch', function ():
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new JobCardController())->show($foreignJobCard);
+    (new JobCardController())->show($foreignJobCard, new EnsureJobCardInBranchAction());
 });

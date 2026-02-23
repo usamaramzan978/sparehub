@@ -4,20 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
-use App\Enums\SupportTicketPriority;
+use App\Actions\Tenant\SupportTicket\CreateSupportTicketAction;
+use App\Actions\Tenant\SupportTicket\EnsureSupportTicketInBranchAction;
+use App\Actions\Tenant\SupportTicket\ResolveSupportTicketAction;
+use App\Actions\Tenant\SupportTicket\StoreSupportTicketMessageAction;
 use App\Enums\SupportTicketStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\SupportTicketMessageRequest;
 use App\Http\Requests\Tenant\SupportTicketRequest;
 use App\Models\SupportTicket;
-use App\Models\SupportTicketMessage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 final class SupportTicketController extends Controller
 {
@@ -56,32 +55,17 @@ final class SupportTicketController extends Controller
         return view('tenants.support-tickets.create');
     }
 
-    public function store(SupportTicketRequest $request): RedirectResponse
+    public function store(SupportTicketRequest $request, CreateSupportTicketAction $createSupportTicketAction): RedirectResponse
     {
-        $payload = $request->validated();
-        $branchId = $this->currentBranchId();
-
-        $ticket = SupportTicket::query()->create([
-            'branch_id' => $branchId,
-            'reported_by' => auth('user')->id(),
-            'ticket_no' => $this->generateTicketNumber($branchId),
-            'title' => $payload['title'],
-            'description' => $payload['description'],
-            'priority' => $payload['priority'] ?? SupportTicketPriority::MEDIUM->value,
-            'status' => $payload['status'] ?? SupportTicketStatus::OPEN->value,
-            'image_paths' => [],
-        ]);
-
-        $this->replaceTicketImages($ticket, $request->file('images', []));
-        $this->createTenantMessage($ticket, $payload['description']);
+        $ticket = $createSupportTicketAction->handle($request->validated(), $this->currentBranchId(), $request->file('images', []));
 
         return to_route('tenant.support-tickets.show', $ticket)->with('status', 'Created.');
     }
 
-    public function show(): View
+    public function show(ResolveSupportTicketAction $resolveSupportTicketAction, EnsureSupportTicketInBranchAction $ensureSupportTicketInBranchAction): View
     {
-        $supportTicket = $this->resolveSupportTicket((string) request()->route('supportTicket'));
-        $this->ensureSupportTicketInCurrentBranch($supportTicket);
+        $supportTicket = $resolveSupportTicketAction->handle((string) request()->route('supportTicket'));
+        $supportTicket = $ensureSupportTicketInBranchAction->handle($supportTicket, $this->currentBranchId());
 
         $supportTicket->load(['reporter', 'messages']);
 
@@ -90,94 +74,17 @@ final class SupportTicketController extends Controller
         ]);
     }
 
-    public function storeMessage(SupportTicketMessageRequest $request): RedirectResponse
-    {
-        $supportTicket = $this->resolveSupportTicket((string) request()->route('supportTicket'));
-        $this->ensureSupportTicketInCurrentBranch($supportTicket);
-        $message = $request->validated('message');
+    public function storeMessage(
+        SupportTicketMessageRequest $request,
+        ResolveSupportTicketAction $resolveSupportTicketAction,
+        EnsureSupportTicketInBranchAction $ensureSupportTicketInBranchAction,
+        StoreSupportTicketMessageAction $storeSupportTicketMessageAction
+    ): RedirectResponse {
+        $supportTicket = $resolveSupportTicketAction->handle((string) request()->route('supportTicket'));
+        $supportTicket = $ensureSupportTicketInBranchAction->handle($supportTicket, $this->currentBranchId());
 
-        if (in_array($supportTicket->status->value, [SupportTicketStatus::RESOLVED->value, SupportTicketStatus::CLOSED->value], true)) {
-            $supportTicket->update(['status' => SupportTicketStatus::OPEN->value]);
-        }
-
-        $this->createTenantMessage($supportTicket, $message);
+        $storeSupportTicketMessageAction->handle($supportTicket, (string) $request->validated('message'));
 
         return to_route('tenant.support-tickets.show', $supportTicket)->with('status', 'Message sent.');
-    }
-
-    private function ensureSupportTicketInCurrentBranch(SupportTicket $supportTicket): void
-    {
-        abort_if($supportTicket->branch_id !== $this->currentBranchId(), 404);
-    }
-
-    private function resolveSupportTicket(string $supportTicketId): SupportTicket
-    {
-        return SupportTicket::query()->withoutGlobalScopes()->findOrFail($supportTicketId);
-    }
-
-    private function generateTicketNumber(string $branchId): string
-    {
-        do {
-            $ticketNumber = sprintf('SUP-%s', Str::upper(Str::random(8)));
-            $exists = SupportTicket::query()
-                ->withoutGlobalScopes()
-                ->where('branch_id', $branchId)
-                ->where('ticket_no', $ticketNumber)
-                ->exists();
-        } while ($exists);
-
-        return $ticketNumber;
-    }
-
-    private function createTenantMessage(SupportTicket $supportTicket, string $message): void
-    {
-        $user = auth('user')->user();
-
-        SupportTicketMessage::query()->create([
-            'support_ticket_id' => $supportTicket->id,
-            'sender_type' => SupportTicketMessage::SENDER_TENANT,
-            'sender_user_id' => (string) ($user?->id ?? ''),
-            'sender_name' => (string) ($user?->name ?? 'Tenant User'),
-            'message' => $message,
-        ]);
-    }
-
-    /**
-     * @param  array<int, UploadedFile>|UploadedFile|null  $uploadedImages
-     */
-    private function replaceTicketImages(SupportTicket $supportTicket, array|UploadedFile|null $uploadedImages): void
-    {
-        $images = is_array($uploadedImages) ? $uploadedImages : [$uploadedImages];
-        $images = array_values(array_filter($images, fn (?UploadedFile $image): bool => $image instanceof UploadedFile));
-
-        $this->deleteTicketImages($supportTicket);
-
-        if ($images === []) {
-            $supportTicket->update(['image_paths' => []]);
-
-            return;
-        }
-
-        $storedPaths = [];
-        foreach ($images as $image) {
-            $storedPaths[] = (string) $image->store('support-tickets', 'public');
-        }
-
-        $supportTicket->update(['image_paths' => $storedPaths]);
-    }
-
-    private function deleteTicketImages(SupportTicket $supportTicket): void
-    {
-        $paths = $supportTicket->image_paths ?? [];
-
-        if (! is_array($paths) || $paths === []) {
-            return;
-        }
-
-        foreach ($paths as $path) {
-            if (is_string($path) && $path !== '') {
-                Storage::disk('public')->delete($path);
-            }
-        }
     }
 }

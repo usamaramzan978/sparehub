@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\Unit\DeleteUnitAction;
+use App\Actions\Tenant\Unit\UpdateUnitAction;
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
 use App\Models\Branch;
@@ -165,4 +167,48 @@ it('clamps units pagination limits', function (): void {
 
     expect($minResponse->viewData('items')->perPage())->toBe(5);
     expect($maxResponse->viewData('items')->perPage())->toBe(100);
+});
+
+it('updates unit via action', function (): void {
+    authenticateUnitUser();
+
+    $unit = Unit::query()->create([
+        'code' => 'SET',
+        'name' => 'Set',
+        'is_fractional' => false,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $updated = (new UpdateUnitAction())->handle($unit, [
+        'code' => 'SET2',
+        'name' => 'Set 2',
+        'is_fractional' => true,
+        'status' => RecordStatus::INACTIVE->value,
+    ]);
+
+    expect($updated)->toBeTrue();
+
+    $this->assertDatabaseHas('units', [
+        'id' => $unit->id,
+        'code' => 'SET2',
+        'name' => 'Set 2',
+        'is_fractional' => 1,
+        'status' => RecordStatus::INACTIVE->value,
+    ], 'tenant');
+});
+
+it('deletes unit via action', function (): void {
+    authenticateUnitUser();
+
+    $unit = Unit::query()->create([
+        'code' => 'DEL',
+        'name' => 'Delete Unit',
+        'is_fractional' => false,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $deleted = (new DeleteUnitAction())->handle($unit);
+
+    expect($deleted)->toBeTrue();
+    $this->assertDatabaseMissing('units', ['id' => $unit->id], 'tenant');
 });

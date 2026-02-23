@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\JobCardService\CreateJobCardServiceAction;
+use App\Actions\Tenant\JobCardService\DeleteJobCardServiceAction;
+use App\Actions\Tenant\JobCardService\EnsureJobCardServiceInBranchAction;
+use App\Actions\Tenant\JobCardService\UpdateJobCardServiceAction;
 use App\Enums\JobCardServiceStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\JobCardServiceRequest;
@@ -28,21 +32,6 @@ final class JobCardServiceController extends Controller
             ->latest()
             ->paginate($perPage);
 
-        JobCard::query()
-            ->where('branch_id', $branchId)
-            ->latest('job_date')
-            ->get();
-
-        ServiceCatalog::query()
-            ->where('branch_id', $branchId)
-            ->orderBy('name')
-            ->get();
-
-        User::query()
-            ->where('branch_id', $branchId)
-            ->orderBy('name')
-            ->get();
-
         return view('tenants.job-card-services.index', [
             'items' => $services,
         ]);
@@ -53,20 +42,19 @@ final class JobCardServiceController extends Controller
         return view('tenants.job-card-services.create', $this->formOptions());
     }
 
-    public function store(JobCardServiceRequest $request): RedirectResponse
+    public function store(JobCardServiceRequest $request, CreateJobCardServiceAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['line_total'] = (float) $payload['qty'] * (float) $payload['rate'];
-
-        JobCardService::query()->create($payload);
+        $action->handle($request->validated());
 
         return to_route('tenant.job-card-services.index')
             ->with('status', 'Created.');
     }
 
-    public function show(JobCardService $jobCardService): View
-    {
-        $this->ensureJobCardServiceInCurrentBranch($jobCardService);
+    public function show(
+        JobCardService $jobCardService,
+        EnsureJobCardServiceInBranchAction $ensureJobCardServiceInBranchAction
+    ): View {
+        $jobCardService = $ensureJobCardServiceInBranchAction->handle($jobCardService, $this->currentBranchId());
 
         $jobCardService->load(['jobCard.customer', 'jobCard.vehicle', 'serviceCatalog', 'technician']);
 
@@ -75,9 +63,11 @@ final class JobCardServiceController extends Controller
         ]);
     }
 
-    public function edit(JobCardService $jobCardService): View
-    {
-        $this->ensureJobCardServiceInCurrentBranch($jobCardService);
+    public function edit(
+        JobCardService $jobCardService,
+        EnsureJobCardServiceInBranchAction $ensureJobCardServiceInBranchAction
+    ): View {
+        $jobCardService = $ensureJobCardServiceInBranchAction->handle($jobCardService, $this->currentBranchId());
 
         return view('tenants.job-card-services.edit', array_merge(
             ['serviceLine' => $jobCardService],
@@ -85,34 +75,29 @@ final class JobCardServiceController extends Controller
         ));
     }
 
-    public function update(JobCardServiceRequest $request, JobCardService $jobCardService): RedirectResponse
-    {
-        $this->ensureJobCardServiceInCurrentBranch($jobCardService);
-
-        $payload = $request->validated();
-        $payload['line_total'] = (float) $payload['qty'] * (float) $payload['rate'];
-
-        $jobCardService->update($payload);
+    public function update(
+        JobCardServiceRequest $request,
+        JobCardService $jobCardService,
+        UpdateJobCardServiceAction $action,
+        EnsureJobCardServiceInBranchAction $ensureJobCardServiceInBranchAction
+    ): RedirectResponse {
+        $jobCardService = $ensureJobCardServiceInBranchAction->handle($jobCardService, $this->currentBranchId());
+        $action->handle($jobCardService, $request->validated());
 
         return to_route('tenant.job-card-services.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(JobCardService $jobCardService): RedirectResponse
-    {
-        $this->ensureJobCardServiceInCurrentBranch($jobCardService);
-
-        $jobCardService->delete();
+    public function destroy(
+        JobCardService $jobCardService,
+        DeleteJobCardServiceAction $action,
+        EnsureJobCardServiceInBranchAction $ensureJobCardServiceInBranchAction
+    ): RedirectResponse {
+        $jobCardService = $ensureJobCardServiceInBranchAction->handle($jobCardService, $this->currentBranchId());
+        $action->handle($jobCardService);
 
         return to_route('tenant.job-card-services.index')
             ->with('status', 'Deleted.');
-    }
-
-    private function ensureJobCardServiceInCurrentBranch(JobCardService $jobCardService): void
-    {
-        $jobCard = $jobCardService->jobCard;
-
-        abort_if(! $jobCard instanceof JobCard || $jobCard->branch_id !== $this->currentBranchId(), 404);
     }
 
     /**

@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 
 final class MechanicPayableController extends Controller
 {
-    public function index(Request $request): View
+    public function __invoke(Request $request): View
     {
         $branchId = $this->currentBranchId();
         $search = mb_trim($request->string('search')->toString());

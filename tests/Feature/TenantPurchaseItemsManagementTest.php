@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\PurchaseItem\DeletePurchaseItemAction;
+use App\Actions\Tenant\PurchaseItem\EnsurePurchaseItemInBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\PurchaseStatus;
 use App\Enums\RecordStatus;
@@ -257,7 +259,11 @@ it('deletes purchase item and recalculates purchase totals', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new PurchaseItemController())->destroy($item);
+    $response = (new PurchaseItemController())->destroy(
+        $item,
+        app(DeletePurchaseItemAction::class),
+        new EnsurePurchaseItemInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(purchaseItemsTenantRoute('purchase-items.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -298,5 +304,5 @@ it('throws not found when showing purchase item outside current branch', functio
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new PurchaseItemController())->show($foreignItem);
+    (new PurchaseItemController())->show($foreignItem, new EnsurePurchaseItemInBranchAction());
 });

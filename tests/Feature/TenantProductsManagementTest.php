@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\Product\DeleteProductAction;
+use App\Actions\Tenant\Product\GetProductDetailsAction;
+use App\Actions\Tenant\Product\GetProductEditDataAction;
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
 use App\Enums\StockMoveType;
@@ -365,7 +368,7 @@ it('shows product details', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $branch->id);
-    $response = (new ProductController())->show($product);
+    $response = (new ProductController())->show($product, app(GetProductDetailsAction::class));
 
     expect($response->name())->toBe('tenants.products.show');
     expect($response->getData()['product']->id)->toBe($product->id);
@@ -380,7 +383,7 @@ it('shows edit product page', function (): void {
         'status' => RecordStatus::ACTIVE->value,
     ]);
 
-    $response = (new ProductController())->edit($product);
+    $response = (new ProductController())->edit($product, app(GetProductEditDataAction::class));
 
     expect($response->name())->toBe('tenants.products.edit');
     expect($response->getData()['product']->id)->toBe($product->id);
@@ -395,7 +398,7 @@ it('deletes product', function (): void {
         'status' => RecordStatus::ACTIVE->value,
     ]);
 
-    $response = (new ProductController())->destroy($product);
+    $response = (new ProductController())->destroy($product, app(DeleteProductAction::class));
 
     expect($response->getTargetUrl())->toBe(productsTenantRoute('products.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');

@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\Category\DeleteCategoryAction;
+use App\Actions\Tenant\Category\GenerateUniqueCategorySlugAction;
+use App\Actions\Tenant\Category\UpdateCategoryAction;
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
 use App\Models\Branch;
@@ -218,4 +221,49 @@ it('clamps categories pagination limits', function (): void {
 
     expect($minResponse->viewData('items')->perPage())->toBe(5);
     expect($maxResponse->viewData('items')->perPage())->toBe(100);
+});
+
+it('updates category and regenerates unique slug via action', function (): void {
+    authenticateCategoryUser();
+
+    Category::query()->create([
+        'name' => 'Fluids',
+        'slug' => 'fluids',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $category = Category::query()->create([
+        'name' => 'Fluids Pro',
+        'slug' => 'fluids-pro',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $updated = (new UpdateCategoryAction(new GenerateUniqueCategorySlugAction()))->handle($category, [
+        'name' => 'Fluids',
+        'status' => RecordStatus::INACTIVE->value,
+    ]);
+
+    expect($updated)->toBeTrue();
+
+    $this->assertDatabaseHas('categories', [
+        'id' => $category->id,
+        'name' => 'Fluids',
+        'slug' => 'fluids-2',
+        'status' => RecordStatus::INACTIVE->value,
+    ], 'tenant');
+});
+
+it('deletes category via action', function (): void {
+    authenticateCategoryUser();
+
+    $category = Category::query()->create([
+        'name' => 'Delete Category',
+        'slug' => 'delete-category',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $deleted = (new DeleteCategoryAction())->handle($category);
+
+    expect($deleted)->toBeTrue();
+    $this->assertDatabaseMissing('categories', ['id' => $category->id], 'tenant');
 });

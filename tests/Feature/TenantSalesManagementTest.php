@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\Sale\DeleteSaleAction;
+use App\Actions\Tenant\Sale\EnsureSaleInBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\InvoiceType;
 use App\Enums\RecordStatus;
@@ -351,7 +353,11 @@ it('deletes sale', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new SaleController())->destroy($sale);
+    $response = (new SaleController())->destroy(
+        $sale,
+        app(DeleteSaleAction::class),
+        new EnsureSaleInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(salesTenantRoute('sales.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -371,5 +377,5 @@ it('throws not found when showing sale outside current branch', function (): voi
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new SaleController())->show($foreignSale);
+    (new SaleController())->show($foreignSale, new EnsureSaleInBranchAction());
 });

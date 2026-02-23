@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\JobCard\CreateJobCardAction;
+use App\Actions\Tenant\JobCard\DeleteJobCardAction;
+use App\Actions\Tenant\JobCard\EnsureJobCardInBranchAction;
+use App\Actions\Tenant\JobCard\UpdateJobCardAction;
 use App\Enums\JobCardStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\JobCardRequest;
@@ -11,13 +15,10 @@ use App\Models\Customer;
 use App\Models\CustomerVehicle;
 use App\Models\JobCard;
 use App\Models\User;
-use App\Support\AuditTimelineLogger;
-use BackedEnum;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 final class JobCardController extends Controller
 {
@@ -42,17 +43,7 @@ final class JobCardController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        $customers = Customer::query()
-            ->where('branch_id', $branchId)
-            ->orderBy('name')
-            ->get();
-
-        CustomerVehicle::query()
-            ->whereIn('customer_id', $customers->pluck('id'))
-            ->orderBy('registration_no')
-            ->get();
-
-        User::query()
+        Customer::query()
             ->where('branch_id', $branchId)
             ->orderBy('name')
             ->get();
@@ -67,33 +58,17 @@ final class JobCardController extends Controller
         return view('tenants.job-cards.create', $this->formOptions());
     }
 
-    public function store(JobCardRequest $request): RedirectResponse
+    public function store(JobCardRequest $request, CreateJobCardAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-        $payload['created_by'] = auth('user')->id();
-
-        $jobCard = JobCard::query()->create($payload);
-
-        AuditTimelineLogger::log(
-            event: 'job_card_created',
-            description: 'Job card created.',
-            causer: Auth::guard('user')->user(),
-            subject: $jobCard,
-            properties: [
-                'job_card_id' => (string) $jobCard->id,
-                'job_no' => (string) $jobCard->job_no,
-                'status' => $this->statusValue($jobCard->status),
-            ],
-        );
+        $action->handle($request->validated(), $this->currentBranchId(), auth('user')->id());
 
         return to_route('tenant.job-cards.index')
             ->with('status', 'Created.');
     }
 
-    public function show(JobCard $jobCard): View
+    public function show(JobCard $jobCard, EnsureJobCardInBranchAction $ensureJobCardInBranchAction): View
     {
-        $this->ensureJobCardInCurrentBranch($jobCard);
+        $jobCard = $ensureJobCardInBranchAction->handle($jobCard, $this->currentBranchId());
 
         $jobCard->load([
             'customer',
@@ -109,9 +84,9 @@ final class JobCardController extends Controller
         ]);
     }
 
-    public function edit(JobCard $jobCard): View
+    public function edit(JobCard $jobCard, EnsureJobCardInBranchAction $ensureJobCardInBranchAction): View
     {
-        $this->ensureJobCardInCurrentBranch($jobCard);
+        $jobCard = $ensureJobCardInBranchAction->handle($jobCard, $this->currentBranchId());
 
         return view('tenants.job-cards.edit', array_merge(
             ['jobCard' => $jobCard],
@@ -119,67 +94,29 @@ final class JobCardController extends Controller
         ));
     }
 
-    public function update(JobCardRequest $request, JobCard $jobCard): RedirectResponse
-    {
-        $this->ensureJobCardInCurrentBranch($jobCard);
-
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-
-        $jobCard->update($payload);
-
-        AuditTimelineLogger::log(
-            event: 'job_card_updated',
-            description: 'Job card updated.',
-            causer: Auth::guard('user')->user(),
-            subject: $jobCard,
-            properties: [
-                'job_card_id' => (string) $jobCard->id,
-                'job_no' => (string) $jobCard->job_no,
-                'changed_attributes' => array_keys($payload),
-            ],
-        );
+    public function update(
+        JobCardRequest $request,
+        JobCard $jobCard,
+        UpdateJobCardAction $action,
+        EnsureJobCardInBranchAction $ensureJobCardInBranchAction
+    ): RedirectResponse {
+        $jobCard = $ensureJobCardInBranchAction->handle($jobCard, $this->currentBranchId());
+        $action->handle($jobCard, $request->validated(), $this->currentBranchId());
 
         return to_route('tenant.job-cards.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(JobCard $jobCard): RedirectResponse
-    {
-        $this->ensureJobCardInCurrentBranch($jobCard);
-
-        $snapshot = [
-            'job_card_id' => (string) $jobCard->id,
-            'job_no' => (string) $jobCard->job_no,
-            'status' => $this->statusValue($jobCard->status),
-        ];
-
-        $jobCard->delete();
-
-        AuditTimelineLogger::log(
-            event: 'job_card_deleted',
-            description: 'Job card deleted.',
-            causer: Auth::guard('user')->user(),
-            subject: $jobCard,
-            properties: $snapshot,
-        );
+    public function destroy(
+        JobCard $jobCard,
+        DeleteJobCardAction $action,
+        EnsureJobCardInBranchAction $ensureJobCardInBranchAction
+    ): RedirectResponse {
+        $jobCard = $ensureJobCardInBranchAction->handle($jobCard, $this->currentBranchId());
+        $action->handle($jobCard);
 
         return to_route('tenant.job-cards.index')
             ->with('status', 'Deleted.');
-    }
-
-    private function ensureJobCardInCurrentBranch(JobCard $jobCard): void
-    {
-        abort_if($jobCard->branch_id !== $this->currentBranchId(), 404);
-    }
-
-    private function statusValue(mixed $status): string
-    {
-        if ($status instanceof BackedEnum) {
-            return (string) $status->value;
-        }
-
-        return (string) $status;
     }
 
     /**

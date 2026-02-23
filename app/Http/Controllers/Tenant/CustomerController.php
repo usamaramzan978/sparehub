@@ -6,12 +6,13 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Actions\Tenant\Customer\CreateCustomerAction;
 use App\Actions\Tenant\Customer\DeleteCustomerAction;
+use App\Actions\Tenant\Customer\EnsureCustomerInBranchAction;
+use App\Actions\Tenant\Customer\ListRecentCustomerSalesAction;
 use App\Actions\Tenant\Customer\UpdateCustomerAction;
 use App\Enums\CustomerStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\CustomerRequest;
 use App\Models\Customer;
-use App\Models\Sale;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,17 +49,16 @@ final class CustomerController extends Controller
         ]);
     }
 
-    public function show(Customer $customer): View
-    {
-        $this->ensureCustomerInCurrentBranch($customer);
+    public function show(
+        Customer $customer,
+        EnsureCustomerInBranchAction $ensureCustomerInBranchAction,
+        ListRecentCustomerSalesAction $listRecentCustomerSalesAction
+    ): View {
+        $customer = $ensureCustomerInBranchAction->handle($customer, $this->currentBranchId());
 
         $customer->load(['branch', 'vehicles']);
-        $recentSales = Sale::query()
-            ->where('branch_id', $this->currentBranchId())
-            ->where('customer_id', $customer->id)
-            ->latest('invoice_date')
-            ->limit(10)
-            ->get();
+
+        $recentSales = $listRecentCustomerSalesAction->handle($customer, $this->currentBranchId());
 
         return view('tenants.customers.show', [
             'customer' => $customer,
@@ -66,9 +66,13 @@ final class CustomerController extends Controller
         ]);
     }
 
-    public function update(CustomerRequest $request, Customer $customer, UpdateCustomerAction $action): RedirectResponse
-    {
-        $this->ensureCustomerInCurrentBranch($customer);
+    public function update(
+        CustomerRequest $request,
+        Customer $customer,
+        UpdateCustomerAction $action,
+        EnsureCustomerInBranchAction $ensureCustomerInBranchAction
+    ): RedirectResponse {
+        $customer = $ensureCustomerInBranchAction->handle($customer, $this->currentBranchId());
 
         $data = $request->validated();
         $data['branch_id'] = $this->currentBranchId();
@@ -78,9 +82,9 @@ final class CustomerController extends Controller
             ->with('status', 'Updated.');
     }
 
-    public function edit(Customer $customer): View
+    public function edit(Customer $customer, EnsureCustomerInBranchAction $ensureCustomerInBranchAction): View
     {
-        $this->ensureCustomerInCurrentBranch($customer);
+        $customer = $ensureCustomerInBranchAction->handle($customer, $this->currentBranchId());
 
         $statuses = CustomerStatus::cases();
 
@@ -90,18 +94,16 @@ final class CustomerController extends Controller
         ]);
     }
 
-    public function destroy(Customer $customer, DeleteCustomerAction $action): RedirectResponse
-    {
-        $this->ensureCustomerInCurrentBranch($customer);
+    public function destroy(
+        Customer $customer,
+        DeleteCustomerAction $action,
+        EnsureCustomerInBranchAction $ensureCustomerInBranchAction
+    ): RedirectResponse {
+        $customer = $ensureCustomerInBranchAction->handle($customer, $this->currentBranchId());
 
         $action->handle($customer);
 
         return to_route('tenant.customers.index')
             ->with('status', 'Deleted.');
-    }
-
-    private function ensureCustomerInCurrentBranch(Customer $customer): void
-    {
-        abort_if($customer->branch_id !== $this->currentBranchId(), 404);
     }
 }

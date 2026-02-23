@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Actions\Tenant\Customer\DeleteCustomerAction;
+use App\Actions\Tenant\Customer\EnsureCustomerInBranchAction;
+use App\Actions\Tenant\Customer\ListRecentCustomerSalesAction;
 use App\Enums\BranchStatus;
 use App\Enums\CustomerStatus;
 use App\Http\Controllers\Tenant\CustomerController;
@@ -232,7 +234,11 @@ it('shows customer details in current branch', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $branches['current']->id);
-    $response = (new CustomerController())->show($customer);
+    $response = (new CustomerController())->show(
+        $customer,
+        new EnsureCustomerInBranchAction(),
+        new ListRecentCustomerSalesAction()
+    );
 
     expect($response->name())->toBe('tenants.customers.show');
     expect($response->getData()['customer']->id)->toBe($customer->id);
@@ -249,7 +255,7 @@ it('shows edit customer page for current branch customer', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $branches['current']->id);
-    $response = (new CustomerController())->edit($customer);
+    $response = (new CustomerController())->edit($customer, new EnsureCustomerInBranchAction());
 
     expect($response->name())->toBe('tenants.customers.edit');
     expect($response->getData()['customer']->id)->toBe($customer->id);
@@ -280,7 +286,11 @@ it('deletes customer', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $branches['current']->id);
-    $response = (new CustomerController())->destroy($customer, new DeleteCustomerAction());
+    $response = (new CustomerController())->destroy(
+        $customer,
+        new DeleteCustomerAction(),
+        new EnsureCustomerInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(customersTenantRoute('customers.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -298,5 +308,9 @@ it('throws not found when showing customer outside current branch', function ():
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new CustomerController())->show($foreignCustomer);
+    (new CustomerController())->show(
+        $foreignCustomer,
+        new EnsureCustomerInBranchAction(),
+        new ListRecentCustomerSalesAction()
+    );
 });

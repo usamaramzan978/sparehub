@@ -137,9 +137,11 @@ final class LoginAction
                     if (! is_string($tenantId)) {
                         continue;
                     }
+
                     if ($tenantId === '') {
                         continue;
                     }
+
                     AuditTimelineLogger::logForTenant(
                         tenantId: $tenantId,
                         event: 'auth_failure',

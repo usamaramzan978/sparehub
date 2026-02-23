@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\SaleHold\DeleteSaleHoldAction;
+use App\Actions\Tenant\SaleHold\EnsureSaleHoldInBranchAction;
 use App\Enums\BranchStatus;
 use App\Http\Controllers\Tenant\SaleHoldController;
 use App\Models\Branch;
@@ -190,7 +192,11 @@ it('deletes sale hold', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new SaleHoldController())->destroy($hold);
+    $response = (new SaleHoldController())->destroy(
+        $hold,
+        new DeleteSaleHoldAction(),
+        new EnsureSaleHoldInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(saleHoldsTenantRoute('sale-holds.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -208,5 +214,5 @@ it('throws not found when showing hold outside current branch', function (): voi
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new SaleHoldController())->show($foreignHold);
+    (new SaleHoldController())->show($foreignHold, new EnsureSaleHoldInBranchAction());
 });

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\Setting\UpsertTenantSettingAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\UpdateTenantSettingRequest;
 use App\Models\TenantSetting;
-use App\Support\AuditTimelineLogger;
 use DateTimeZone;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -28,71 +28,16 @@ final class SettingController extends Controller
         ]);
     }
 
-    public function update(UpdateTenantSettingRequest $request): RedirectResponse
+    public function update(UpdateTenantSettingRequest $request, UpsertTenantSettingAction $action): RedirectResponse
     {
         $data = $request->validated();
         $branchId = $this->currentBranchId();
-
-        $settings = TenantSetting::query()->firstOrNew(['branch_id' => $branchId]);
-        $settings->branch_id = $branchId;
-
-        $previousTwoFactorEnabled = (bool) $settings->two_factor_enabled;
-        $previousTwoFactorMethod = $settings->two_factor_method?->value;
 
         if ($request->hasFile('logo')) {
             $data['logo_path'] = (string) $request->file('logo')->store('tenant-settings', 'public');
         }
 
-        if (! $request->boolean('two_factor_enabled')) {
-            $data['two_factor_method'] = null;
-            $request->session()->put('two_step.required', false);
-            $request->session()->put('two_step.verified', true);
-            $request->session()->forget([
-                'two_step.method',
-                'two_step.setup_required',
-                'two_step.enrollment_required',
-                'two_step.code',
-                'two_step.expires_at',
-            ]);
-        }
-
-        unset($data['logo']);
-
-        $settings->fill($data);
-        $settings->save();
-
-        $changedAttributes = array_keys($settings->getChanges());
-
-        AuditTimelineLogger::log(
-            event: 'settings_updated',
-            description: 'Tenant settings updated.',
-            causer: Auth::guard('user')->user(),
-            subject: $settings,
-            properties: [
-                'changed_attributes' => $changedAttributes,
-                'branch_id' => $branchId,
-            ],
-        );
-
-        $currentTwoFactorMethod = $settings->two_factor_method?->value;
-        if (
-            $previousTwoFactorEnabled !== (bool) $settings->two_factor_enabled
-            || $previousTwoFactorMethod !== $currentTwoFactorMethod
-        ) {
-            AuditTimelineLogger::log(
-                event: 'two_factor_policy_changed',
-                description: 'Two-factor policy updated.',
-                causer: Auth::guard('user')->user(),
-                subject: $settings,
-                properties: [
-                    'previous_enabled' => $previousTwoFactorEnabled,
-                    'current_enabled' => (bool) $settings->two_factor_enabled,
-                    'previous_method' => $previousTwoFactorMethod,
-                    'current_method' => $currentTwoFactorMethod,
-                    'branch_id' => $branchId,
-                ],
-            );
-        }
+        $action->handle($data, $branchId, $request->session(), Auth::guard('user')->user());
 
         return to_route('tenant.settings.edit')
             ->with('status', 'Settings updated.');

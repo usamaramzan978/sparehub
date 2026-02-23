@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\Vendor\DeleteVendorAction;
+use App\Actions\Tenant\Vendor\EnsureVendorInBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Tenant\VendorController;
@@ -262,7 +264,7 @@ it('shows vendor details in current branch', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $branches['current']->id);
-    $response = (new VendorController())->show($vendor);
+    $response = (new VendorController())->show($vendor, new EnsureVendorInBranchAction());
 
     expect($response->name())->toBe('tenants.vendors.show');
     expect($response->getData()['vendor']->id)->toBe($vendor->id);
@@ -279,7 +281,7 @@ it('shows edit vendor page for current branch vendor', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $branches['current']->id);
-    $response = (new VendorController())->edit($vendor);
+    $response = (new VendorController())->edit($vendor, new EnsureVendorInBranchAction());
 
     expect($response->name())->toBe('tenants.vendors.edit');
     expect($response->getData()['vendor']->id)->toBe($vendor->id);
@@ -310,7 +312,11 @@ it('deletes vendor', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $branches['current']->id);
-    $response = (new VendorController())->destroy($vendor);
+    $response = (new VendorController())->destroy(
+        $vendor,
+        new DeleteVendorAction(),
+        new EnsureVendorInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(vendorsTenantRoute('vendors.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -328,5 +334,5 @@ it('throws not found when showing vendor outside current branch', function (): v
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new VendorController())->show($foreignVendor);
+    (new VendorController())->show($foreignVendor, new EnsureVendorInBranchAction());
 });

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\JobCardPart\CreateJobCardPartAction;
+use App\Actions\Tenant\JobCardPart\DeleteJobCardPartAction;
+use App\Actions\Tenant\JobCardPart\EnsureJobCardPartInBranchAction;
+use App\Actions\Tenant\JobCardPart\UpdateJobCardPartAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\JobCardPartRequest;
 use App\Models\JobCard;
@@ -26,15 +30,6 @@ final class JobCardPartController extends Controller
             ->latest()
             ->paginate($perPage);
 
-        JobCard::query()
-            ->where('branch_id', $branchId)
-            ->latest('job_date')
-            ->get();
-
-        Product::query()
-            ->orderBy('name')
-            ->get();
-
         return view('tenants.job-card-parts.index', [
             'items' => $parts,
         ]);
@@ -45,20 +40,17 @@ final class JobCardPartController extends Controller
         return view('tenants.job-card-parts.create', $this->formOptions());
     }
 
-    public function store(JobCardPartRequest $request): RedirectResponse
+    public function store(JobCardPartRequest $request, CreateJobCardPartAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['line_total'] = (float) $payload['qty'] * (float) $payload['unit_price'];
-
-        JobCardPart::query()->create($payload);
+        $action->handle($request->validated());
 
         return to_route('tenant.job-card-parts.index')
             ->with('status', 'Created.');
     }
 
-    public function show(JobCardPart $jobCardPart): View
+    public function show(JobCardPart $jobCardPart, EnsureJobCardPartInBranchAction $ensureJobCardPartInBranchAction): View
     {
-        $this->ensureJobCardPartInCurrentBranch($jobCardPart);
+        $jobCardPart = $ensureJobCardPartInBranchAction->handle($jobCardPart, $this->currentBranchId());
 
         $jobCardPart->load(['jobCard.customer', 'jobCard.vehicle', 'product']);
 
@@ -67,9 +59,9 @@ final class JobCardPartController extends Controller
         ]);
     }
 
-    public function edit(JobCardPart $jobCardPart): View
+    public function edit(JobCardPart $jobCardPart, EnsureJobCardPartInBranchAction $ensureJobCardPartInBranchAction): View
     {
-        $this->ensureJobCardPartInCurrentBranch($jobCardPart);
+        $jobCardPart = $ensureJobCardPartInBranchAction->handle($jobCardPart, $this->currentBranchId());
 
         return view('tenants.job-card-parts.edit', array_merge(
             ['partLine' => $jobCardPart],
@@ -77,34 +69,29 @@ final class JobCardPartController extends Controller
         ));
     }
 
-    public function update(JobCardPartRequest $request, JobCardPart $jobCardPart): RedirectResponse
-    {
-        $this->ensureJobCardPartInCurrentBranch($jobCardPart);
-
-        $payload = $request->validated();
-        $payload['line_total'] = (float) $payload['qty'] * (float) $payload['unit_price'];
-
-        $jobCardPart->update($payload);
+    public function update(
+        JobCardPartRequest $request,
+        JobCardPart $jobCardPart,
+        UpdateJobCardPartAction $action,
+        EnsureJobCardPartInBranchAction $ensureJobCardPartInBranchAction
+    ): RedirectResponse {
+        $jobCardPart = $ensureJobCardPartInBranchAction->handle($jobCardPart, $this->currentBranchId());
+        $action->handle($jobCardPart, $request->validated());
 
         return to_route('tenant.job-card-parts.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(JobCardPart $jobCardPart): RedirectResponse
-    {
-        $this->ensureJobCardPartInCurrentBranch($jobCardPart);
-
-        $jobCardPart->delete();
+    public function destroy(
+        JobCardPart $jobCardPart,
+        DeleteJobCardPartAction $action,
+        EnsureJobCardPartInBranchAction $ensureJobCardPartInBranchAction
+    ): RedirectResponse {
+        $jobCardPart = $ensureJobCardPartInBranchAction->handle($jobCardPart, $this->currentBranchId());
+        $action->handle($jobCardPart);
 
         return to_route('tenant.job-card-parts.index')
             ->with('status', 'Deleted.');
-    }
-
-    private function ensureJobCardPartInCurrentBranch(JobCardPart $jobCardPart): void
-    {
-        $jobCard = $jobCardPart->jobCard;
-
-        abort_if(! $jobCard instanceof JobCard || $jobCard->branch_id !== $this->currentBranchId(), 404);
     }
 
     /**

@@ -50,10 +50,10 @@ Route::prefix('system')->name('system.')->group(function (): void {
         Route::resource('plans', PlanController::class)->except(['show']);
         Route::resource('tenants', TenantController::class)->except(['show', 'destroy']);
         Route::resource('tenant-users', TenantUserController::class)->only(['index', 'create', 'store']);
-        Route::get('support-tickets', [SystemSupportTicketController::class, 'index'])->name('support-tickets.index');
-        Route::get('support-tickets/{tenant}/{ticket}/edit', [SystemSupportTicketController::class, 'edit'])->name('support-tickets.edit');
-        Route::put('support-tickets/{tenant}/{ticket}', [SystemSupportTicketController::class, 'update'])->name('support-tickets.update');
-        Route::post('support-tickets/{tenant}/{ticket}/messages', [SystemSupportTicketController::class, 'storeMessage'])->name('support-tickets.messages.store');
+        Route::get('support-tickets', (new SystemSupportTicketController())->index(...))->name('support-tickets.index');
+        Route::get('support-tickets/{tenant}/{ticket}/edit', (new SystemSupportTicketController())->edit(...))->name('support-tickets.edit');
+        Route::put('support-tickets/{tenant}/{ticket}', (new SystemSupportTicketController())->update(...))->name('support-tickets.update');
+        Route::post('support-tickets/{tenant}/{ticket}/messages', (new SystemSupportTicketController())->storeMessage(...))->name('support-tickets.messages.store');
         Route::post('logout', (new SystemAuthController())->logout(...))->name('logout');
     });
 });

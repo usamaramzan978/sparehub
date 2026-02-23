@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\Unit\CreateUnitAction;
+use App\Actions\Tenant\Unit\DeleteUnitAction;
+use App\Actions\Tenant\Unit\UpdateUnitAction;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\UnitRequest;
@@ -29,29 +32,29 @@ final class UnitController extends Controller
         ]);
     }
 
-    public function store(UnitRequest $request): RedirectResponse
+    public function store(UnitRequest $request, CreateUnitAction $action): RedirectResponse
     {
         $validated = $request->validated();
         $validated['is_fractional'] = $request->boolean('is_fractional');
-        Unit::query()->create($validated);
+        $action->handle($validated);
 
         return to_route('tenant.units.index')
             ->with('status', 'Created.');
     }
 
-    public function update(UnitRequest $request, Unit $unit): RedirectResponse
+    public function update(UnitRequest $request, Unit $unit, UpdateUnitAction $action): RedirectResponse
     {
         $validated = $request->validated();
         $validated['is_fractional'] = $request->boolean('is_fractional');
-        $unit->update($validated);
+        $action->handle($unit, $validated);
 
         return to_route('tenant.units.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(Unit $unit): RedirectResponse
+    public function destroy(Unit $unit, DeleteUnitAction $action): RedirectResponse
     {
-        $unit->delete();
+        $action->handle($unit);
 
         return to_route('tenant.units.index')
             ->with('status', 'Deleted.');

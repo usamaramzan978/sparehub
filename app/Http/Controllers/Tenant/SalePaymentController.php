@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\SalePayment\CreateSalePaymentAction;
+use App\Actions\Tenant\SalePayment\DeleteSalePaymentAction;
+use App\Actions\Tenant\SalePayment\EnsureSalePaymentInBranchAction;
+use App\Actions\Tenant\SalePayment\UpdateSalePaymentAction;
 use App\Enums\PaymentMethodType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\SalePaymentRequest;
 use App\Models\Sale;
 use App\Models\SalePayment;
 use App\Models\User;
-use App\Support\AuditTimelineLogger;
-use BackedEnum;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,33 +42,16 @@ final class SalePaymentController extends Controller
         return view('tenants.sale-payments.create', $this->formOptions());
     }
 
-    public function store(SalePaymentRequest $request): RedirectResponse
+    public function store(SalePaymentRequest $request, CreateSalePaymentAction $action): RedirectResponse
     {
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-
-        $payment = SalePayment::query()->create($payload);
-        $this->recalculatePaid($payment->sale);
-
-        AuditTimelineLogger::log(
-            event: 'sale_payment_recorded',
-            description: 'Sale payment recorded.',
-            causer: Auth::guard('user')->user(),
-            subject: $payment,
-            properties: [
-                'sale_id' => (string) $payment->sale_id,
-                'payment_id' => (string) $payment->id,
-                'amount' => (float) $payment->amount,
-                'method' => $this->paymentMethodValue($payment->payment_method),
-            ],
-        );
+        $action->handle($request->validated(), $this->currentBranchId(), Auth::guard('user')->user());
 
         return to_route('tenant.sale-payments.index')->with('status', 'Created.');
     }
 
-    public function show(SalePayment $salePayment): View
+    public function show(SalePayment $salePayment, EnsureSalePaymentInBranchAction $ensureSalePaymentInBranchAction): View
     {
-        $this->ensureSalePaymentInCurrentBranch($salePayment);
+        $salePayment = $ensureSalePaymentInBranchAction->handle($salePayment, $this->currentBranchId());
 
         $salePayment->load(['sale.customer', 'receiver', 'branch']);
 
@@ -75,9 +60,9 @@ final class SalePaymentController extends Controller
         ]);
     }
 
-    public function edit(SalePayment $salePayment): View
+    public function edit(SalePayment $salePayment, EnsureSalePaymentInBranchAction $ensureSalePaymentInBranchAction): View
     {
-        $this->ensureSalePaymentInCurrentBranch($salePayment);
+        $salePayment = $ensureSalePaymentInBranchAction->handle($salePayment, $this->currentBranchId());
 
         return view('tenants.sale-payments.edit', array_merge(
             ['salePayment' => $salePayment],
@@ -85,83 +70,27 @@ final class SalePaymentController extends Controller
         ));
     }
 
-    public function update(SalePaymentRequest $request, SalePayment $salePayment): RedirectResponse
-    {
-        $this->ensureSalePaymentInCurrentBranch($salePayment);
-
-        $payload = $request->validated();
-        $payload['branch_id'] = $this->currentBranchId();
-
-        $salePayment->update($payload);
-        $this->recalculatePaid($salePayment->sale);
-
-        AuditTimelineLogger::log(
-            event: 'sale_payment_updated',
-            description: 'Sale payment updated.',
-            causer: Auth::guard('user')->user(),
-            subject: $salePayment,
-            properties: [
-                'sale_id' => (string) $salePayment->sale_id,
-                'payment_id' => (string) $salePayment->id,
-                'amount' => (float) $salePayment->amount,
-                'method' => $this->paymentMethodValue($salePayment->payment_method),
-            ],
-        );
+    public function update(
+        SalePaymentRequest $request,
+        SalePayment $salePayment,
+        UpdateSalePaymentAction $action,
+        EnsureSalePaymentInBranchAction $ensureSalePaymentInBranchAction
+    ): RedirectResponse {
+        $salePayment = $ensureSalePaymentInBranchAction->handle($salePayment, $this->currentBranchId());
+        $action->handle($salePayment, $request->validated(), $this->currentBranchId(), Auth::guard('user')->user());
 
         return to_route('tenant.sale-payments.index')->with('status', 'Updated.');
     }
 
-    public function destroy(SalePayment $salePayment): RedirectResponse
-    {
-        $this->ensureSalePaymentInCurrentBranch($salePayment);
-        $sale = $salePayment->sale;
-        $snapshot = [
-            'sale_id' => (string) $salePayment->sale_id,
-            'payment_id' => (string) $salePayment->id,
-            'amount' => (float) $salePayment->amount,
-            'method' => $this->paymentMethodValue($salePayment->payment_method),
-        ];
-        $salePayment->delete();
-        $this->recalculatePaid($sale);
-
-        AuditTimelineLogger::log(
-            event: 'sale_payment_deleted',
-            description: 'Sale payment deleted.',
-            causer: Auth::guard('user')->user(),
-            subject: $salePayment,
-            properties: $snapshot,
-        );
+    public function destroy(
+        SalePayment $salePayment,
+        DeleteSalePaymentAction $action,
+        EnsureSalePaymentInBranchAction $ensureSalePaymentInBranchAction
+    ): RedirectResponse {
+        $salePayment = $ensureSalePaymentInBranchAction->handle($salePayment, $this->currentBranchId());
+        $action->handle($salePayment, Auth::guard('user')->user());
 
         return to_route('tenant.sale-payments.index')->with('status', 'Deleted.');
-    }
-
-    private function ensureSalePaymentInCurrentBranch(SalePayment $salePayment): void
-    {
-        abort_if($salePayment->branch_id !== $this->currentBranchId(), 404);
-    }
-
-    private function recalculatePaid(?Sale $sale): void
-    {
-        if (! $sale instanceof Sale) {
-            return;
-        }
-
-        $paid = (float) $sale->payments()->sum('amount');
-        $grandTotal = (float) $sale->grand_total;
-
-        $sale->update([
-            'paid_total' => $paid,
-            'balance_due' => $grandTotal - $paid,
-        ]);
-    }
-
-    private function paymentMethodValue(mixed $method): string
-    {
-        if ($method instanceof BackedEnum) {
-            return (string) $method->value;
-        }
-
-        return (string) $method;
     }
 
     /**

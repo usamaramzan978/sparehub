@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\Tax\CreateTaxAction;
+use App\Actions\Tenant\Tax\DeleteTaxAction;
+use App\Actions\Tenant\Tax\UpdateTaxAction;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\TaxRequest;
@@ -30,29 +33,29 @@ final class TaxController extends Controller
         ]);
     }
 
-    public function store(TaxRequest $request): RedirectResponse
+    public function store(TaxRequest $request, CreateTaxAction $action): RedirectResponse
     {
         $validated = $request->validated();
         $validated['is_inclusive'] = $request->boolean('is_inclusive');
-        Tax::query()->create($validated);
+        $action->handle($validated);
 
         return to_route('tenant.taxes.index')
             ->with('status', 'Created.');
     }
 
-    public function update(TaxRequest $request, Tax $tax): RedirectResponse
+    public function update(TaxRequest $request, Tax $tax, UpdateTaxAction $action): RedirectResponse
     {
         $validated = $request->validated();
         $validated['is_inclusive'] = $request->boolean('is_inclusive');
-        $tax->update($validated);
+        $action->handle($tax, $validated);
 
         return to_route('tenant.taxes.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(Tax $tax): RedirectResponse
+    public function destroy(Tax $tax, DeleteTaxAction $action): RedirectResponse
     {
-        $tax->delete();
+        $action->handle($tax);
 
         return to_route('tenant.taxes.index')
             ->with('status', 'Deleted.');

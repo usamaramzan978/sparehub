@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\Tenant\CustomerVehicle\CreateCustomerVehicleAction;
+use App\Actions\Tenant\CustomerVehicle\DeleteCustomerVehicleAction;
+use App\Actions\Tenant\CustomerVehicle\EnsureVehicleInBranchAction;
+use App\Actions\Tenant\CustomerVehicle\UpdateCustomerVehicleAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\CustomerVehicleRequest;
 use App\Models\Customer;
@@ -53,17 +57,17 @@ final class CustomerVehicleController extends Controller
         ]);
     }
 
-    public function store(CustomerVehicleRequest $request): RedirectResponse
+    public function store(CustomerVehicleRequest $request, CreateCustomerVehicleAction $action): RedirectResponse
     {
-        CustomerVehicle::query()->create($request->validated());
+        $action->handle($request->validated());
 
         return to_route('tenant.customer-vehicles.index')
             ->with('status', 'Created.');
     }
 
-    public function show(CustomerVehicle $customerVehicle): View
+    public function show(CustomerVehicle $customerVehicle, EnsureVehicleInBranchAction $ensureVehicleInBranchAction): View
     {
-        $this->ensureVehicleInCurrentBranch($customerVehicle);
+        $customerVehicle = $ensureVehicleInBranchAction->handle($customerVehicle, $this->currentBranchId());
 
         $customerVehicle->load('customer');
 
@@ -72,9 +76,9 @@ final class CustomerVehicleController extends Controller
         ]);
     }
 
-    public function edit(CustomerVehicle $customerVehicle): View
+    public function edit(CustomerVehicle $customerVehicle, EnsureVehicleInBranchAction $ensureVehicleInBranchAction): View
     {
-        $this->ensureVehicleInCurrentBranch($customerVehicle);
+        $customerVehicle = $ensureVehicleInBranchAction->handle($customerVehicle, $this->currentBranchId());
 
         $customers = Customer::query()
             ->where('branch_id', $this->currentBranchId())
@@ -87,31 +91,30 @@ final class CustomerVehicleController extends Controller
         ]);
     }
 
-    public function update(CustomerVehicleRequest $request, CustomerVehicle $customerVehicle): RedirectResponse
-    {
-        $this->ensureVehicleInCurrentBranch($customerVehicle);
+    public function update(
+        CustomerVehicleRequest $request,
+        CustomerVehicle $customerVehicle,
+        UpdateCustomerVehicleAction $action,
+        EnsureVehicleInBranchAction $ensureVehicleInBranchAction
+    ): RedirectResponse {
+        $customerVehicle = $ensureVehicleInBranchAction->handle($customerVehicle, $this->currentBranchId());
 
-        $customerVehicle->update($request->validated());
+        $action->handle($customerVehicle, $request->validated());
 
         return to_route('tenant.customer-vehicles.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(CustomerVehicle $customerVehicle): RedirectResponse
-    {
-        $this->ensureVehicleInCurrentBranch($customerVehicle);
+    public function destroy(
+        CustomerVehicle $customerVehicle,
+        DeleteCustomerVehicleAction $action,
+        EnsureVehicleInBranchAction $ensureVehicleInBranchAction
+    ): RedirectResponse {
+        $customerVehicle = $ensureVehicleInBranchAction->handle($customerVehicle, $this->currentBranchId());
 
-        $customerVehicle->delete();
+        $action->handle($customerVehicle);
 
         return to_route('tenant.customer-vehicles.index')
             ->with('status', 'Deleted.');
-    }
-
-    private function ensureVehicleInCurrentBranch(CustomerVehicle $customerVehicle): void
-    {
-        $branchId = $this->currentBranchId();
-        $customer = $customerVehicle->customer;
-
-        abort_if(! $customer instanceof Customer || $customer->branch_id !== $branchId, 404);
     }
 }

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\CustomerVehicle\DeleteCustomerVehicleAction;
+use App\Actions\Tenant\CustomerVehicle\EnsureVehicleInBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\CustomerStatus;
 use App\Http\Controllers\Tenant\CustomerVehicleController;
@@ -276,7 +278,7 @@ it('shows customer vehicle details for current branch', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new CustomerVehicleController())->show($vehicle);
+    $response = (new CustomerVehicleController())->show($vehicle, new EnsureVehicleInBranchAction());
 
     expect($response->name())->toBe('tenants.customer-vehicles.show');
     expect($response->getData()['vehicle']->id)->toBe($vehicle->id);
@@ -292,7 +294,7 @@ it('shows edit customer vehicle page for current branch', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new CustomerVehicleController())->edit($vehicle);
+    $response = (new CustomerVehicleController())->edit($vehicle, new EnsureVehicleInBranchAction());
 
     expect($response->name())->toBe('tenants.customer-vehicles.edit');
     expect($response->getData()['vehicle']->id)->toBe($vehicle->id);
@@ -308,7 +310,11 @@ it('deletes customer vehicle in current branch', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new CustomerVehicleController())->destroy($vehicle);
+    $response = (new CustomerVehicleController())->destroy(
+        $vehicle,
+        new DeleteCustomerVehicleAction(),
+        new EnsureVehicleInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(vehiclesTenantRoute('customer-vehicles.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -325,5 +331,5 @@ it('throws not found when showing customer vehicle outside current branch', func
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new CustomerVehicleController())->show($foreignVehicle);
+    (new CustomerVehicleController())->show($foreignVehicle, new EnsureVehicleInBranchAction());
 });

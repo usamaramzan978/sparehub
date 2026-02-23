@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\Purchase\DeletePurchaseAction;
+use App\Actions\Tenant\Purchase\EnsurePurchaseInBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\PurchaseStatus;
 use App\Enums\RecordStatus;
@@ -277,7 +279,11 @@ it('deletes purchase', function (): void {
     ]);
 
     session()->put('tenant.current_branch_id', $fixture['current']->id);
-    $response = (new PurchaseController())->destroy($purchase);
+    $response = (new PurchaseController())->destroy(
+        $purchase,
+        app(DeletePurchaseAction::class),
+        new EnsurePurchaseInBranchAction()
+    );
 
     expect($response->getTargetUrl())->toBe(purchasesTenantRoute('purchases.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
@@ -297,5 +303,5 @@ it('throws not found when showing purchase outside current branch', function ():
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new PurchaseController())->show($foreignPurchase);
+    (new PurchaseController())->show($foreignPurchase, new EnsurePurchaseInBranchAction());
 });
