@@ -6,11 +6,13 @@ namespace App\Providers;
 
 use App\Models\Branch;
 use App\Models\TenantSetting;
+use App\Support\HeaderContextCache;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -65,9 +67,12 @@ final class AppServiceProvider extends ServiceProvider
             $tenantId = function_exists('tenant') && tenant() ? (string) tenant()->getTenantKey() : 'central';
             $user = Auth::guard('user')->user();
             $userId = (string) ($user?->getAuthIdentifier() ?? 'guest');
-            $cacheKey = sprintf('header_context:%s:%s:%s', $tenantId, $userId, $currentBranchId);
+            $headerVersion = HeaderContextCache::currentVersion($tenantId);
+            $roleNames = $this->resolveRoleNames($user);
+            $roleFingerprint = sha1($roleNames->implode('|'));
+            $cacheKey = sprintf('header_context:%s:%s:%s:%d:%s', $tenantId, $userId, $currentBranchId, $headerVersion, $roleFingerprint);
 
-            $headerContext = Cache::remember($cacheKey, now()->addMinutes(2), function () use ($currentBranchId, $user): array {
+            $headerContext = Cache::remember($cacheKey, now()->addMinutes(2), function () use ($currentBranchId, $user, $roleNames): array {
                 $branches = $user
                     ? Branch::query()->active()->orderBy('name')->get(['id', 'name'])
                     : collect();
@@ -81,13 +86,7 @@ final class AppServiceProvider extends ServiceProvider
                     ->where('branch_id', $currentBranchId)
                     ->value('timezone') ?? config('app.timezone', 'UTC');
 
-                $headerRole = __('User');
-                if ($user && method_exists($user, 'getRoleNames')) {
-                    $roleName = $user->getRoleNames()->first();
-                    if (is_string($roleName) && $roleName !== '') {
-                        $headerRole = Str::headline(str_replace(['-', '_'], ' ', $roleName));
-                    }
-                }
+                $headerRole = $this->resolveHeaderRoleFromNames($roleNames);
 
                 return [
                     'headerBranches' => $branches,
@@ -101,5 +100,39 @@ final class AppServiceProvider extends ServiceProvider
 
             $view->with($headerContext);
         });
+    }
+
+    /**
+     * @return Collection<int, string>
+     */
+    private function resolveRoleNames(mixed $user): Collection
+    {
+        if (! $user || ! method_exists($user, 'getRoleNames')) {
+            return collect();
+        }
+
+        $roleNames = $user->getRoleNames();
+
+        if (! $roleNames instanceof Collection) {
+            return collect();
+        }
+
+        return $roleNames
+            ->filter(fn (mixed $roleName): bool => is_string($roleName) && $roleName !== '')
+            ->values();
+    }
+
+    /**
+     * @param  Collection<int, string>  $roleNames
+     */
+    private function resolveHeaderRoleFromNames(Collection $roleNames): string
+    {
+        $roleName = $roleNames->first();
+
+        if (! is_string($roleName) || $roleName === '') {
+            return __('User');
+        }
+
+        return Str::headline(str_replace(['-', '_'], ' ', $roleName));
     }
 }

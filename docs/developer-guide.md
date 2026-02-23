@@ -490,3 +490,63 @@ Practical scenario:
   Mark attendance and create salary record for same user/month branch context.
 - Reports:
   Open per-report page (sales/purchases/etc.) and export page-specific PDF route.
+
+## 13. Action Pattern Used in Tenant Modules
+
+Tenant modules follow an action-first mutation pattern for consistency and testability.
+
+Read pattern:
+- Controller handles request/auth/response concerns.
+- Validation stays in `FormRequest`.
+- Mutations are delegated to `App\Actions\Tenant\...`.
+
+Write pattern:
+1. Controller receives validated payload.
+2. Controller calls one action (or a small action chain).
+3. Action performs DB mutation and related side effects (audit log, cache/version bump, policy/session updates).
+4. Controller returns redirect/view/json.
+
+Benefits in this codebase:
+- Side effects are centralized and reusable.
+- Controllers stay thin and predictable.
+- Mutation behavior is easier to test without full HTTP flow.
+
+Examples:
+- Branch mutations:
+  - `app/Actions/Tenant/Branch/CreateBranchAction.php`
+  - `app/Actions/Tenant/Branch/UpdateBranchAction.php`
+  - `app/Actions/Tenant/Branch/DeleteBranchAction.php`
+- Tenant settings mutation:
+  - `app/Actions/Tenant/Setting/UpsertTenantSettingAction.php`
+
+Rule of thumb:
+- If a change mutates tenant business state, implement/extend an action instead of adding mutation logic in controller methods.
+
+## 14. Header Cache Invalidation Strategy
+
+Tenant header data is cached for 2 minutes in the header view composer:
+- `app/Providers/AppServiceProvider.php` (`View::composer('layouts.shared.header', ...)`)
+
+To avoid stale header data after branch/settings/role changes, the cache key is versioned.
+
+Current cache key parts:
+- tenant id
+- user id
+- current branch id (session)
+- tenant header cache version
+- current user role fingerprint (`getRoleNames()`)
+
+Implementation:
+- Version helper:
+  - `app/Support/HeaderContextCache.php`
+- Composer reads version with:
+  - `HeaderContextCache::currentVersion($tenantId)`
+- Mutating actions bump version with:
+  - `HeaderContextCache::bumpForCurrentTenant()`
+
+Where version bump is currently applied:
+- branch create/update/delete actions
+- tenant setting upsert action
+
+Operational rule:
+- Any new mutation that affects header payload (`branches`, selected-branch settings, displayed role/context) must call `HeaderContextCache::bumpForCurrentTenant()`.

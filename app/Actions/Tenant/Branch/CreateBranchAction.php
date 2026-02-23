@@ -6,6 +6,7 @@ namespace App\Actions\Tenant\Branch;
 
 use App\Models\Branch;
 use App\Support\AuditTimelineLogger;
+use App\Support\HeaderContextCache;
 use Illuminate\Support\Facades\Auth;
 
 final class CreateBranchAction
@@ -16,6 +17,7 @@ final class CreateBranchAction
     public function handle(array $data): Branch
     {
         $branch = Branch::query()->create($data);
+        HeaderContextCache::bumpForCurrentTenant();
 
         AuditTimelineLogger::log(
             event: 'branch_created',

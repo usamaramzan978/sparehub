@@ -7,6 +7,7 @@ namespace App\Actions\Tenant\Branch;
 use App\Enums\BranchDeletionResult;
 use App\Models\Branch;
 use App\Support\AuditTimelineLogger;
+use App\Support\HeaderContextCache;
 use Illuminate\Support\Facades\Auth;
 
 final class DeleteBranchAction
@@ -27,6 +28,7 @@ final class DeleteBranchAction
         ];
 
         $branch->delete();
+        HeaderContextCache::bumpForCurrentTenant();
 
         AuditTimelineLogger::log(
             event: 'branch_deleted',

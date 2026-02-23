@@ -6,6 +6,7 @@ namespace App\Actions\Tenant\Branch;
 
 use App\Models\Branch;
 use App\Support\AuditTimelineLogger;
+use App\Support\HeaderContextCache;
 use Illuminate\Support\Facades\Auth;
 
 final class UpdateBranchAction
@@ -16,6 +17,10 @@ final class UpdateBranchAction
     public function handle(Branch $branch, array $changes): bool
     {
         $updated = $branch->update($changes);
+
+        if ($updated) {
+            HeaderContextCache::bumpForCurrentTenant();
+        }
 
         AuditTimelineLogger::log(
             event: 'branch_updated',

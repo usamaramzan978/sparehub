@@ -6,6 +6,7 @@ namespace App\Actions\Tenant\Setting;
 
 use App\Models\TenantSetting;
 use App\Support\AuditTimelineLogger;
+use App\Support\HeaderContextCache;
 use Illuminate\Contracts\Session\Session;
 
 final class UpsertTenantSettingAction
@@ -38,6 +39,7 @@ final class UpsertTenantSettingAction
 
         $settings->fill($data);
         $settings->save();
+        HeaderContextCache::bumpForCurrentTenant();
 
         $changedAttributes = array_keys($settings->getChanges());
 
