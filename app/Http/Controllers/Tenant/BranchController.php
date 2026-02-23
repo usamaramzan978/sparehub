@@ -51,14 +51,14 @@ final class BranchController extends Controller
         ]);
     }
 
-    public function show(Branch $branch): View
+    public function show(string $tenant, Branch $branch): View
     {
         $branch->load(['warehouse']);
 
         return view('tenants.branches.show', ['branch' => $branch]);
     }
 
-    public function update(BranchRequest $request, Branch $branch, UpdateBranchAction $action): RedirectResponse
+    public function update(BranchRequest $request, string $tenant, Branch $branch, UpdateBranchAction $action): RedirectResponse
     {
         $action->handle($branch, $request->validated());
 
@@ -66,7 +66,7 @@ final class BranchController extends Controller
             ->with('status', 'Updated.');
     }
 
-    public function edit(Branch $branch): View
+    public function edit(string $tenant, Branch $branch): View
     {
         $statuses = BranchStatus::cases();
         $warehouses = Warehouse::query()->orderBy('name')->get();
@@ -78,7 +78,7 @@ final class BranchController extends Controller
         ]);
     }
 
-    public function destroy(Branch $branch, DeleteBranchAction $action): RedirectResponse
+    public function destroy(string $tenant, Branch $branch, DeleteBranchAction $action): RedirectResponse
     {
         return match ($action->handle($branch, session('tenant.current_branch_id'))) {
             BranchDeletionResult::LastRemaining => to_route('tenant.branches.index')

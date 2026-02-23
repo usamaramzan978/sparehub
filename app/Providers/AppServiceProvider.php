@@ -16,6 +16,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -61,6 +62,8 @@ final class AppServiceProvider extends ServiceProvider
 
             return route('auth.login');
         });
+
+        Route::model('branch', Branch::class);
 
         View::composer('layouts.shared.header', function ($view): void {
             $currentBranchId = (string) session('tenant.current_branch_id', '');

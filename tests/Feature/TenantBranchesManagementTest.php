@@ -191,7 +191,7 @@ it('prevents deleting the last remaining branch', function (): void {
 
     session()->put('tenant.current_branch_id', $fixture['branch']->id);
 
-    $response = (new BranchController())->destroy($fixture['branch'], new DeleteBranchAction());
+    $response = (new BranchController())->destroy('test-tenant-id', $fixture['branch'], new DeleteBranchAction());
 
     expect($response->getTargetUrl())->toBe(tenantRoute('branches.index'));
     expect($response->getSession()->get('error'))->toBe('At least one branch must remain.');
@@ -210,7 +210,7 @@ it('prevents deleting the currently selected branch', function (): void {
 
     session()->put('tenant.current_branch_id', $fixture['branch']->id);
 
-    $response = (new BranchController())->destroy($fixture['branch'], new DeleteBranchAction());
+    $response = (new BranchController())->destroy('test-tenant-id', $fixture['branch'], new DeleteBranchAction());
 
     expect($response->getTargetUrl())->toBe(tenantRoute('branches.index'));
     expect($response->getSession()->get('error'))->toBe('You cannot delete the currently selected branch.');
@@ -230,7 +230,7 @@ it('deletes branch when it is not the selected branch and at least one branch re
 
     session()->put('tenant.current_branch_id', $fixture['branch']->id);
 
-    $response = (new BranchController())->destroy($deletableBranch, new DeleteBranchAction());
+    $response = (new BranchController())->destroy('test-tenant-id', $deletableBranch, new DeleteBranchAction());
 
     expect($response->getTargetUrl())->toBe(tenantRoute('branches.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');

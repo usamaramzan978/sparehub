@@ -522,6 +522,59 @@ Examples:
 Rule of thumb:
 - If a change mutates tenant business state, implement/extend an action instead of adding mutation logic in controller methods.
 
+### 13.1 Shared Action Template (Audit + Cache Side Effects)
+
+Use this snippet when creating new tenant mutation actions:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Tenant\{Module};
+
+use App\Support\AuditTimelineLogger;
+use App\Support\HeaderContextCache;
+use Illuminate\Support\Facades\Auth;
+
+final class {ActionName}
+{
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function handle(array $data): mixed
+    {
+        // 1) Perform primary mutation first.
+        $result = /* create/update/delete */;
+
+        // 2) Bump header cache version only if this mutation affects header context
+        //    (branches, selected-branch settings, displayed role/context).
+        HeaderContextCache::bumpForCurrentTenant();
+
+        // 3) Record audit event with stable event key + useful properties.
+        AuditTimelineLogger::log(
+            event: '{module}_{action}',
+            description: '{Human readable summary}.',
+            causer: Auth::guard('user')->user(),
+            subject: $result,
+            properties: [
+                // 'changed_attributes' => [...],
+                // 'branch_id' => ...,
+            ],
+        );
+
+        return $result;
+    }
+}
+```
+
+Checklist before merging a new action:
+- Keep validation in a `FormRequest` and pass only validated payload into action.
+- Keep controller thin: call action and return response only.
+- Add/verify `AuditTimelineLogger::log(...)` with meaningful event/properties.
+- Call `HeaderContextCache::bumpForCurrentTenant()` only when header data can become stale.
+- Add/update focused Pest tests for the mutation behavior and required side effects.
+
 ## 14. Header Cache Invalidation Strategy
 
 Tenant header data is cached for 2 minutes in the header view composer:

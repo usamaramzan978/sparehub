@@ -2,17 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenant\Branch\CreateBranchAction;
-use App\Actions\Tenant\Branch\DeleteBranchAction;
-use App\Actions\Tenant\Branch\UpdateBranchAction;
-use App\Actions\Tenant\Setting\UpsertTenantSettingAction;
-use App\Enums\BranchDeletionResult;
 use App\Enums\BranchStatus;
 use App\Enums\UserStatus;
 use App\Models\Branch;
 use App\Models\User;
 use App\Support\HeaderContextCache;
-use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
@@ -69,69 +63,61 @@ function authenticateHeaderCacheUser(): array
     return ['branch' => $branch, 'user' => $user];
 }
 
+function headerCacheTenantRoute(string $name, array $parameters = []): string
+{
+    return route('tenant.'.$name, ['tenant' => 'test-tenant-id', ...$parameters]);
+}
+
 test('header cache version is bumped by branch create update and delete', function (): void {
     $fixture = authenticateHeaderCacheUser();
-    bindHeaderCacheTenantContext();
 
     expect(HeaderContextCache::currentVersion('test-tenant-id'))->toBe(1);
 
-    $branch = app(CreateBranchAction::class)->handle([
+    $this->post(headerCacheTenantRoute('branches.store'), [
         'code' => 'SUB',
         'name' => 'Sub Branch',
         'status' => BranchStatus::ACTIVE->value,
-    ]);
+    ])->assertRedirect(headerCacheTenantRoute('branches.index'));
 
     expect(HeaderContextCache::currentVersion('test-tenant-id'))->toBe(2);
-    expect($branch->code)->toBe('SUB');
+    $branch = Branch::query()->where('code', 'SUB')->firstOrFail();
 
-    $updated = app(UpdateBranchAction::class)->handle($branch, [
+    $this->put(headerCacheTenantRoute('branches.update', ['branch' => $branch->id]), [
         'code' => 'SUB',
         'name' => 'Sub Branch Updated',
         'status' => BranchStatus::ACTIVE->value,
-    ]);
-
-    expect($updated)->toBeTrue();
+    ])->assertRedirect(headerCacheTenantRoute('branches.index'));
     expect(HeaderContextCache::currentVersion('test-tenant-id'))->toBe(3);
 
-    $deletionBranch = app(CreateBranchAction::class)->handle([
+    $this->post(headerCacheTenantRoute('branches.store'), [
         'code' => 'DEL',
         'name' => 'Delete Branch',
         'status' => BranchStatus::ACTIVE->value,
-    ]);
+    ])->assertRedirect(headerCacheTenantRoute('branches.index'));
     expect(HeaderContextCache::currentVersion('test-tenant-id'))->toBe(4);
 
-    $deletionResult = app(DeleteBranchAction::class)->handle($deletionBranch, $fixture['branch']->id);
+    $deletionBranch = Branch::query()->where('code', 'DEL')->firstOrFail();
 
-    expect($deletionResult)->toBe(BranchDeletionResult::Deleted);
+    $this->delete(headerCacheTenantRoute('branches.destroy', ['branch' => $deletionBranch->id]))
+        ->assertRedirect(headerCacheTenantRoute('branches.index'));
     expect(HeaderContextCache::currentVersion('test-tenant-id'))->toBe(5);
+    expect((string) session('tenant.current_branch_id'))->toBe((string) $fixture['branch']->id);
 });
 
 test('header cache version is bumped when tenant settings are saved', function (): void {
     $fixture = authenticateHeaderCacheUser();
-    bindHeaderCacheTenantContext();
 
     expect(HeaderContextCache::currentVersion('test-tenant-id'))->toBe(1);
 
-    /** @var Store $session */
-    $session = app('session')->driver();
-    app(UpsertTenantSettingAction::class)->handle([
+    $this->put(headerCacheTenantRoute('settings.update'), [
         'timezone' => 'Asia/Karachi',
-    ], $fixture['branch']->id, $session, $fixture['user']);
+    ])->assertRedirect(headerCacheTenantRoute('settings.edit'));
 
     expect(HeaderContextCache::currentVersion('test-tenant-id'))->toBe(2);
 
-    app(UpsertTenantSettingAction::class)->handle([
+    $this->put(headerCacheTenantRoute('settings.update'), [
         'timezone' => 'UTC',
-    ], $fixture['branch']->id, $session, $fixture['user']);
+    ])->assertRedirect(headerCacheTenantRoute('settings.edit'));
 
     expect(HeaderContextCache::currentVersion('test-tenant-id'))->toBe(3);
 });
-
-function bindHeaderCacheTenantContext(): void
-{
-    $route = app('router')->getRoutes()->match(
-        request()->create('/firm/test-tenant-id/branches', 'POST')
-    );
-
-    request()->setRouteResolver(static fn () => $route);
-}
