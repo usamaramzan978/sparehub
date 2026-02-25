@@ -15,6 +15,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class ExpenseController extends Controller
 {
@@ -65,25 +66,32 @@ final class ExpenseController extends Controller
         return to_route('tenant.expenses.index')->with('status', 'Created.');
     }
 
-    public function update(
-        ExpenseRequest $request,
-        string $tenant,
-        string $expense,
-        UpdateExpenseAction $action
-    ): RedirectResponse {
-        unset($tenant);
-
-        $action->handle($expense, $request->validated(), $this->currentBranchId());
+    public function update(ExpenseRequest $request, UpdateExpenseAction $action): RedirectResponse
+    {
+        $action->handle($this->resolveExpenseId($request), $request->validated(), $this->currentBranchId());
 
         return to_route('tenant.expenses.index')->with('status', 'Updated.');
     }
 
-    public function destroy(string $tenant, string $expense, DeleteExpenseAction $action): RedirectResponse
+    public function destroy(Request $request, DeleteExpenseAction $action): RedirectResponse
     {
-        unset($tenant);
-
-        $action->handle($expense, $this->currentBranchId());
+        $action->handle($this->resolveExpenseId($request), $this->currentBranchId());
 
         return to_route('tenant.expenses.index')->with('status', 'Deleted.');
+    }
+
+    private function resolveExpenseId(Request $request): string
+    {
+        $expense = $request->route('expense');
+
+        if ($expense instanceof Expense) {
+            return (string) $expense->id;
+        }
+
+        if (! is_string($expense) || $expense === '') {
+            throw new NotFoundHttpException();
+        }
+
+        return $expense;
     }
 }

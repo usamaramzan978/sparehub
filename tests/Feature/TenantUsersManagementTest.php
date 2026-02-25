@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\User\DeleteUserAction;
 use App\Enums\BranchStatus;
 use App\Enums\RoleName;
+use App\Enums\UserDeletionResult;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Tenant\UserController;
 use App\Models\Branch;
@@ -172,7 +174,7 @@ it('throws not found when showing user outside current branch', function (): voi
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new UserController())->show('test-tenant-id', $foreignUser);
+    (new UserController())->show($foreignUser);
 });
 
 it('prevents deleting the last tenant owner user', function (): void {
@@ -185,11 +187,9 @@ it('prevents deleting the last tenant owner user', function (): void {
 
     $fixture['user']->assignRole(RoleName::TENANT_OWNER->value);
 
-    $response = $this->delete(usersTenantRoute('users.destroy', ['user' => $fixture['user']->id]));
+    $result = app(DeleteUserAction::class)->handle($fixture['user']);
 
-    $response->assertRedirect(usersTenantRoute('users.index'));
-    $response->assertSessionHas('error', 'At least one tenant owner must remain.');
-
+    expect($result)->toBe(UserDeletionResult::LastTenantOwner);
     expect(User::query()->find($fixture['user']->id))->not->toBeNull();
 });
 
@@ -212,10 +212,8 @@ it('allows deleting a tenant owner user when another tenant owner remains', func
     ]);
     $secondOwner->assignRole(RoleName::TENANT_OWNER->value);
 
-    $response = $this->delete(usersTenantRoute('users.destroy', ['user' => $secondOwner->id]));
+    $result = app(DeleteUserAction::class)->handle($secondOwner);
 
-    $response->assertRedirect(usersTenantRoute('users.index'));
-    $response->assertSessionHas('status', 'Deleted.');
-
+    expect($result)->toBe(UserDeletionResult::Deleted);
     expect(User::query()->find($secondOwner->id))->toBeNull();
 });

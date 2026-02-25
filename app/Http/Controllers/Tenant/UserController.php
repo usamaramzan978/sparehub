@@ -62,10 +62,8 @@ final class UserController extends Controller
         ]);
     }
 
-    public function show(string $tenant, User $user): View
+    public function show(User $user): View
     {
-        unset($tenant);
-
         $this->ensureUserInCurrentBranch($user);
         $user->load('branch');
 
@@ -80,10 +78,8 @@ final class UserController extends Controller
             ->with('status', 'Created.');
     }
 
-    public function edit(string $tenant, User $user): View
+    public function edit(User $user): View
     {
-        unset($tenant);
-
         $this->ensureUserInCurrentBranch($user);
 
         $statuses = UserStatus::cases();
@@ -96,10 +92,8 @@ final class UserController extends Controller
         ]);
     }
 
-    public function update(string $tenant, UserRequest $request, User $user, UpdateUserAction $action): RedirectResponse
+    public function update(UserRequest $request, User $user, UpdateUserAction $action): RedirectResponse
     {
-        unset($tenant);
-
         $this->ensureUserInCurrentBranch($user);
 
         $action->handle($user, $request->validated(), $this->currentBranchId());
@@ -108,10 +102,8 @@ final class UserController extends Controller
             ->with('status', 'Updated.');
     }
 
-    public function destroy(string $tenant, User $user, DeleteUserAction $action): RedirectResponse
+    public function destroy(User $user, DeleteUserAction $action): RedirectResponse
     {
-        unset($tenant);
-
         $this->ensureUserInCurrentBranch($user);
 
         return match ($action->handle($user)) {
