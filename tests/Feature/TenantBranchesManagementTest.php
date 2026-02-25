@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenant\Branch\DeleteBranchAction;
 use App\Actions\Tenant\Branch\UpdateBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
-use App\Http\Controllers\Tenant\BranchController;
 use App\Models\Branch;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -191,10 +189,10 @@ it('prevents deleting the last remaining branch', function (): void {
 
     session()->put('tenant.current_branch_id', $fixture['branch']->id);
 
-    $response = (new BranchController())->destroy('test-tenant-id', $fixture['branch'], new DeleteBranchAction());
+    $response = $this->delete(tenantRoute('branches.destroy', ['branch' => $fixture['branch']->id]));
 
-    expect($response->getTargetUrl())->toBe(tenantRoute('branches.index'));
-    expect($response->getSession()->get('error'))->toBe('At least one branch must remain.');
+    $response->assertRedirect(tenantRoute('branches.index'));
+    $response->assertSessionHas('error', 'At least one branch must remain.');
 
     $this->assertDatabaseHas('branches', ['id' => $fixture['branch']->id], 'tenant');
 });
@@ -210,10 +208,10 @@ it('prevents deleting the currently selected branch', function (): void {
 
     session()->put('tenant.current_branch_id', $fixture['branch']->id);
 
-    $response = (new BranchController())->destroy('test-tenant-id', $fixture['branch'], new DeleteBranchAction());
+    $response = $this->delete(tenantRoute('branches.destroy', ['branch' => $fixture['branch']->id]));
 
-    expect($response->getTargetUrl())->toBe(tenantRoute('branches.index'));
-    expect($response->getSession()->get('error'))->toBe('You cannot delete the currently selected branch.');
+    $response->assertRedirect(tenantRoute('branches.index'));
+    $response->assertSessionHas('error', 'You cannot delete the currently selected branch.');
 
     $this->assertDatabaseHas('branches', ['id' => $fixture['branch']->id], 'tenant');
     $this->assertDatabaseHas('branches', ['id' => $otherBranch->id], 'tenant');
@@ -230,10 +228,10 @@ it('deletes branch when it is not the selected branch and at least one branch re
 
     session()->put('tenant.current_branch_id', $fixture['branch']->id);
 
-    $response = (new BranchController())->destroy('test-tenant-id', $deletableBranch, new DeleteBranchAction());
+    $response = $this->delete(tenantRoute('branches.destroy', ['branch' => $deletableBranch->id]));
 
-    expect($response->getTargetUrl())->toBe(tenantRoute('branches.index'));
-    expect($response->getSession()->get('status'))->toBe('Deleted.');
+    $response->assertRedirect(tenantRoute('branches.index'));
+    $response->assertSessionHas('status', 'Deleted.');
 
     $this->assertDatabaseMissing('branches', ['id' => $deletableBranch->id], 'tenant');
     $this->assertDatabaseHas('branches', ['id' => $fixture['branch']->id], 'tenant');
@@ -296,4 +294,22 @@ it('clamps branch pagination to minimum and maximum per-page limits', function (
 
     expect($minResponse->viewData('items')->perPage())->toBe(5);
     expect($maxResponse->viewData('items')->perPage())->toBe(100);
+});
+
+it('deletes a branch via the destroy route', function (): void {
+    $fixture = createAuthenticatedTenantUser();
+
+    $deletableBranch = Branch::query()->create([
+        'code' => 'BR-ROUTE',
+        'name' => 'Route Deletable Branch',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    session()->put('tenant.current_branch_id', $fixture['branch']->id);
+
+    $response = $this->delete(tenantRoute('branches.destroy', ['branch' => $deletableBranch->id]));
+
+    $response->assertRedirect(tenantRoute('branches.index'));
+    $response->assertSessionHas('status', 'Deleted.');
+    $this->assertDatabaseMissing('branches', ['id' => $deletableBranch->id], 'tenant');
 });

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Requests\Tenant;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Date;
+use Throwable;
 
 final class DashboardFilterRequest extends FormRequest
 {
@@ -37,23 +39,45 @@ final class DashboardFilterRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $dateFrom = mb_trim((string) $this->input('date_from', ''));
+        $dateTo = mb_trim((string) $this->input('date_to', ''));
         $dateRange = mb_trim((string) $this->input('date_range', ''));
 
-        if ($dateRange === '' || ! str_contains($dateRange, ' to ')) {
-            return;
+        if ($dateRange !== '' && str_contains($dateRange, ' to ')) {
+            $parts = explode(' to ', $dateRange);
+            if (count($parts) === 2) {
+                [$dateFrom, $dateTo] = $parts;
+                $dateFrom = mb_trim($dateFrom);
+                $dateTo = mb_trim($dateTo);
+            }
         }
-
-        $parts = explode(' to ', $dateRange);
-
-        if (count($parts) !== 2) {
-            return;
-        }
-
-        [$dateFrom, $dateTo] = $parts;
 
         $this->merge([
-            'date_from' => mb_trim($dateFrom),
-            'date_to' => mb_trim($dateTo),
+            'date_from' => $this->normalizeDateValue($dateFrom),
+            'date_to' => $this->normalizeDateValue($dateTo),
         ]);
+    }
+
+    private function normalizeDateValue(string $dateValue): string
+    {
+        if ($dateValue === '') {
+            return '';
+        }
+
+        $knownFormats = ['Y-m-d', 'F, d Y', 'M, d Y', 'd M Y', 'd-m-Y', 'm/d/Y'];
+
+        foreach ($knownFormats as $knownFormat) {
+            try {
+                return Date::createFromFormat($knownFormat, $dateValue)->toDateString();
+            } catch (Throwable) {
+                continue;
+            }
+        }
+
+        try {
+            return Date::parse($dateValue)->toDateString();
+        } catch (Throwable) {
+            return $dateValue;
+        }
     }
 }

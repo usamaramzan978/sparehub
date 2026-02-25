@@ -31,10 +31,16 @@ const initDateRange = () => {
         return;
     }
 
+    const inputValue = input.value?.trim() ?? "";
+    const defaultDate =
+        inputValue !== "" && inputValue.includes(" to ")
+            ? inputValue.split(" to ").map((value) => value.trim())
+            : undefined;
+
     flatpickr(input, {
         mode: "range",
-        dateFormat: "F, d Y",
-        defaultDate: ["May, 01 2026", "May, 30 2026"],
+        dateFormat: "Y-m-d",
+        defaultDate,
         disableMobile: true,
     });
 };

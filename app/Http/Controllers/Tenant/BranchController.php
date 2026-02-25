@@ -51,23 +51,35 @@ final class BranchController extends Controller
         ]);
     }
 
-    public function show(string $tenant, Branch $branch): View
+    public function show(string $tenant): View
     {
+        unset($tenant);
+
+        $branch = $this->resolveBranchFromRoute();
+
         $branch->load(['warehouse']);
 
         return view('tenants.branches.show', ['branch' => $branch]);
     }
 
-    public function update(BranchRequest $request, string $tenant, Branch $branch, UpdateBranchAction $action): RedirectResponse
+    public function update(BranchRequest $request, string $tenant, UpdateBranchAction $action): RedirectResponse
     {
+        unset($tenant);
+
+        $branch = $this->resolveBranchFromRoute();
+
         $action->handle($branch, $request->validated());
 
         return to_route('tenant.branches.index')
             ->with('status', 'Updated.');
     }
 
-    public function edit(string $tenant, Branch $branch): View
+    public function edit(string $tenant): View
     {
+        unset($tenant);
+
+        $branch = $this->resolveBranchFromRoute();
+
         $statuses = BranchStatus::cases();
         $warehouses = Warehouse::query()->orderBy('name')->get();
 
@@ -78,8 +90,12 @@ final class BranchController extends Controller
         ]);
     }
 
-    public function destroy(string $tenant, Branch $branch, DeleteBranchAction $action): RedirectResponse
+    public function destroy(string $tenant, DeleteBranchAction $action): RedirectResponse
     {
+        unset($tenant);
+
+        $branch = $this->resolveBranchFromRoute();
+
         return match ($action->handle($branch, session('tenant.current_branch_id'))) {
             BranchDeletionResult::LastRemaining => to_route('tenant.branches.index')
                 ->with('error', 'At least one branch must remain.'),
@@ -88,5 +104,16 @@ final class BranchController extends Controller
             BranchDeletionResult::Deleted => to_route('tenant.branches.index')
                 ->with('status', 'Deleted.'),
         };
+    }
+
+    private function resolveBranchFromRoute(): Branch
+    {
+        $branchRouteParameter = request()->route('branch');
+
+        if ($branchRouteParameter instanceof Branch) {
+            return $branchRouteParameter;
+        }
+
+        return Branch::query()->findOrFail((string) $branchRouteParameter);
     }
 }

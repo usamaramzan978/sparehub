@@ -241,6 +241,23 @@ it('accepts date range filter parsing', function (): void {
     expect($dateRange['date_to'])->toBe($today);
 });
 
+it('accepts human readable dashboard date range values', function (): void {
+    authenticateDashboardUser();
+
+    $today = now()->toDateString();
+    $humanDate = now()->format('F, d Y');
+
+    $response = $this->get(dashboardTenantRoute([
+        'date_range' => $humanDate.' to '.$humanDate,
+    ]));
+
+    $response->assertSuccessful();
+
+    $dateRange = $response->viewData('dateRange');
+    expect($dateRange['date_from'])->toBe($today);
+    expect($dateRange['date_to'])->toBe($today);
+});
+
 it('validates dashboard date filters', function (): void {
     authenticateDashboardUser();
 
