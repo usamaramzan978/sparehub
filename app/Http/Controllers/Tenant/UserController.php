@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Actions\Tenant\User\CreateUserAction;
 use App\Actions\Tenant\User\DeleteUserAction;
 use App\Actions\Tenant\User\UpdateUserAction;
+use App\Enums\UserDeletionResult;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\UserRequest;
@@ -61,8 +62,10 @@ final class UserController extends Controller
         ]);
     }
 
-    public function show(User $user): View
+    public function show(string $tenant, User $user): View
     {
+        unset($tenant);
+
         $this->ensureUserInCurrentBranch($user);
         $user->load('branch');
 
@@ -77,8 +80,10 @@ final class UserController extends Controller
             ->with('status', 'Created.');
     }
 
-    public function edit(User $user): View
+    public function edit(string $tenant, User $user): View
     {
+        unset($tenant);
+
         $this->ensureUserInCurrentBranch($user);
 
         $statuses = UserStatus::cases();
@@ -91,8 +96,10 @@ final class UserController extends Controller
         ]);
     }
 
-    public function update(UserRequest $request, User $user, UpdateUserAction $action): RedirectResponse
+    public function update(string $tenant, UserRequest $request, User $user, UpdateUserAction $action): RedirectResponse
     {
+        unset($tenant);
+
         $this->ensureUserInCurrentBranch($user);
 
         $action->handle($user, $request->validated(), $this->currentBranchId());
@@ -101,13 +108,17 @@ final class UserController extends Controller
             ->with('status', 'Updated.');
     }
 
-    public function destroy(User $user, DeleteUserAction $action): RedirectResponse
+    public function destroy(string $tenant, User $user, DeleteUserAction $action): RedirectResponse
     {
+        unset($tenant);
+
         $this->ensureUserInCurrentBranch($user);
 
-        $action->handle($user);
-
-        return to_route('tenant.users.index')
-            ->with('status', 'Deleted.');
+        return match ($action->handle($user)) {
+            UserDeletionResult::LastTenantOwner => to_route('tenant.users.index')
+                ->with('error', 'At least one tenant owner must remain.'),
+            UserDeletionResult::Deleted => to_route('tenant.users.index')
+                ->with('status', 'Deleted.'),
+        };
     }
 }

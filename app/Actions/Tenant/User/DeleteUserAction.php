@@ -5,15 +5,22 @@ declare(strict_types=1);
 namespace App\Actions\Tenant\User;
 
 use App\Enums\LoginUserType;
+use App\Enums\RoleName;
+use App\Enums\UserDeletionResult;
 use App\Models\LoginMap;
 use App\Models\User;
 use App\Support\AuditTimelineLogger;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 final class DeleteUserAction
 {
-    public function handle(User $user): bool
+    public function handle(User $user): UserDeletionResult
     {
+        if ($this->isLastTenantOwner($user)) {
+            return UserDeletionResult::LastTenantOwner;
+        }
+
         $userSnapshot = [
             'user_id' => (string) $user->id,
             'user_email' => $user->email,
@@ -22,7 +29,7 @@ final class DeleteUserAction
 
         $this->deleteLoginMap($user);
 
-        $deleted = (bool) $user->delete();
+        $user->delete();
 
         AuditTimelineLogger::log(
             event: 'user_deleted',
@@ -32,7 +39,7 @@ final class DeleteUserAction
             properties: $userSnapshot,
         );
 
-        return $deleted;
+        return UserDeletionResult::Deleted;
     }
 
     private function deleteLoginMap(User $user): void
@@ -48,5 +55,24 @@ final class DeleteUserAction
             ->where('type', LoginUserType::USER->value)
             ->where('type_id', $user->id)
             ->delete();
+    }
+
+    private function isLastTenantOwner(User $user): bool
+    {
+        $isTenantOwner = $user->roles()
+            ->where('name', RoleName::TENANT_OWNER->value)
+            ->exists();
+
+        if (! $isTenantOwner) {
+            return false;
+        }
+
+        $tenantOwnersCount = User::query()
+            ->whereHas('roles', function (Builder $query): void {
+                $query->where('name', RoleName::TENANT_OWNER->value);
+            })
+            ->count();
+
+        return $tenantOwnersCount <= 1;
     }
 }

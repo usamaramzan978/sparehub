@@ -217,6 +217,7 @@ it('shows dashboard summary and chart data', function (): void {
 
     $response->assertSee('Top Stock');
     $response->assertSee('Tenant Health');
+    $response->assertSee('Staff');
     $response->assertSee('Low Stock Items');
     $response->assertSee('Unpaid Vendors');
     $response->assertSee('Open Job Cards');

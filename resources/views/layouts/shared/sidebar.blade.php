@@ -99,6 +99,7 @@
                                         'tenant.permissions.*',
                                     );
                                     $isEmployees = request()->routeIs(
+                                        'tenant.users.*',
                                         'tenant.employee-attendances.*',
                                         'tenant.employee-salaries.*',
                                         'tenant.mechanic-payables.*',
@@ -110,7 +111,10 @@
                                     $isRoles = request()->routeIs('tenant.roles.*');
                                     $isPermissions = request()->routeIs('tenant.permissions.*');
                                     $isReports = request()->routeIs('tenant.reports.*');
-                                    $isReportsOverview = request()->routeIs('tenant.reports.index', 'tenant.reports.overview');
+                                    $isReportsOverview = request()->routeIs(
+                                        'tenant.reports.index',
+                                        'tenant.reports.overview',
+                                    );
                                     $isReportsSales = request()->routeIs('tenant.reports.sales');
                                     $isReportsPurchases = request()->routeIs('tenant.reports.purchases');
                                     $isReportsSalePayments = request()->routeIs('tenant.reports.sale-payments');
@@ -120,7 +124,11 @@
                                     $isSystem = request()->routeIs('tenant.settings.*', 'tenant.activity-timeline.*');
                                     $isSettings = request()->routeIs('tenant.settings.*');
                                     $isActivityTimeline = request()->routeIs('tenant.activity-timeline.*');
-                                    $isProfile = request()->routeIs('tenant.profile.show', 'tenant.profile.edit', 'tenant.profile.update');
+                                    $isProfile = request()->routeIs(
+                                        'tenant.profile.show',
+                                        'tenant.profile.edit',
+                                        'tenant.profile.update',
+                                    );
                                     $isProfileSecurity = request()->routeIs('tenant.profile.security.*');
                                 @endphp
 
@@ -588,6 +596,12 @@
                                             <i class="ri-arrow-right-s-line side-menu__angle"></i>
                                         </a>
                                         <ul class="slide-menu child1 {{ $isEmployees ? 'open' : '' }}">
+                                            <li class="slide {{ $isUsers ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.users.index') }}"
+                                                    class="side-menu__item {{ $isUsers ? 'active' : '' }}">
+                                                    {{ __('Users') }}
+                                                </a>
+                                            </li>
                                             <li class="slide {{ $isEmployeeAttendances ? 'active' : '' }}">
                                                 <a href="{{ route('tenant.employee-attendances.index') }}"
                                                     class="side-menu__item {{ $isEmployeeAttendances ? 'active' : '' }}">

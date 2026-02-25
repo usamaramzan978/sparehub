@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\System;
 
 use App\Enums\LoginUserType;
+use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\System\TenantUserRequest;
@@ -104,6 +105,8 @@ final class TenantUserController extends Controller
                 'status' => $statusValue,
                 'email_verified_at' => now(),
             ]);
+
+            $user->assignRole(RoleName::TENANT_OWNER->value);
 
             return (string) $user->id;
         });

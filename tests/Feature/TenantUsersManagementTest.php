@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Enums\BranchStatus;
+use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Tenant\UserController;
 use App\Models\Branch;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
@@ -170,5 +172,50 @@ it('throws not found when showing user outside current branch', function (): voi
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new UserController())->show($foreignUser);
+    (new UserController())->show('test-tenant-id', $foreignUser);
+});
+
+it('prevents deleting the last tenant owner user', function (): void {
+    $fixture = authenticateUsersModuleUser();
+
+    Role::query()->firstOrCreate([
+        'name' => RoleName::TENANT_OWNER->value,
+        'guard_name' => 'user',
+    ]);
+
+    $fixture['user']->assignRole(RoleName::TENANT_OWNER->value);
+
+    $response = $this->delete(usersTenantRoute('users.destroy', ['user' => $fixture['user']->id]));
+
+    $response->assertRedirect(usersTenantRoute('users.index'));
+    $response->assertSessionHas('error', 'At least one tenant owner must remain.');
+
+    expect(User::query()->find($fixture['user']->id))->not->toBeNull();
+});
+
+it('allows deleting a tenant owner user when another tenant owner remains', function (): void {
+    $fixture = authenticateUsersModuleUser();
+
+    Role::query()->firstOrCreate([
+        'name' => RoleName::TENANT_OWNER->value,
+        'guard_name' => 'user',
+    ]);
+
+    $fixture['user']->assignRole(RoleName::TENANT_OWNER->value);
+
+    $secondOwner = User::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'name' => 'Second Owner',
+        'email' => 'second.owner+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+    $secondOwner->assignRole(RoleName::TENANT_OWNER->value);
+
+    $response = $this->delete(usersTenantRoute('users.destroy', ['user' => $secondOwner->id]));
+
+    $response->assertRedirect(usersTenantRoute('users.index'));
+    $response->assertSessionHas('status', 'Deleted.');
+
+    expect(User::query()->find($secondOwner->id))->toBeNull();
 });
