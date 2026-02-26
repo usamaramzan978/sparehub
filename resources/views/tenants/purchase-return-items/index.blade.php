@@ -12,12 +12,8 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#purchase-return-items-search-form" data-input-selector="#purchase-return-items-search"
-        data-table-body-selector="#purchase-return-items-table tbody"
-        data-pagination-selector="[data-purchase-return-items-pagination]"
-        data-loading-selector="#purchase-return-items-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#purchase-return-items-search-form', 'inputSelector' => '#purchase-return-items-search', 'tableBodySelector' => '#purchase-return-items-table tbody', 'paginationSelector' => '[data-purchase-return-items-pagination]', 'loadingSelector' => '#purchase-return-items-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Purchase Return Items') }}

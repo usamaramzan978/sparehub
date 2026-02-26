@@ -25,11 +25,8 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#warehouses-search-form" data-input-selector="#warehouses-search"
-        data-table-body-selector="#warehouses-table tbody" data-pagination-selector="[data-warehouses-pagination]"
-        data-loading-selector="#warehouses-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#warehouses-search-form', 'inputSelector' => '#warehouses-search', 'tableBodySelector' => '#warehouses-table tbody', 'paginationSelector' => '[data-warehouses-pagination]', 'loadingSelector' => '#warehouses-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Warehouses') }}

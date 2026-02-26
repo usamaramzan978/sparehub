@@ -25,10 +25,8 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search data-form-selector="#brands-search-form"
-        data-input-selector="#search" data-table-body-selector="#brands-table tbody"
-        data-pagination-selector="[data-brands-pagination]" data-loading-selector="#brands-search-loading"
-        data-search-param="search" data-debounce="350" data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#brands-search-form', 'inputSelector' => '#search', 'tableBodySelector' => '#brands-table tbody', 'paginationSelector' => '[data-brands-pagination]', 'loadingSelector' => '#brands-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 Brands

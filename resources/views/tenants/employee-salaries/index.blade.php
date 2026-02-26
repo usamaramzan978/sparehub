@@ -54,11 +54,8 @@
         </div>
     </div>
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#employee-salaries-search-form" data-input-selector="#employee-salaries-search"
-        data-table-body-selector="#employee-salaries-table tbody" data-pagination-selector="[data-employee-salaries-pagination]"
-        data-loading-selector="#employee-salaries-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#employee-salaries-search-form', 'inputSelector' => '#employee-salaries-search', 'tableBodySelector' => '#employee-salaries-table tbody', 'paginationSelector' => '[data-employee-salaries-pagination]', 'loadingSelector' => '#employee-salaries-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Employee Salaries') }}

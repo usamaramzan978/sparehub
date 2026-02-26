@@ -11,11 +11,8 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#job-cards-search-form" data-input-selector="#job-cards-search"
-        data-table-body-selector="#job-cards-table tbody" data-pagination-selector="[data-job-cards-pagination]"
-        data-loading-selector="#job-cards-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#job-cards-search-form', 'inputSelector' => '#job-cards-search', 'tableBodySelector' => '#job-cards-table tbody', 'paginationSelector' => '[data-job-cards-pagination]', 'loadingSelector' => '#job-cards-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Job Cards') }}

@@ -11,11 +11,8 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#purchase-items-search-form" data-input-selector="#purchase-items-search"
-        data-table-body-selector="#purchase-items-table tbody"
-        data-pagination-selector="[data-purchase-items-pagination]" data-loading-selector="#purchase-items-search-loading"
-        data-search-param="search" data-debounce="350" data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#purchase-items-search-form', 'inputSelector' => '#purchase-items-search', 'tableBodySelector' => '#purchase-items-table tbody', 'paginationSelector' => '[data-purchase-items-pagination]', 'loadingSelector' => '#purchase-items-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Purchase Items') }}

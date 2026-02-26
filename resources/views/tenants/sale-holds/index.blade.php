@@ -25,11 +25,8 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#sale-holds-search-form" data-input-selector="#sale-holds-search"
-        data-table-body-selector="#sale-holds-table tbody" data-pagination-selector="[data-sale-holds-pagination]"
-        data-loading-selector="#sale-holds-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#sale-holds-search-form', 'inputSelector' => '#sale-holds-search', 'tableBodySelector' => '#sale-holds-table tbody', 'paginationSelector' => '[data-sale-holds-pagination]', 'loadingSelector' => '#sale-holds-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Sale Holds (POS Hold)') }}

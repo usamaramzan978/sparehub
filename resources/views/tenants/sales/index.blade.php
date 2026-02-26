@@ -11,10 +11,8 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search data-form-selector="#sales-search-form"
-        data-input-selector="#sales-search" data-table-body-selector="#sales-table tbody"
-        data-pagination-selector="[data-sales-pagination]" data-loading-selector="#sales-search-loading"
-        data-search-param="search" data-debounce="350" data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#sales-search-form', 'inputSelector' => '#sales-search', 'tableBodySelector' => '#sales-table tbody', 'paginationSelector' => '[data-sales-pagination]', 'loadingSelector' => '#sales-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Sale Invoices') }}

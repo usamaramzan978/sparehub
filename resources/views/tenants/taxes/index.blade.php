@@ -25,10 +25,8 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search data-form-selector="#taxes-search-form"
-        data-input-selector="#taxes-search" data-table-body-selector="#taxes-table tbody"
-        data-pagination-selector="[data-taxes-pagination]" data-loading-selector="#taxes-search-loading"
-        data-search-param="search" data-debounce="350" data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#taxes-search-form', 'inputSelector' => '#taxes-search', 'tableBodySelector' => '#taxes-table tbody', 'paginationSelector' => '[data-taxes-pagination]', 'loadingSelector' => '#taxes-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Taxes') }}

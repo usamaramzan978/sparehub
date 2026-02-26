@@ -11,12 +11,8 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#vendor-payments-search-form" data-input-selector="#vendor-payments-search"
-        data-table-body-selector="#vendor-payments-table tbody"
-        data-pagination-selector="[data-vendor-payments-pagination]"
-        data-loading-selector="#vendor-payments-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#vendor-payments-search-form', 'inputSelector' => '#vendor-payments-search', 'tableBodySelector' => '#vendor-payments-table tbody', 'paginationSelector' => '[data-vendor-payments-pagination]', 'loadingSelector' => '#vendor-payments-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Vendor Payments') }}

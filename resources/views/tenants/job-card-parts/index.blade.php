@@ -11,12 +11,8 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#job-card-parts-search-form" data-input-selector="#job-card-parts-search"
-        data-table-body-selector="#job-card-parts-table tbody"
-        data-pagination-selector="[data-job-card-parts-pagination]"
-        data-loading-selector="#job-card-parts-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#job-card-parts-search-form', 'inputSelector' => '#job-card-parts-search', 'tableBodySelector' => '#job-card-parts-table tbody', 'paginationSelector' => '[data-job-card-parts-pagination]', 'loadingSelector' => '#job-card-parts-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Job Card Parts') }}

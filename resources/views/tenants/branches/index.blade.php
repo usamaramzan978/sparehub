@@ -11,11 +11,16 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#branches-search-form" data-input-selector="#branches-search"
-        data-table-body-selector="#branches-table tbody" data-pagination-selector="[data-branches-pagination]"
-        data-loading-selector="#branches-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100" @include('components.ajax-table-attributes', [
+        'formSelector' => '#branches-search-form',
+        'inputSelector' => '#branches-search',
+        'tableBodySelector' => '#branches-table tbody',
+        'paginationSelector' => '[data-branches-pagination]',
+        'loadingSelector' => '#branches-search-loading',
+        'searchParam' => 'search',
+        'debounce' => '350',
+        'minLoadingVisible' => '220',
+    ])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Branches') }}
@@ -39,13 +44,10 @@
                 <table class="table table-striped align-middle mb-0" id="branches-table">
                     <thead>
                         <tr>
-                            <x-sortable-column :label="__('Code')" column="code" :current-sort-by="$sortBy"
-                                :current-sort-direction="$sortDirection" />
-                            <x-sortable-column :label="__('Name')" column="name" :current-sort-by="$sortBy"
-                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Code')" column="code" :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Name')" column="name" :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
                             <th>{{ __('Warehouse') }}</th>
-                            <x-sortable-column :label="__('Status')" column="status" :current-sort-by="$sortBy"
-                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Status')" column="status" :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

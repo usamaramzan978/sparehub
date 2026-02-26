@@ -21,12 +21,8 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#service-catalog-search-form" data-input-selector="#service-catalog-search"
-        data-table-body-selector="#service-catalog-table tbody"
-        data-pagination-selector="[data-service-catalog-pagination]"
-        data-loading-selector="#service-catalog-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#service-catalog-search-form', 'inputSelector' => '#service-catalog-search', 'tableBodySelector' => '#service-catalog-table tbody', 'paginationSelector' => '[data-service-catalog-pagination]', 'loadingSelector' => '#service-catalog-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Service Catalog') }}

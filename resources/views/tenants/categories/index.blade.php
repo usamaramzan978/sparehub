@@ -25,11 +25,8 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#categories-search-form" data-input-selector="#categories-search"
-        data-table-body-selector="#categories-table tbody" data-pagination-selector="[data-categories-pagination]"
-        data-loading-selector="#categories-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#categories-search-form', 'inputSelector' => '#categories-search', 'tableBodySelector' => '#categories-table tbody', 'paginationSelector' => '[data-categories-pagination]', 'loadingSelector' => '#categories-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Categories') }}

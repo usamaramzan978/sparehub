@@ -11,11 +11,8 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#customers-search-form" data-input-selector="#customers-search"
-        data-table-body-selector="#customers-table tbody" data-pagination-selector="[data-customers-pagination]"
-        data-loading-selector="#customers-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#customers-search-form', 'inputSelector' => '#customers-search', 'tableBodySelector' => '#customers-table tbody', 'paginationSelector' => '[data-customers-pagination]', 'loadingSelector' => '#customers-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Customers') }}

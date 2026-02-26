@@ -54,12 +54,8 @@
         </div>
     </div>
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#employee-attendances-search-form" data-input-selector="#employee-attendances-search"
-        data-table-body-selector="#employee-attendances-table tbody"
-        data-pagination-selector="[data-employee-attendances-pagination]"
-        data-loading-selector="#employee-attendances-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#employee-attendances-search-form', 'inputSelector' => '#employee-attendances-search', 'tableBodySelector' => '#employee-attendances-table tbody', 'paginationSelector' => '[data-employee-attendances-pagination]', 'loadingSelector' => '#employee-attendances-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Employee Attendance') }}

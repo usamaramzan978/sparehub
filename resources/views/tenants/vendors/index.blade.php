@@ -21,11 +21,8 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#vendors-search-form" data-input-selector="#vendors-search"
-        data-table-body-selector="#vendors-table tbody" data-pagination-selector="[data-vendors-pagination]"
-        data-loading-selector="#vendors-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#vendors-search-form', 'inputSelector' => '#vendors-search', 'tableBodySelector' => '#vendors-table tbody', 'paginationSelector' => '[data-vendors-pagination]', 'loadingSelector' => '#vendors-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Vendors') }}

@@ -25,11 +25,8 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#product-prices-search-form" data-input-selector="#product-prices-search"
-        data-table-body-selector="#product-prices-table tbody"
-        data-pagination-selector="[data-product-prices-pagination]" data-loading-selector="#product-prices-search-loading"
-        data-search-param="search" data-debounce="350" data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#product-prices-search-form', 'inputSelector' => '#product-prices-search', 'tableBodySelector' => '#product-prices-table tbody', 'paginationSelector' => '[data-product-prices-pagination]', 'loadingSelector' => '#product-prices-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Product Prices') }}

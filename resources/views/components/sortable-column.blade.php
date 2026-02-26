@@ -36,7 +36,8 @@
 
 <th scope="col" aria-sort="{{ $ariaSort }}">
     <a href="{{ $sortUrl }}" class="text-body text-decoration-none d-inline-flex align-items-center gap-1"
-        data-ajax-sort-link data-sort-column="{{ $column }}">
+        data-ajax-sort-link data-sort-column="{{ $column }}" title="{{ __('Click to sort asc/desc/reset') }}"
+        aria-label="{{ __('Click to sort asc/desc/reset') }}">
         <span>{{ $label }}</span>
         <i class="{{ $sortIcon }}" aria-hidden="true"></i>
     </a>

@@ -21,12 +21,8 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
-        data-form-selector="#customer-vehicles-search-form" data-input-selector="#customer-vehicles-search"
-        data-table-body-selector="#customer-vehicles-table tbody"
-        data-pagination-selector="[data-customer-vehicles-pagination]"
-        data-loading-selector="#customer-vehicles-search-loading" data-search-param="search" data-debounce="350"
-        data-min-loading-visible="220">
+    <div class="card custom-card border-0 shadow-sm h-100"
+        @include('components.ajax-table-attributes', ['formSelector' => '#customer-vehicles-search-form', 'inputSelector' => '#customer-vehicles-search', 'tableBodySelector' => '#customer-vehicles-table tbody', 'paginationSelector' => '[data-customer-vehicles-pagination]', 'loadingSelector' => '#customer-vehicles-search-loading', 'searchParam' => 'search', 'debounce' => '350', 'minLoadingVisible' => '220'])>
         <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div class="card-title mb-0">
                 {{ __('Customer Vehicles') }}
