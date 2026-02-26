@@ -19,10 +19,15 @@ const initAjaxTableSearch = (rootElement) => {
     const inputSelector = rootElement.dataset.inputSelector ?? "#search";
     const tableBodySelector =
         rootElement.dataset.tableBodySelector ?? "#brands-table tbody";
+    const tableHeadSelector =
+        rootElement.dataset.tableHeadSelector ??
+        tableBodySelector.replace(/tbody$/, "thead");
     const paginationSelector =
         rootElement.dataset.paginationSelector ?? "[data-brands-pagination]";
     const loadingSelector =
         rootElement.dataset.loadingSelector ?? "#brands-search-loading";
+    const sortLinkSelector =
+        rootElement.dataset.sortLinkSelector ?? "[data-ajax-sort-link]";
     const searchParam = rootElement.dataset.searchParam ?? "search";
     const debounceMs = toInteger(rootElement.dataset.debounce, 350);
     const minLoadingVisibleMs = toInteger(
@@ -34,13 +39,14 @@ const initAjaxTableSearch = (rootElement) => {
     const searchInput = rootElement.querySelector(inputSelector);
     const searchLoading = rootElement.querySelector(loadingSelector);
     const tableBody = rootElement.querySelector(tableBodySelector);
+    const tableHead = rootElement.querySelector(tableHeadSelector);
     const paginationWrapper = rootElement.querySelector(paginationSelector);
 
     if (!(searchInput instanceof HTMLInputElement)) {
         return;
     }
 
-    if (!tableBody || !paginationWrapper) {
+    if (!tableBody || !tableHead || !paginationWrapper) {
         return;
     }
 
@@ -118,14 +124,16 @@ const initAjaxTableSearch = (rootElement) => {
             const parser = new DOMParser();
             const parsedDocument = parser.parseFromString(html, "text/html");
             const parsedBody = parsedDocument.querySelector(tableBodySelector);
+            const parsedHead = parsedDocument.querySelector(tableHeadSelector);
             const parsedPagination =
                 parsedDocument.querySelector(paginationSelector);
 
-            if (!parsedBody || !parsedPagination) {
+            if (!parsedBody || !parsedHead || !parsedPagination) {
                 return;
             }
 
             tableBody.innerHTML = parsedBody.innerHTML;
+            tableHead.innerHTML = parsedHead.innerHTML;
             paginationWrapper.innerHTML = parsedPagination.innerHTML;
 
             if (shouldPushState) {
@@ -165,6 +173,25 @@ const initAjaxTableSearch = (rootElement) => {
         }
 
         const link = target.closest("a");
+
+        if (!(link instanceof HTMLAnchorElement) || !link.href) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const url = buildSearchUrl(link.href);
+        refreshTable(url);
+    });
+
+    rootElement.addEventListener("click", (event) => {
+        const target = event.target;
+
+        if (!(target instanceof HTMLElement)) {
+            return;
+        }
+
+        const link = target.closest(sortLinkSelector);
 
         if (!(link instanceof HTMLAnchorElement) || !link.href) {
             return;

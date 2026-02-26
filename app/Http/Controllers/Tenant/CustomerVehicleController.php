@@ -24,8 +24,13 @@ final class CustomerVehicleController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['registration_no', 'model', 'year', 'meter_reading', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $vehicles = CustomerVehicle::query()
+        $vehiclesQuery = CustomerVehicle::query()
             ->with('customer')
             ->whereHas('customer', fn (Builder $query) => $query->where('branch_id', $branchId))
             ->when(filled($search), function (Builder $query) use ($search): void {
@@ -35,13 +40,22 @@ final class CustomerVehicleController extends Controller
                         ->orWhere('model', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('chassis_no', 'like', sprintf('%%%s%%', $search));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $vehiclesQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $vehiclesQuery->latest();
+        }
+
+        $vehicles = $vehiclesQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.customer-vehicles.index', [
             'items' => $vehicles,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

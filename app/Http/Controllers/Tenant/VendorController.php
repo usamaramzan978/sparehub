@@ -24,8 +24,13 @@ final class VendorController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['code', 'name', 'phone', 'city', 'status', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $vendors = Vendor::query()
+        $vendorsQuery = Vendor::query()
             ->where('branch_id', $branchId)
             ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
@@ -34,13 +39,22 @@ final class VendorController extends Controller
                         ->orWhere('name', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('phone', 'like', sprintf('%%%s%%', $search));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $vendorsQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $vendorsQuery->latest();
+        }
+
+        $vendors = $vendorsQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.vendors.index', [
             'items' => $vendors,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

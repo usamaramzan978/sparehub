@@ -30,8 +30,13 @@ final class SaleController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['invoice_no', 'invoice_date', 'invoice_type', 'status', 'grand_total', 'balance_due', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $sales = Sale::query()
+        $salesQuery = Sale::query()
             ->with(['customer', 'jobCard'])
             ->where('branch_id', $branchId)
             ->when(filled($search), function (Builder $query) use ($search): void {
@@ -40,13 +45,22 @@ final class SaleController extends Controller
                         ->where('invoice_no', 'like', sprintf('%%%s%%', $search))
                         ->orWhereHas('customer', fn (Builder $q) => $q->where('name', 'like', sprintf('%%%s%%', $search)));
                 });
-            })
-            ->latest('invoice_date')
+            });
+
+        if ($activeSortBy !== null) {
+            $salesQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $salesQuery->latest('invoice_date');
+        }
+
+        $sales = $salesQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.sales.index', [
             'items' => $sales,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

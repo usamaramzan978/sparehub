@@ -37,7 +37,7 @@
                 id="brands-search-form">
                 <div class="position-relative">
                     <input type="text" name="search" id="search" class="form-control pe-5"
-                        value="{{ request('search') }}" placeholder="{{ __('Search by name') }}">
+                        value="{{ request('search') }}" placeholder="{{ __('Search by brand name') }}">
                     <span id="brands-search-loading"
                         class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
                         style="transition: opacity 0.2s ease;" aria-hidden="true">
@@ -51,9 +51,10 @@
                 <table class="table table-striped align-middle mb-0" id="brands-table">
                     <thead>
                         <tr>
-                            <th>{{ __('Name') }}</th>
-                            <th>{{ __('Products') }}</th>
-                            <th>{{ __('Status') }}</th>
+                            <x-sortable-column :label="__('Name')" column="name" :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Products')" column="products_count" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Status')" column="status" :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

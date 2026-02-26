@@ -25,8 +25,13 @@ final class BranchController extends Controller
         $perPage = $request->integer('per_page', 15);
         $perPage = min(max($perPage, 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['code', 'name', 'status', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $branches = Branch::query()
+        $branchesQuery = Branch::query()
             ->with('warehouse')
             ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
@@ -34,8 +39,15 @@ final class BranchController extends Controller
                         ->where('code', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('name', 'like', sprintf('%%%s%%', $search));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $branchesQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $branchesQuery->latest();
+        }
+
+        $branches = $branchesQuery
             ->paginate($perPage)
             ->withQueryString();
 
@@ -44,6 +56,8 @@ final class BranchController extends Controller
         return view('tenants.branches.index', [
             'items' => $branches,
             'canDeleteBranch' => $canDeleteBranch,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

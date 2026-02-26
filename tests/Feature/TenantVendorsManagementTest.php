@@ -104,6 +104,7 @@ it('shows vendors index scoped to current branch', function (): void {
     $response->assertSee('Main Vendor');
     $response->assertDontSee('Other Vendor');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('vendors-search-form');
     $response->assertSee('vendors-search-loading');
 });
@@ -132,6 +133,43 @@ it('filters vendors by search', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Alpha Vendor');
     $response->assertDontSee('Beta Vendor');
+});
+
+it('sorts vendors by name ascending and descending', function (): void {
+    $branches = authenticateVendorUser();
+
+    Vendor::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branches['current']->id,
+        'code' => 'SRT-A',
+        'name' => 'AAA Vendor',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    Vendor::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branches['current']->id,
+        'code' => 'SRT-Z',
+        'name' => 'ZZZ Vendor',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(vendorsTenantRoute('vendors.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(vendorsTenantRoute('vendors.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    expect($ascending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'AAA Vendor',
+        'ZZZ Vendor',
+    ]);
+    expect($descending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'ZZZ Vendor',
+        'AAA Vendor',
+    ]);
 });
 
 it('shows create vendor page', function (): void {

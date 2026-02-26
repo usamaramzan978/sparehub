@@ -145,9 +145,48 @@ it('shows sale payments index for current branch only', function (): void {
 
     $response->assertSuccessful();
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('id="sale-payments-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
+});
+
+it('sorts sale payments by amount ascending and descending', function (): void {
+    $fixture = authenticateSalePaymentsUser();
+
+    SalePayment::query()->withoutGlobalScopes()->create([
+        'sale_id' => $fixture['sale']->id,
+        'branch_id' => $fixture['current']->id,
+        'received_by' => $fixture['user']->id,
+        'payment_method' => PaymentMethodType::CASH->value,
+        'amount' => 10,
+        'paid_at' => now(),
+    ]);
+
+    SalePayment::query()->withoutGlobalScopes()->create([
+        'sale_id' => $fixture['sale']->id,
+        'branch_id' => $fixture['current']->id,
+        'received_by' => $fixture['user']->id,
+        'payment_method' => PaymentMethodType::CASH->value,
+        'amount' => 100,
+        'paid_at' => now(),
+    ]);
+
+    $ascending = $this->get(salePaymentsTenantRoute('sale-payments.index', [
+        'sort_by' => 'amount',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(salePaymentsTenantRoute('sale-payments.index', [
+        'sort_by' => 'amount',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingAmounts = $ascending->viewData('items')->pluck('amount')->map(fn ($value): float => (float) $value)->values()->all();
+    $descendingAmounts = $descending->viewData('items')->pluck('amount')->map(fn ($value): float => (float) $value)->values()->all();
+
+    expect(array_search(10.0, $ascendingAmounts, true))->toBeLessThan(array_search(100.0, $ascendingAmounts, true));
+    expect(array_search(10.0, $descendingAmounts, true))->toBeGreaterThan(array_search(100.0, $descendingAmounts, true));
 });
 
 it('clamps sale payments pagination limits', function (): void {

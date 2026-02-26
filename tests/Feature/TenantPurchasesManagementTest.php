@@ -155,9 +155,48 @@ it('shows purchases index for current branch only', function (): void {
 
     $response->assertSuccessful();
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('id="purchases-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
+});
+
+it('sorts purchases by purchase number ascending and descending', function (): void {
+    $fixture = authenticatePurchasesUser();
+
+    Purchase::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'created_by' => $fixture['user']->id,
+        'purchase_no' => 'PUR-SORT-A',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+    ]);
+
+    Purchase::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'created_by' => $fixture['user']->id,
+        'purchase_no' => 'PUR-SORT-Z',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+    ]);
+
+    $ascending = $this->get(purchasesTenantRoute('purchases.index', [
+        'sort_by' => 'purchase_no',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(purchasesTenantRoute('purchases.index', [
+        'sort_by' => 'purchase_no',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingPurchaseNumbers = $ascending->viewData('items')->pluck('purchase_no')->values()->all();
+    $descendingPurchaseNumbers = $descending->viewData('items')->pluck('purchase_no')->values()->all();
+
+    expect(array_search('PUR-SORT-A', $ascendingPurchaseNumbers, true))->toBeLessThan(array_search('PUR-SORT-Z', $ascendingPurchaseNumbers, true));
+    expect(array_search('PUR-SORT-A', $descendingPurchaseNumbers, true))->toBeGreaterThan(array_search('PUR-SORT-Z', $descendingPurchaseNumbers, true));
 });
 
 it('clamps purchases pagination limits', function (): void {

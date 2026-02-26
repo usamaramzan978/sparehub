@@ -111,8 +111,10 @@
                                     <th>{{ __('Date') }}</th>
                                     <th>{{ __('Mechanic') }}</th>
                                     <th>{{ __('Service') }}</th>
-                                    <th class="text-end">{{ __('Customer Charge') }}</th>
-                                    <th class="text-end">{{ __('Mechanic Payable') }}</th>
+                                    <x-sortable-column :label="__('Customer Charge')" column="line_total" :current-sort-by="$sortBy"
+                                        :current-sort-direction="$sortDirection" />
+                                    <x-sortable-column :label="__('Mechanic Payable')" column="mechanic_charge" :current-sort-by="$sortBy"
+                                        :current-sort-direction="$sortDirection" />
                                 </tr>
                             </thead>
                             <tbody>

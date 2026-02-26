@@ -52,10 +52,13 @@
                 <table class="table table-striped align-middle mb-0" id="sale-holds-table">
                     <thead>
                         <tr>
-                            <th>{{ __('Hold No') }}</th>
+                            <x-sortable-column :label="__('Hold No')" column="hold_no" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th>{{ __('Customer') }}</th>
-                            <th>{{ __('Expires At') }}</th>
-                            <th>{{ __('Created') }}</th>
+                            <x-sortable-column :label="__('Expires At')" column="expires_at" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Created')" column="created_at" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

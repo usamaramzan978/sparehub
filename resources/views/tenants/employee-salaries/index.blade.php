@@ -82,7 +82,8 @@
                 <table class="table table-striped align-middle mb-0" id="employee-salaries-table">
                     <thead>
                         <tr>
-                            <th>{{ __('Employee') }}</th>
+                            <x-sortable-column :label="__('Employee')" column="name" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th>{{ __('Basic') }}</th>
                             <th>{{ __('Bonus') }}</th>
                             <th>{{ __('Deduction') }}</th>

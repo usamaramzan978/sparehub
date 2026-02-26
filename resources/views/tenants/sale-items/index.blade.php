@@ -39,13 +39,18 @@
                     <thead>
                         <tr>
                             <th>{{ __('Invoice') }}</th>
-                            <th>{{ __('Type') }}</th>
+                            <x-sortable-column :label="__('Type')" column="line_type" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th>{{ __('Description') }}</th>
-                            <th>{{ __('Qty') }}</th>
-                            <th>{{ __('Unit Price') }}</th>
+                            <x-sortable-column :label="__('Qty')" column="qty" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Unit Price')" column="unit_price" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th>{{ __('Mechanic') }}</th>
-                            <th>{{ __('Mechanic Payable') }}</th>
-                            <th>{{ __('Line Total') }}</th>
+                            <x-sortable-column :label="__('Mechanic Payable')" column="mechanic_charge"
+                                :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Line Total')" column="line_total" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

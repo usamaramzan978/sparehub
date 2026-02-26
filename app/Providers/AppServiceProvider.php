@@ -45,6 +45,12 @@ final class AppServiceProvider extends ServiceProvider
         Model::shouldBeStrict(! $app->isProduction());
         Paginator::useBootstrapFive();
 
+        Route::model('branch', Branch::class);
+
+        Blade::directive('tenantDate', function (string $expression): string {
+            return sprintf('<?php echo \\%s::format(%s); ?>', TenantDateTime::class, $expression);
+        });
+
         // Runs on every request after middleware (including tenancy) has fired
         $this->app->make(Dispatcher::class)->listen(
             TenancyInitialized::class,
@@ -63,12 +69,6 @@ final class AppServiceProvider extends ServiceProvider
             }
 
             return route('auth.login');
-        });
-
-        Route::model('branch', Branch::class);
-
-        Blade::directive('tenantDate', function (string $expression): string {
-            return sprintf('<?php echo \\%s::format(%s); ?>', TenantDateTime::class, $expression);
         });
 
         View::composer('layouts.shared.header', function ($view): void {

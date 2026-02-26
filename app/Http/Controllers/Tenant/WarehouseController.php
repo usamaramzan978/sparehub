@@ -22,8 +22,13 @@ final class WarehouseController extends Controller
     {
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['code', 'name', 'status', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $warehouses = Warehouse::query()
+        $warehousesQuery = Warehouse::query()
             ->with('branch')
             ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
@@ -31,14 +36,23 @@ final class WarehouseController extends Controller
                         ->where('name', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('code', 'like', sprintf('%%%s%%', $search));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $warehousesQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $warehousesQuery->latest();
+        }
+
+        $warehouses = $warehousesQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.warehouses.index', [
             'items' => $warehouses,
             'statuses' => RecordStatus::cases(),
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

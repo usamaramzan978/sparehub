@@ -105,9 +105,46 @@ it('shows users index scoped to current branch', function (): void {
     $response = $this->get(usersTenantRoute('users.index'));
 
     $response->assertSuccessful();
+    $response->assertSee('data-ajax-sort-link', false);
 
     $items = $response->viewData('items');
     expect($items->total())->toBe(2);
+});
+
+it('sorts users by name ascending and descending', function (): void {
+    $fixture = authenticateUsersModuleUser();
+
+    User::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'name' => 'User Sort A',
+        'email' => 'user.sort.a+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+
+    User::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'name' => 'User Sort Z',
+        'email' => 'user.sort.z+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(usersTenantRoute('users.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(usersTenantRoute('users.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingNames = $ascending->viewData('items')->pluck('name')->values()->all();
+    $descendingNames = $descending->viewData('items')->pluck('name')->values()->all();
+
+    expect(array_search('User Sort A', $ascendingNames, true))->toBeLessThan(array_search('User Sort Z', $ascendingNames, true));
+    expect(array_search('User Sort A', $descendingNames, true))->toBeGreaterThan(array_search('User Sort Z', $descendingNames, true));
 });
 
 it('filters users by search and status', function (): void {

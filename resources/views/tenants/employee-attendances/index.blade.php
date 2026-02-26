@@ -83,7 +83,8 @@
                 <table class="table table-striped align-middle mb-0" id="employee-attendances-table">
                     <thead>
                         <tr>
-                            <th>{{ __('Employee') }}</th>
+                            <x-sortable-column :label="__('Employee')" column="name" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th>{{ __('Status') }}</th>
                             <th>{{ __('Check In') }}</th>
                             <th>{{ __('Check Out') }}</th>

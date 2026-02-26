@@ -103,6 +103,7 @@ it('shows warehouse index with warehouses from available branches', function ():
     $response->assertSee('Main Branch Warehouse');
     $response->assertSee('Other Branch Warehouse');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('warehouses-search-form');
     $response->assertSee('warehouses-search-loading');
 });
@@ -132,6 +133,40 @@ it('filters warehouses by name or code', function (): void {
 
     $byNameResponse->assertSee('Brake Room');
     $byNameResponse->assertDontSee('Axle Storage');
+});
+
+it('sorts warehouses by name ascending and descending', function (): void {
+    $fixture = createAuthenticatedWarehouseUser();
+
+    Warehouse::query()->create([
+        'branch_id' => $fixture['branch']->id,
+        'code' => 'WH-A',
+        'name' => 'AAA Warehouse',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    Warehouse::query()->create([
+        'branch_id' => $fixture['branch']->id,
+        'code' => 'WH-Z',
+        'name' => 'ZZZ Warehouse',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(warehouseTenantRoute('warehouses.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(warehouseTenantRoute('warehouses.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingNames = $ascending->viewData('items')->pluck('name')->values()->all();
+    $descendingNames = $descending->viewData('items')->pluck('name')->values()->all();
+
+    expect(array_search('AAA Warehouse', $ascendingNames, true))->toBeLessThan(array_search('ZZZ Warehouse', $ascendingNames, true));
+    expect(array_search('AAA Warehouse', $descendingNames, true))->toBeGreaterThan(array_search('ZZZ Warehouse', $descendingNames, true));
 });
 
 it('validates required warehouse fields', function (string $field): void {

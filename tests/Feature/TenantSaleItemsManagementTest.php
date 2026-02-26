@@ -202,9 +202,54 @@ it('shows sale items index for current branch only', function (): void {
 
     $response->assertSuccessful();
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('id="sale-items-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
+});
+
+it('sorts sale items by line total ascending and descending', function (): void {
+    $fixture = authenticateSaleItemsUser();
+
+    SaleItem::query()->withoutGlobalScopes()->create([
+        'sale_id' => $fixture['sale']->id,
+        'branch_id' => $fixture['current']->id,
+        'line_type' => SaleLineType::PRODUCT->value,
+        'product_id' => $fixture['product']->id,
+        'qty' => 1,
+        'unit_price' => 10,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'line_total' => 10,
+    ]);
+
+    SaleItem::query()->withoutGlobalScopes()->create([
+        'sale_id' => $fixture['sale']->id,
+        'branch_id' => $fixture['current']->id,
+        'line_type' => SaleLineType::PRODUCT->value,
+        'product_id' => $fixture['product']->id,
+        'qty' => 1,
+        'unit_price' => 100,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'line_total' => 100,
+    ]);
+
+    $ascending = $this->get(saleItemsTenantRoute('sale-items.index', [
+        'sort_by' => 'line_total',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(saleItemsTenantRoute('sale-items.index', [
+        'sort_by' => 'line_total',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingTotals = $ascending->viewData('items')->pluck('line_total')->map(fn ($value): float => (float) $value)->values()->all();
+    $descendingTotals = $descending->viewData('items')->pluck('line_total')->map(fn ($value): float => (float) $value)->values()->all();
+
+    expect(array_search(10.0, $ascendingTotals, true))->toBeLessThan(array_search(100.0, $ascendingTotals, true));
+    expect(array_search(10.0, $descendingTotals, true))->toBeGreaterThan(array_search(100.0, $descendingTotals, true));
 });
 
 it('clamps sale items pagination limits', function (): void {

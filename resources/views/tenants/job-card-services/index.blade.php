@@ -40,12 +40,17 @@
                     <thead>
                         <tr>
                             <th>{{ __('Job Card') }}</th>
-                            <th>{{ __('Service') }}</th>
+                            <x-sortable-column :label="__('Service')" column="service_name" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th>{{ __('Technician') }}</th>
-                            <th>{{ __('Qty') }}</th>
-                            <th>{{ __('Rate') }}</th>
-                            <th>{{ __('Line Total') }}</th>
-                            <th>{{ __('Status') }}</th>
+                            <x-sortable-column :label="__('Qty')" column="qty" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Rate')" column="rate" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Line Total')" column="line_total" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Status')" column="status" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

@@ -171,10 +171,51 @@ it('shows sales index for current branch only', function (): void {
 
     $response->assertSuccessful();
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('id="sales-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
     expect($response->viewData('items')->items()[0]->invoice_no)->toBe('INV-MAIN-1');
+});
+
+it('sorts sales invoices by invoice number ascending and descending', function (): void {
+    $fixture = authenticateSalesUser();
+
+    Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-SORT-A',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+    ]);
+
+    Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-SORT-Z',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+    ]);
+
+    $ascending = $this->get(salesTenantRoute('sales.index', [
+        'sort_by' => 'invoice_no',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(salesTenantRoute('sales.index', [
+        'sort_by' => 'invoice_no',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingInvoices = $ascending->viewData('items')->pluck('invoice_no')->values()->all();
+    $descendingInvoices = $descending->viewData('items')->pluck('invoice_no')->values()->all();
+
+    expect(array_search('INV-SORT-A', $ascendingInvoices, true))->toBeLessThan(array_search('INV-SORT-Z', $ascendingInvoices, true));
+    expect(array_search('INV-SORT-A', $descendingInvoices, true))->toBeGreaterThan(array_search('INV-SORT-Z', $descendingInvoices, true));
 });
 
 it('renders status badges on sales index', function (): void {

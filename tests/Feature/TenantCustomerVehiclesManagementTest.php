@@ -125,6 +125,7 @@ it('shows customer vehicles index scoped by customer branch', function (): void 
     expect($registrationNumbers)->toContain('ABC-123');
     expect($registrationNumbers)->not->toContain('XYZ-999');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('customer-vehicles-search-form');
     $response->assertSee('customer-vehicles-search-loading');
 });
@@ -157,6 +158,41 @@ it('filters customer vehicles by search', function (): void {
 
     expect($models)->toContain('Prius');
     expect($models)->not->toContain('Yaris');
+});
+
+it('sorts customer vehicles by registration ascending and descending', function (): void {
+    $fixture = authenticateVehicleUser();
+
+    CustomerVehicle::query()->create([
+        'customer_id' => $fixture['currentCustomer']->id,
+        'registration_no' => 'AAA-111',
+        'model' => 'Sort A',
+    ]);
+
+    CustomerVehicle::query()->create([
+        'customer_id' => $fixture['currentCustomer']->id,
+        'registration_no' => 'ZZZ-999',
+        'model' => 'Sort Z',
+    ]);
+
+    $ascending = $this->get(vehiclesTenantRoute('customer-vehicles.index', [
+        'sort_by' => 'registration_no',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(vehiclesTenantRoute('customer-vehicles.index', [
+        'sort_by' => 'registration_no',
+        'sort_direction' => 'desc',
+    ]));
+
+    expect($ascending->viewData('items')->pluck('registration_no')->values()->all())->toBe([
+        'AAA-111',
+        'ZZZ-999',
+    ]);
+    expect($descending->viewData('items')->pluck('registration_no')->values()->all())->toBe([
+        'ZZZ-999',
+        'AAA-111',
+    ]);
 });
 
 it('shows create customer vehicle page with current branch customers', function (): void {

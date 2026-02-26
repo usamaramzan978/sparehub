@@ -1,1 +1,1 @@
-import "./globalSearch";
+import "./ajaxTableFilters";

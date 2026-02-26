@@ -177,6 +177,7 @@ it('shows job card parts index for current branch job cards', function (): void 
     expect($lineTotals)->toContain(50.0);
     expect($lineTotals)->not->toContain(70.0);
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('job-card-parts-search-form');
     $response->assertSee('job-card-parts-search-loading');
 });
@@ -212,6 +213,42 @@ it('filters job card parts by search keyword', function (): void {
     $productNames = $response->viewData('items')->getCollection()->pluck('product.name')->all();
     expect($productNames)->toContain('Axle Part');
     expect($productNames)->not->toContain('Oil Filter');
+});
+
+it('sorts job card parts by line total ascending and descending', function (): void {
+    $fixture = authenticateJobCardPartUser();
+
+    JobCardPart::query()->create([
+        'job_card_id' => $fixture['currentJobCard']->id,
+        'product_id' => $fixture['productA']->id,
+        'qty' => 1,
+        'unit_price' => 10,
+        'line_total' => 10,
+    ]);
+
+    JobCardPart::query()->create([
+        'job_card_id' => $fixture['currentJobCard']->id,
+        'product_id' => $fixture['productA']->id,
+        'qty' => 1,
+        'unit_price' => 100,
+        'line_total' => 100,
+    ]);
+
+    $ascending = $this->get(jobCardPartsTenantRoute('job-card-parts.index', [
+        'sort_by' => 'line_total',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(jobCardPartsTenantRoute('job-card-parts.index', [
+        'sort_by' => 'line_total',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingLineTotals = $ascending->viewData('items')->pluck('line_total')->map(fn ($value): float => (float) $value)->values()->all();
+    $descendingLineTotals = $descending->viewData('items')->pluck('line_total')->map(fn ($value): float => (float) $value)->values()->all();
+
+    expect(array_search(10.0, $ascendingLineTotals, true))->toBeLessThan(array_search(100.0, $ascendingLineTotals, true));
+    expect(array_search(10.0, $descendingLineTotals, true))->toBeGreaterThan(array_search(100.0, $descendingLineTotals, true));
 });
 
 it('shows create job card parts page with branch job cards', function (): void {

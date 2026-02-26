@@ -92,6 +92,7 @@ it('shows attendance index and summary', function (): void {
 
     $response->assertSuccessful();
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('id="employee-attendances-search-form"', false);
 
     $summary = $response->viewData('summary');
@@ -99,6 +100,42 @@ it('shows attendance index and summary', function (): void {
     expect($summary['employees_count'])->toBe(2);
     expect($summary['checked_in_count'])->toBe(1);
     expect($summary['checked_out_count'])->toBe(1);
+});
+
+it('sorts attendance employees by name ascending and descending', function (): void {
+    $fixture = authenticateAttendanceUser();
+
+    User::query()->create([
+        'branch_id' => $fixture['branch']->id,
+        'name' => 'Attendance Sort A',
+        'email' => 'attendance.sort.a+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+
+    User::query()->create([
+        'branch_id' => $fixture['branch']->id,
+        'name' => 'Attendance Sort Z',
+        'email' => 'attendance.sort.z+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(attendanceTenantRoute('employee-attendances.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(attendanceTenantRoute('employee-attendances.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingNames = $ascending->viewData('employees')->pluck('name')->values()->all();
+    $descendingNames = $descending->viewData('employees')->pluck('name')->values()->all();
+
+    expect(array_search('Attendance Sort A', $ascendingNames, true))->toBeLessThan(array_search('Attendance Sort Z', $ascendingNames, true));
+    expect(array_search('Attendance Sort A', $descendingNames, true))->toBeGreaterThan(array_search('Attendance Sort Z', $descendingNames, true));
 });
 
 it('searches attendance employees by name', function (): void {

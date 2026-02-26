@@ -39,12 +39,16 @@
                 <table class="table table-striped align-middle mb-0" id="purchase-returns-table">
                     <thead>
                         <tr>
-                            <th>{{ __('Return No') }}</th>
-                            <th>{{ __('Date') }}</th>
+                            <x-sortable-column :label="__('Return No')" column="return_no" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Date')" column="return_date" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th>{{ __('Vendor') }}</th>
                             <th>{{ __('Purchase') }}</th>
-                            <th>{{ __('Status') }}</th>
-                            <th>{{ __('Grand Total') }}</th>
+                            <x-sortable-column :label="__('Status')" column="status" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Grand Total')" column="grand_total" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

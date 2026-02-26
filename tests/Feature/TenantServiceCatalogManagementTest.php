@@ -107,6 +107,7 @@ it('shows service catalog index for current branch only', function (): void {
     $response->assertSee('Oil Change');
     $response->assertDontSee('Engine Tuning');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('service-catalog-search-form');
     $response->assertSee('service-catalog-search-loading');
 });
@@ -138,6 +139,45 @@ it('filters service catalog by search keyword in current branch', function (): v
     $serviceNames = $response->viewData('items')->getCollection()->pluck('name')->all();
     expect($serviceNames)->toContain('Oil Service');
     expect($serviceNames)->not->toContain('Brake Service');
+});
+
+it('sorts service catalog by name ascending and descending', function (): void {
+    $branches = authenticateServiceCatalogUser();
+
+    ServiceCatalog::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branches['current']->id,
+        'code' => 'SRT-A',
+        'name' => 'AAA Service',
+        'base_price' => 100,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    ServiceCatalog::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branches['current']->id,
+        'code' => 'SRT-Z',
+        'name' => 'ZZZ Service',
+        'base_price' => 120,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(serviceCatalogTenantRoute('service-catalog.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(serviceCatalogTenantRoute('service-catalog.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    expect($ascending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'AAA Service',
+        'ZZZ Service',
+    ]);
+    expect($descending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'ZZZ Service',
+        'AAA Service',
+    ]);
 });
 
 it('shows create service catalog page with active taxes only', function (): void {

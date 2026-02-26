@@ -179,9 +179,56 @@ it('shows purchase items index for current branch only', function (): void {
 
     $response->assertSuccessful();
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('id="purchase-items-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
+});
+
+it('sorts purchase items by line total ascending and descending', function (): void {
+    $fixture = authenticatePurchaseItemsUser();
+
+    PurchaseItem::query()->withoutGlobalScopes()->create([
+        'purchase_id' => $fixture['purchase']->id,
+        'branch_id' => $fixture['current']->id,
+        'product_id' => $fixture['product']->id,
+        'tax_id' => $fixture['tax']->id,
+        'qty' => 1,
+        'received_qty' => 1,
+        'unit_cost' => 10,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'line_total' => 10,
+    ]);
+
+    PurchaseItem::query()->withoutGlobalScopes()->create([
+        'purchase_id' => $fixture['purchase']->id,
+        'branch_id' => $fixture['current']->id,
+        'product_id' => $fixture['product']->id,
+        'tax_id' => $fixture['tax']->id,
+        'qty' => 1,
+        'received_qty' => 1,
+        'unit_cost' => 100,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'line_total' => 100,
+    ]);
+
+    $ascending = $this->get(purchaseItemsTenantRoute('purchase-items.index', [
+        'sort_by' => 'line_total',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(purchaseItemsTenantRoute('purchase-items.index', [
+        'sort_by' => 'line_total',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingTotals = $ascending->viewData('items')->pluck('line_total')->map(fn ($value): float => (float) $value)->values()->all();
+    $descendingTotals = $descending->viewData('items')->pluck('line_total')->map(fn ($value): float => (float) $value)->values()->all();
+
+    expect(array_search(10.0, $ascendingTotals, true))->toBeLessThan(array_search(100.0, $ascendingTotals, true));
+    expect(array_search(10.0, $descendingTotals, true))->toBeGreaterThan(array_search(100.0, $descendingTotals, true));
 });
 
 it('clamps purchase items pagination limits', function (): void {

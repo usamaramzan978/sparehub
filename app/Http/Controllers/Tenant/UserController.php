@@ -27,9 +27,14 @@ final class UserController extends Controller
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
         $status = $request->string('status')->toString();
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
         $allowedStatuses = Arr::map(UserStatus::cases(), fn (UserStatus $item): string => $item->value);
+        $allowedSortColumns = ['name', 'email', 'phone', 'status', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $users = User::query()
+        $usersQuery = User::query()
             ->with('branch')
             ->where('branch_id', $branchId)
             ->when(filled($search), function (Builder $query) use ($search): void {
@@ -40,14 +45,23 @@ final class UserController extends Controller
                         ->orWhere('phone', 'like', sprintf('%%%s%%', $search));
                 });
             })
-            ->when(in_array($status, $allowedStatuses, true), fn (Builder $query) => $query->where('status', $status))
-            ->latest()
+            ->when(in_array($status, $allowedStatuses, true), fn (Builder $query): Builder => $query->where('status', $status));
+
+        if ($activeSortBy !== null) {
+            $usersQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $usersQuery->latest();
+        }
+
+        $users = $usersQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.users.index', [
             'items' => $users,
             'statuses' => UserStatus::cases(),
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

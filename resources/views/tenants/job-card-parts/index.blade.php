@@ -41,9 +41,12 @@
                         <tr>
                             <th>{{ __('Job Card') }}</th>
                             <th>{{ __('Product') }}</th>
-                            <th>{{ __('Qty') }}</th>
-                            <th>{{ __('Unit Price') }}</th>
-                            <th>{{ __('Line Total') }}</th>
+                            <x-sortable-column :label="__('Qty')" column="qty" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Unit Price')" column="unit_price" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Line Total')" column="line_total" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

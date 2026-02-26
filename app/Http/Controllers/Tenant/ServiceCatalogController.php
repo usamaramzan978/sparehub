@@ -24,8 +24,13 @@ final class ServiceCatalogController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['code', 'name', 'category', 'base_price', 'duration_minutes', 'status', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $services = ServiceCatalog::query()
+        $servicesQuery = ServiceCatalog::query()
             ->with('defaultTax')
             ->where('branch_id', $branchId)
             ->when($search !== '', function (Builder $query) use ($search): void {
@@ -35,13 +40,22 @@ final class ServiceCatalogController extends Controller
                         ->orWhere('name', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('category', 'like', sprintf('%%%s%%', $search));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $servicesQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $servicesQuery->latest();
+        }
+
+        $services = $servicesQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.service-catalog.index', [
             'items' => $services,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

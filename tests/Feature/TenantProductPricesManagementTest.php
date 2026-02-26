@@ -130,6 +130,7 @@ it('shows product prices index only for current branch', function (): void {
     expect($pricedProductNames)->not->toContain('Product B');
 
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('product-prices-search-form');
     $response->assertSee('product-prices-search-loading');
 });
@@ -170,6 +171,52 @@ it('filters product prices by product name or sku in current branch', function (
     $byNameResponse->assertSuccessful();
     expect($byNameResponse->viewData('items')->getCollection()->pluck('product.name')->all())->toContain('Brake Kit');
     expect($byNameResponse->viewData('items')->getCollection()->pluck('product.name')->all())->not->toContain('Axle Kit');
+});
+
+it('sorts product prices by cost ascending and descending', function (): void {
+    $branches = authenticateProductPriceUser();
+
+    $productLow = makeProduct('SRT-LOW', 'Sort Low');
+    $productHigh = makeProduct('SRT-HIGH', 'Sort High');
+
+    ProductPrice::query()->withoutGlobalScopes()->create([
+        'product_id' => $productLow->id,
+        'branch_id' => $branches['current']->id,
+        'cost' => 10,
+        'mrp' => 20,
+        'retail_price' => 18,
+        'wholesale_price' => 16,
+        'effective_from' => now(),
+    ]);
+
+    ProductPrice::query()->withoutGlobalScopes()->create([
+        'product_id' => $productHigh->id,
+        'branch_id' => $branches['current']->id,
+        'cost' => 100,
+        'mrp' => 120,
+        'retail_price' => 110,
+        'wholesale_price' => 105,
+        'effective_from' => now(),
+    ]);
+
+    $ascending = $this->get(productPricesTenantRoute('product-prices.index', [
+        'sort_by' => 'cost',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(productPricesTenantRoute('product-prices.index', [
+        'sort_by' => 'cost',
+        'sort_direction' => 'desc',
+    ]));
+
+    expect($ascending->viewData('items')->getCollection()->pluck('cost')->values()->all())->toBe([
+        '10.00',
+        '100.00',
+    ]);
+    expect($descending->viewData('items')->getCollection()->pluck('cost')->values()->all())->toBe([
+        '100.00',
+        '10.00',
+    ]);
 });
 
 it('stores product price with current branch id', function (): void {

@@ -28,8 +28,13 @@ final class PurchaseController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['purchase_no', 'purchase_date', 'status', 'grand_total', 'balance_due', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $items = Purchase::query()
+        $purchasesQuery = Purchase::query()
             ->with(['vendor', 'warehouse'])
             ->where('branch_id', $branchId)
             ->when(filled($search), function (Builder $query) use ($search): void {
@@ -39,13 +44,22 @@ final class PurchaseController extends Controller
                         ->orWhere('vendor_invoice_no', 'like', sprintf('%%%s%%', $search))
                         ->orWhereHas('vendor', fn (Builder $q) => $q->where('name', 'like', sprintf('%%%s%%', $search)));
                 });
-            })
-            ->latest('purchase_date')
+            });
+
+        if ($activeSortBy !== null) {
+            $purchasesQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $purchasesQuery->latest('purchase_date');
+        }
+
+        $items = $purchasesQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.purchases.index', [
             'items' => $items,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

@@ -22,9 +22,24 @@ final class ProductController extends Controller
 {
     public function index(Request $request, BuildProductsIndexDataAction $buildProductsIndexDataAction): View
     {
-        $products = $buildProductsIndexDataAction->handle($request, $this->currentBranchId());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['name', 'sku', 'status', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        return view('tenants.products.index', ['items' => $products]);
+        $products = $buildProductsIndexDataAction->handle(
+            $request,
+            $this->currentBranchId(),
+            $activeSortBy,
+            $activeSortDirection
+        );
+
+        return view('tenants.products.index', [
+            'items' => $products,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
+        ]);
     }
 
     public function store(ProductRequest $request, CreateProductAction $createProductAction): RedirectResponse

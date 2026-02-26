@@ -50,11 +50,15 @@
                 <table class="table table-striped align-middle mb-0" id="customer-vehicles-table">
                     <thead>
                         <tr>
-                            <th>{{ __('Registration') }}</th>
+                            <x-sortable-column :label="__('Registration')" column="registration_no"
+                                :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
                             <th>{{ __('Customer') }}</th>
-                            <th>{{ __('Model') }}</th>
-                            <th>{{ __('Year') }}</th>
-                            <th>{{ __('Meter Reading') }}</th>
+                            <x-sortable-column :label="__('Model')" column="model" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Year')" column="year" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Meter Reading')" column="meter_reading"
+                                :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

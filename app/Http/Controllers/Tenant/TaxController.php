@@ -22,16 +22,28 @@ final class TaxController extends Controller
     {
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['code', 'name', 'rate', 'status', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $taxes = Tax::query()
+        $taxesQuery = Tax::query()
             ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('code', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('name', 'like', sprintf('%%%s%%', $search));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $taxesQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $taxesQuery->latest();
+        }
+
+        $taxes = $taxesQuery
             ->paginate($perPage)
             ->withQueryString();
 
@@ -40,6 +52,8 @@ final class TaxController extends Controller
         return view('tenants.taxes.index', [
             'items' => $taxes,
             'statuses' => $statuses,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

@@ -39,13 +39,18 @@
                 <table class="table table-striped align-middle mb-0" id="purchases-table">
                     <thead>
                         <tr>
-                            <th>{{ __('Purchase No') }}</th>
-                            <th>{{ __('Date') }}</th>
+                            <x-sortable-column :label="__('Purchase No')" column="purchase_no" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Date')" column="purchase_date" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th>{{ __('Vendor') }}</th>
                             <th>{{ __('Warehouse') }}</th>
-                            <th>{{ __('Status') }}</th>
-                            <th>{{ __('Grand Total') }}</th>
-                            <th>{{ __('Balance') }}</th>
+                            <x-sortable-column :label="__('Status')" column="status" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Grand Total')" column="grand_total" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Balance')" column="balance_due" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

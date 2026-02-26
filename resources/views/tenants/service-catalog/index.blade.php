@@ -49,12 +49,18 @@
                 <table class="table table-striped align-middle mb-0" id="service-catalog-table">
                     <thead>
                         <tr>
-                            <th>{{ __('Code') }}</th>
-                            <th>{{ __('Name') }}</th>
-                            <th>{{ __('Category') }}</th>
-                            <th>{{ __('Base Price') }}</th>
-                            <th>{{ __('Duration (Min)') }}</th>
-                            <th>{{ __('Status') }}</th>
+                            <x-sortable-column :label="__('Code')" column="code" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Name')" column="name" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Category')" column="category" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Base Price')" column="base_price" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Duration (Min)')" column="duration_minutes"
+                                :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Status')" column="status" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

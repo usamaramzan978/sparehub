@@ -24,8 +24,13 @@ final class SaleHoldController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['hold_no', 'expires_at', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $holds = SaleHold::query()
+        $holdsQuery = SaleHold::query()
             ->with('customer')
             ->where('branch_id', $branchId)
             ->when(filled($search), function (Builder $query) use ($search): void {
@@ -34,14 +39,23 @@ final class SaleHoldController extends Controller
                         ->where('hold_no', 'like', sprintf('%%%s%%', $search))
                         ->orWhereHas('customer', fn (Builder $q) => $q->where('name', 'like', sprintf('%%%s%%', $search)));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $holdsQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $holdsQuery->latest();
+        }
+
+        $holds = $holdsQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.sale-holds.index', [
             'items' => $holds,
             'customers' => Customer::query()->where('branch_id', $branchId)->orderBy('name')->get(),
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

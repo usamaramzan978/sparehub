@@ -27,8 +27,13 @@ final class SalePaymentController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['payment_method', 'amount', 'paid_at', 'reference_no', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $payments = SalePayment::query()
+        $paymentsQuery = SalePayment::query()
             ->with(['sale', 'receiver'])
             ->where('branch_id', $branchId)
             ->when(filled($search), function (Builder $query) use ($search): void {
@@ -39,13 +44,22 @@ final class SalePaymentController extends Controller
                         ->orWhere('reference_no', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('payment_method', 'like', sprintf('%%%s%%', $search));
                 });
-            })
-            ->latest('paid_at')
+            });
+
+        if ($activeSortBy !== null) {
+            $paymentsQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $paymentsQuery->latest('paid_at');
+        }
+
+        $payments = $paymentsQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.sale-payments.index', [
             'items' => $payments,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

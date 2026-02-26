@@ -29,8 +29,13 @@ final class PurchaseReturnController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['return_no', 'return_date', 'status', 'grand_total', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $items = PurchaseReturn::query()
+        $purchaseReturnsQuery = PurchaseReturn::query()
             ->with(['vendor', 'purchase'])
             ->where('branch_id', $branchId)
             ->when(filled($search), function (Builder $query) use ($search): void {
@@ -39,13 +44,22 @@ final class PurchaseReturnController extends Controller
                         ->where('return_no', 'like', sprintf('%%%s%%', $search))
                         ->orWhereHas('vendor', fn (Builder $q) => $q->where('name', 'like', sprintf('%%%s%%', $search)));
                 });
-            })
-            ->latest('return_date')
+            });
+
+        if ($activeSortBy !== null) {
+            $purchaseReturnsQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $purchaseReturnsQuery->latest('return_date');
+        }
+
+        $items = $purchaseReturnsQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.purchase-returns.index', [
             'items' => $items,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

@@ -195,6 +195,7 @@ it('shows job card services index for current branch job cards', function (): vo
     expect($names)->toContain('Main Line');
     expect($names)->not->toContain('Alt Line');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('job-card-services-search-form');
     $response->assertSee('job-card-services-search-loading');
 });
@@ -226,6 +227,44 @@ it('filters job card services by search keyword', function (): void {
     $names = $response->viewData('items')->getCollection()->pluck('service_name')->all();
     expect($names)->toContain('Axle Service');
     expect($names)->not->toContain('Brake Service');
+});
+
+it('sorts job card services by service name ascending and descending', function (): void {
+    $fixture = authenticateJobCardServiceUser();
+
+    JobCardService::query()->create([
+        'job_card_id' => $fixture['currentJobCard']->id,
+        'service_name' => 'AAA Service Line',
+        'qty' => 1,
+        'rate' => 100,
+        'line_total' => 100,
+        'status' => JobCardServiceStatus::PENDING->value,
+    ]);
+
+    JobCardService::query()->create([
+        'job_card_id' => $fixture['currentJobCard']->id,
+        'service_name' => 'ZZZ Service Line',
+        'qty' => 1,
+        'rate' => 100,
+        'line_total' => 100,
+        'status' => JobCardServiceStatus::PENDING->value,
+    ]);
+
+    $ascending = $this->get(jobCardServicesTenantRoute('job-card-services.index', [
+        'sort_by' => 'service_name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(jobCardServicesTenantRoute('job-card-services.index', [
+        'sort_by' => 'service_name',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingNames = $ascending->viewData('items')->pluck('service_name')->values()->all();
+    $descendingNames = $descending->viewData('items')->pluck('service_name')->values()->all();
+
+    expect(array_search('AAA Service Line', $ascendingNames, true))->toBeLessThan(array_search('ZZZ Service Line', $ascendingNames, true));
+    expect(array_search('AAA Service Line', $descendingNames, true))->toBeGreaterThan(array_search('ZZZ Service Line', $descendingNames, true));
 });
 
 it('shows create job card services page with current branch options', function (): void {

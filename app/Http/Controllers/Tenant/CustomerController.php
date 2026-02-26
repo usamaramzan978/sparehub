@@ -24,8 +24,13 @@ final class CustomerController extends Controller
     {
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['code', 'name', 'phone', 'email', 'status', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $customers = Customer::query()
+        $customersQuery = Customer::query()
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
@@ -34,12 +39,23 @@ final class CustomerController extends Controller
                         ->orWhere('phone', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('email', 'like', sprintf('%%%s%%', $search));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $customersQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $customersQuery->latest();
+        }
+
+        $customers = $customersQuery
             ->paginate($perPage)
             ->withQueryString();
 
-        return view('tenants.customers.index', ['items' => $customers]);
+        return view('tenants.customers.index', [
+            'items' => $customers,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
+        ]);
     }
 
     public function store(CustomerRequest $request, CreateCustomerAction $action): RedirectResponse

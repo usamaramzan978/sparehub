@@ -26,8 +26,13 @@ final class PurchaseItemController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['qty', 'received_qty', 'unit_cost', 'line_total', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $items = PurchaseItem::query()
+        $purchaseItemsQuery = PurchaseItem::query()
             ->with(['purchase', 'product', 'tax'])
             ->where('branch_id', $branchId)
             ->when(filled($search), function (Builder $query) use ($search): void {
@@ -36,13 +41,22 @@ final class PurchaseItemController extends Controller
                         ->whereHas('purchase', fn (Builder $purchaseQuery) => $purchaseQuery->where('purchase_no', 'like', sprintf('%%%s%%', $search)))
                         ->orWhereHas('product', fn (Builder $productQuery) => $productQuery->where('name', 'like', sprintf('%%%s%%', $search)));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $purchaseItemsQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $purchaseItemsQuery->latest();
+        }
+
+        $items = $purchaseItemsQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.purchase-items.index', [
             'items' => $items,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

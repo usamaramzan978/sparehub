@@ -24,8 +24,21 @@ final class ProductPriceController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = [
+            'product_id',
+            'cost',
+            'mrp',
+            'retail_price',
+            'wholesale_price',
+            'effective_from',
+            'created_at',
+        ];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $prices = ProductPrice::query()
+        $pricesQuery = ProductPrice::query()
             ->with('product')
             ->where('branch_id', $branchId)
             ->when(filled($search), function (Builder $query) use ($search): void {
@@ -34,8 +47,15 @@ final class ProductPriceController extends Controller
                         ->where('name', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('sku', 'like', sprintf('%%%s%%', $search));
                 });
-            })
-            ->latest('effective_from')
+            });
+
+        if ($activeSortBy !== null) {
+            $pricesQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $pricesQuery->latest('effective_from');
+        }
+
+        $prices = $pricesQuery
             ->paginate($perPage)
             ->withQueryString();
 
@@ -46,6 +66,8 @@ final class ProductPriceController extends Controller
         return view('tenants.product-prices.index', [
             'items' => $prices,
             'products' => $products,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

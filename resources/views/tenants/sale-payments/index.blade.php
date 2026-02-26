@@ -40,11 +40,15 @@
                     <thead>
                         <tr>
                             <th>{{ __('Invoice') }}</th>
-                            <th>{{ __('Method') }}</th>
-                            <th>{{ __('Amount') }}</th>
+                            <x-sortable-column :label="__('Method')" column="payment_method" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Amount')" column="amount" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th>{{ __('Received By') }}</th>
-                            <th>{{ __('Paid At') }}</th>
-                            <th>{{ __('Reference') }}</th>
+                            <x-sortable-column :label="__('Paid At')" column="paid_at" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Reference')" column="reference_no" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

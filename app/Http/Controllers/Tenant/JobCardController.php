@@ -27,8 +27,13 @@ final class JobCardController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['job_no', 'job_date', 'status', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $jobCards = JobCard::query()
+        $jobCardsQuery = JobCard::query()
             ->with(['customer', 'vehicle', 'assignedEmployee'])
             ->where('branch_id', $branchId)
             ->when(filled($search), function (Builder $query) use ($search): void {
@@ -38,8 +43,15 @@ final class JobCardController extends Controller
                         ->orWhereHas('customer', fn (Builder $q) => $q->where('name', 'like', sprintf('%%%s%%', $search)))
                         ->orWhereHas('vehicle', fn (Builder $q) => $q->where('registration_no', 'like', sprintf('%%%s%%', $search)));
                 });
-            })
-            ->latest('job_date')
+            });
+
+        if ($activeSortBy !== null) {
+            $jobCardsQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $jobCardsQuery->latest('job_date');
+        }
+
+        $jobCards = $jobCardsQuery
             ->paginate($perPage)
             ->withQueryString();
 
@@ -50,6 +62,8 @@ final class JobCardController extends Controller
 
         return view('tenants.job-cards.index', [
             'items' => $jobCards,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

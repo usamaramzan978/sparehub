@@ -84,6 +84,7 @@ it('shows brands index', function (): void {
     $response->assertSee('brands-search-form');
     $response->assertSee('brands-search-loading');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('Search by brand name');
 });
 
@@ -136,6 +137,108 @@ it('filters brands by search text', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Toyota Genuine');
     $response->assertDontSee('Honda OEM');
+});
+
+it('sorts brands by name ascending and descending', function (): void {
+    authenticateBrandUser();
+
+    Brand::query()->create([
+        'name' => 'Zeta Auto',
+        'slug' => 'zeta-auto',
+        'status' => BrandStatus::ACTIVE->value,
+    ]);
+
+    Brand::query()->create([
+        'name' => 'Alpha Auto',
+        'slug' => 'alpha-auto',
+        'status' => BrandStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(brandsTenantRoute('brands.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(brandsTenantRoute('brands.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    expect($ascending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'Alpha Auto',
+        'Zeta Auto',
+    ]);
+    expect($descending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'Zeta Auto',
+        'Alpha Auto',
+    ]);
+});
+
+it('falls back to default sorting when invalid sort options are provided', function (): void {
+    authenticateBrandUser();
+
+    $olderBrand = Brand::query()->create([
+        'name' => 'Older Brand',
+        'slug' => 'older-brand',
+        'status' => BrandStatus::ACTIVE->value,
+    ]);
+
+    $newerBrand = Brand::query()->create([
+        'name' => 'Newer Brand',
+        'slug' => 'newer-brand',
+        'status' => BrandStatus::ACTIVE->value,
+    ]);
+
+    $olderBrand->forceFill([
+        'created_at' => now()->subDay(),
+        'updated_at' => now()->subDay(),
+    ])->save();
+
+    $newerBrand->forceFill([
+        'created_at' => now(),
+        'updated_at' => now(),
+    ])->save();
+
+    $response = $this->get(brandsTenantRoute('brands.index', [
+        'sort_by' => 'not_allowed',
+        'sort_direction' => 'up',
+    ]));
+
+    expect($response->viewData('items')->pluck('name')->values()->all())->toBe([
+        'Newer Brand',
+        'Older Brand',
+    ]);
+});
+
+it('clears active sort query on third click from descending state', function (): void {
+    authenticateBrandUser();
+
+    Brand::query()->create([
+        'name' => 'Beta Auto',
+        'slug' => 'beta-auto',
+        'status' => BrandStatus::ACTIVE->value,
+    ]);
+
+    $response = $this->get(brandsTenantRoute('brands.index', [
+        'search' => 'Beta',
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    $document = new DOMDocument();
+    @$document->loadHTML((string) $response->getContent());
+    $xpath = new DOMXPath($document);
+
+    $nodes = $xpath->query('//a[@data-sort-column="name"]');
+    $nameSortLinkHref = $nodes !== false && $nodes->length > 0 ? $nodes->item(0)?->getAttribute('href') : null;
+
+    expect($nameSortLinkHref)->not->toBeNull();
+
+    parse_str((string) parse_url((string) $nameSortLinkHref, PHP_URL_QUERY), $queryParams);
+
+    expect($queryParams)->toHaveKey('search', 'Beta');
+    expect($queryParams)->not->toHaveKey('sort_by');
+    expect($queryParams)->not->toHaveKey('sort_direction');
 });
 
 it('stores brand and generates slug', function (): void {

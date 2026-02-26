@@ -15,12 +15,16 @@ use Illuminate\Support\Collection;
 
 final class BuildProductsIndexDataAction
 {
-    public function handle(Request $request, string $branchId): LengthAwarePaginator
-    {
+    public function handle(
+        Request $request,
+        string $branchId,
+        ?string $activeSortBy = null,
+        string $activeSortDirection = 'asc'
+    ): LengthAwarePaginator {
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
 
-        $products = Product::query()
+        $productsQuery = Product::query()
             ->with(['category', 'brand', 'defaultUnit', 'defaultTax'])
             ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
@@ -29,8 +33,15 @@ final class BuildProductsIndexDataAction
                         ->orWhere('sku', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('part_number', 'like', sprintf('%%%s%%', $search));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $productsQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $productsQuery->latest();
+        }
+
+        $products = $productsQuery
             ->paginate($perPage)
             ->withQueryString();
 

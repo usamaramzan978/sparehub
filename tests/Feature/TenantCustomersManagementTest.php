@@ -98,6 +98,7 @@ it('shows customers index', function (): void {
     $response->assertSee('Customers');
     $response->assertSee('Ali Motors');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('customers-search-form');
     $response->assertSee('customers-search-loading');
 });
@@ -127,6 +128,43 @@ it('filters customers by search keyword', function (): void {
     $customerNames = $response->viewData('items')->getCollection()->pluck('name')->all();
     expect($customerNames)->toContain('Axle Customer');
     expect($customerNames)->not->toContain('Brake Customer');
+});
+
+it('sorts customers by name ascending and descending', function (): void {
+    $branches = authenticateCustomerUser();
+
+    Customer::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branches['current']->id,
+        'code' => 'SRT-A',
+        'name' => 'AAA Customer',
+        'status' => CustomerStatus::ACTIVE->value,
+    ]);
+
+    Customer::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branches['current']->id,
+        'code' => 'SRT-Z',
+        'name' => 'ZZZ Customer',
+        'status' => CustomerStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(customersTenantRoute('customers.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(customersTenantRoute('customers.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    expect($ascending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'AAA Customer',
+        'ZZZ Customer',
+    ]);
+    expect($descending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'ZZZ Customer',
+        'AAA Customer',
+    ]);
 });
 
 it('shows create customer page', function (): void {

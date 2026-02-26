@@ -108,6 +108,7 @@ it('shows products index', function (): void {
     $response->assertSee('Engine Oil');
     $response->assertSee('20 /');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('products-search-form');
     $response->assertSee('products-search-loading');
 });
@@ -134,6 +135,41 @@ it('filters products by search', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Axle Kit');
     $response->assertDontSee('Brake Kit');
+});
+
+it('sorts products by name ascending and descending', function (): void {
+    authenticateProductUser();
+
+    Product::query()->create([
+        'sku' => 'SRT-A',
+        'name' => 'AAA Product',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    Product::query()->create([
+        'sku' => 'SRT-Z',
+        'name' => 'ZZZ Product',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(productsTenantRoute('products.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(productsTenantRoute('products.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    expect($ascending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'AAA Product',
+        'ZZZ Product',
+    ]);
+    expect($descending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'ZZZ Product',
+        'AAA Product',
+    ]);
 });
 
 it('shows create product page with active taxes and units', function (): void {

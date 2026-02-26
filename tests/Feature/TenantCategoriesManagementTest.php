@@ -91,6 +91,7 @@ it('shows categories index', function (): void {
     $response->assertSee('Engine');
     $response->assertSee('1 Products');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('categories-search-form');
     $response->assertSee('categories-search-loading');
 });
@@ -114,6 +115,41 @@ it('filters categories by search', function (): void {
 
     $response->assertSuccessful();
     $response->assertSee('Engine Parts');
+});
+
+it('sorts categories by name ascending and descending', function (): void {
+    authenticateCategoryUser();
+
+    Category::query()->create([
+        'name' => 'AAA Category',
+        'slug' => 'aaa-category',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    Category::query()->create([
+        'name' => 'ZZZ Category',
+        'slug' => 'zzz-category',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(categoriesTenantRoute('categories.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(categoriesTenantRoute('categories.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    expect($ascending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'AAA Category',
+        'ZZZ Category',
+    ]);
+    expect($descending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'ZZZ Category',
+        'AAA Category',
+    ]);
 });
 
 it('stores category and generates slug', function (): void {

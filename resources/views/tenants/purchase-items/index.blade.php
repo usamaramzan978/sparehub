@@ -40,10 +40,14 @@
                         <tr>
                             <th>{{ __('Purchase') }}</th>
                             <th>{{ __('Product') }}</th>
-                            <th>{{ __('Qty') }}</th>
-                            <th>{{ __('Received') }}</th>
-                            <th>{{ __('Unit Cost') }}</th>
-                            <th>{{ __('Line Total') }}</th>
+                            <x-sortable-column :label="__('Qty')" column="qty" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Received')" column="received_qty" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Unit Cost')" column="unit_cost" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Line Total')" column="line_total" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

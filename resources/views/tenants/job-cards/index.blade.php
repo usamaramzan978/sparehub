@@ -39,11 +39,14 @@
                 <table class="table table-striped align-middle mb-0" id="job-cards-table">
                     <thead>
                         <tr>
-                            <th>{{ __('Job No') }}</th>
-                            <th>{{ __('Date') }}</th>
+                            <x-sortable-column :label="__('Job No')" column="job_no" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Date')" column="job_date" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th>{{ __('Customer') }}</th>
                             <th>{{ __('Vehicle') }}</th>
-                            <th>{{ __('Status') }}</th>
+                            <x-sortable-column :label="__('Status')" column="status" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

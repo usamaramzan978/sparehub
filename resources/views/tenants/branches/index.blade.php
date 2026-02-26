@@ -39,10 +39,13 @@
                 <table class="table table-striped align-middle mb-0" id="branches-table">
                     <thead>
                         <tr>
-                            <th>{{ __('Code') }}</th>
-                            <th>{{ __('Name') }}</th>
+                            <x-sortable-column :label="__('Code')" column="code" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Name')" column="name" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th>{{ __('Warehouse') }}</th>
-                            <th>{{ __('Status') }}</th>
+                            <x-sortable-column :label="__('Status')" column="status" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

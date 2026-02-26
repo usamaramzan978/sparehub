@@ -52,12 +52,18 @@
                 <table class="table table-striped align-middle mb-0" id="product-prices-table">
                     <thead>
                         <tr>
-                            <th>{{ __('Product') }}</th>
-                            <th>{{ __('Cost') }}</th>
-                            <th>{{ __('MRP') }}</th>
-                            <th>{{ __('Retail') }}</th>
-                            <th>{{ __('Wholesale') }}</th>
-                            <th>{{ __('Effective From') }}</th>
+                            <x-sortable-column :label="__('Product')" column="product_id" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Cost')" column="cost" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('MRP')" column="mrp" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Retail')" column="retail_price" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Wholesale')" column="wholesale_price" :current-sort-by="$sortBy"
+                                :current-sort-direction="$sortDirection" />
+                            <x-sortable-column :label="__('Effective From')" column="effective_from"
+                                :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>

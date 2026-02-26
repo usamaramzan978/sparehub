@@ -80,6 +80,7 @@ it('shows units index', function (): void {
     $response->assertSee('Units');
     $response->assertSee('Pieces');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('units-search-form');
     $response->assertSee('units-search-loading');
 });
@@ -109,6 +110,41 @@ it('filters units by code or name', function (): void {
     $byNameResponse->assertSuccessful();
     $byNameResponse->assertSee('Liter');
     $byNameResponse->assertDontSee('Pieces');
+});
+
+it('sorts units by name ascending and descending', function (): void {
+    authenticateUnitUser();
+
+    Unit::query()->create([
+        'code' => 'UNI-A',
+        'name' => 'AAA Unit',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    Unit::query()->create([
+        'code' => 'UNI-Z',
+        'name' => 'ZZZ Unit',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(unitsTenantRoute('units.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(unitsTenantRoute('units.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    expect($ascending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'AAA Unit',
+        'ZZZ Unit',
+    ]);
+    expect($descending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'ZZZ Unit',
+        'AAA Unit',
+    ]);
 });
 
 it('stores unit with fractional flag', function (): void {

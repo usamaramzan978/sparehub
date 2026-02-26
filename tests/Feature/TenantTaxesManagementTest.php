@@ -82,6 +82,7 @@ it('shows taxes index', function (): void {
     $response->assertSee('Taxes');
     $response->assertSee('GST 17%');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('taxes-search-form');
     $response->assertSee('taxes-search-loading');
 });
@@ -113,6 +114,43 @@ it('filters taxes by code or name', function (): void {
     $byNameResponse->assertSuccessful();
     $byNameResponse->assertSee('VAT 5%');
     $byNameResponse->assertDontSee('GST 17%');
+});
+
+it('sorts taxes by name ascending and descending', function (): void {
+    authenticateTaxUser();
+
+    Tax::query()->create([
+        'code' => 'TX-A',
+        'name' => 'AAA Tax',
+        'rate' => 5,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    Tax::query()->create([
+        'code' => 'TX-Z',
+        'name' => 'ZZZ Tax',
+        'rate' => 10,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(taxesTenantRoute('taxes.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(taxesTenantRoute('taxes.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    expect($ascending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'AAA Tax',
+        'ZZZ Tax',
+    ]);
+    expect($descending->viewData('items')->pluck('name')->values()->all())->toBe([
+        'ZZZ Tax',
+        'AAA Tax',
+    ]);
 });
 
 it('stores tax with inclusive flag', function (): void {

@@ -29,8 +29,13 @@ final class SaleItemController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['line_type', 'qty', 'unit_price', 'mechanic_charge', 'line_total', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $items = SaleItem::query()
+        $itemsQuery = SaleItem::query()
             ->with(['sale', 'product', 'serviceCatalog', 'jobCardService', 'mechanic'])
             ->where('branch_id', $branchId)
             ->when(filled($search), function (Builder $query) use ($search): void {
@@ -42,13 +47,22 @@ final class SaleItemController extends Controller
                         ->orWhereHas('serviceCatalog', fn (Builder $serviceQuery) => $serviceQuery->where('name', 'like', sprintf('%%%s%%', $search)))
                         ->orWhereHas('mechanic', fn (Builder $mechanicQuery) => $mechanicQuery->where('name', 'like', sprintf('%%%s%%', $search)));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $itemsQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $itemsQuery->latest();
+        }
+
+        $items = $itemsQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.sale-items.index', [
             'items' => $items,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

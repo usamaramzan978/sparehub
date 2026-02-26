@@ -112,10 +112,45 @@ it('shows sale holds index for current branch only', function (): void {
 
     $response->assertSuccessful();
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('id="sale-holds-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
     expect($response->viewData('items')->items()[0]->hold_no)->toBe('HOLD-MAIN-1');
+});
+
+it('sorts sale holds by hold number ascending and descending', function (): void {
+    $fixture = authenticateSaleHoldsUser();
+
+    SaleHold::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'created_by' => $fixture['user']->id,
+        'hold_no' => 'HOLD-SORT-A',
+        'payload' => ['items' => [['name' => 'A']]],
+    ]);
+
+    SaleHold::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'created_by' => $fixture['user']->id,
+        'hold_no' => 'HOLD-SORT-Z',
+        'payload' => ['items' => [['name' => 'Z']]],
+    ]);
+
+    $ascending = $this->get(saleHoldsTenantRoute('sale-holds.index', [
+        'sort_by' => 'hold_no',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(saleHoldsTenantRoute('sale-holds.index', [
+        'sort_by' => 'hold_no',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingHoldNumbers = $ascending->viewData('items')->pluck('hold_no')->values()->all();
+    $descendingHoldNumbers = $descending->viewData('items')->pluck('hold_no')->values()->all();
+
+    expect(array_search('HOLD-SORT-A', $ascendingHoldNumbers, true))->toBeLessThan(array_search('HOLD-SORT-Z', $ascendingHoldNumbers, true));
+    expect(array_search('HOLD-SORT-A', $descendingHoldNumbers, true))->toBeGreaterThan(array_search('HOLD-SORT-Z', $descendingHoldNumbers, true));
 });
 
 it('searches sale holds by hold number and customer', function (): void {

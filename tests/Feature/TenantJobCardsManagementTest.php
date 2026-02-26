@@ -152,6 +152,7 @@ it('shows job cards index scoped to current branch', function (): void {
     $response->assertSee('JC-MAIN');
     $response->assertDontSee('JC-ALT');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('job-cards-search-form');
     $response->assertSee('job-cards-search-loading');
 });
@@ -182,6 +183,44 @@ it('filters job cards by customer, vehicle and job number', function (): void {
     $response->assertSuccessful();
     $response->assertSee('JC-AXLE');
     $response->assertDontSee('JC-BRAKE');
+});
+
+it('sorts job cards by job number ascending and descending', function (): void {
+    $fixture = authenticateJobCardUser();
+
+    JobCard::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['currentCustomer']->id,
+        'vehicle_id' => $fixture['currentVehicle']->id,
+        'job_no' => 'JC-SORT-A',
+        'job_date' => now()->toDateString(),
+        'status' => JobCardStatus::NEW->value,
+    ]);
+
+    JobCard::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['currentCustomer']->id,
+        'vehicle_id' => $fixture['currentVehicle']->id,
+        'job_no' => 'JC-SORT-Z',
+        'job_date' => now()->toDateString(),
+        'status' => JobCardStatus::NEW->value,
+    ]);
+
+    $ascending = $this->get(jobCardsTenantRoute('job-cards.index', [
+        'sort_by' => 'job_no',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(jobCardsTenantRoute('job-cards.index', [
+        'sort_by' => 'job_no',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingJobNumbers = $ascending->viewData('items')->pluck('job_no')->values()->all();
+    $descendingJobNumbers = $descending->viewData('items')->pluck('job_no')->values()->all();
+
+    expect(array_search('JC-SORT-A', $ascendingJobNumbers, true))->toBeLessThan(array_search('JC-SORT-Z', $ascendingJobNumbers, true));
+    expect(array_search('JC-SORT-A', $descendingJobNumbers, true))->toBeGreaterThan(array_search('JC-SORT-Z', $descendingJobNumbers, true));
 });
 
 it('shows create job card page with current branch options', function (): void {

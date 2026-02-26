@@ -604,7 +604,7 @@ Where version bump is currently applied:
 Operational rule:
 - Any new mutation that affects header payload (`branches`, selected-branch settings, displayed role/context) must call `HeaderContextCache::bumpForCurrentTenant()`.
 
-## 15. Global AJAX Table Search
+## 15. Global AJAX Table Search & Sorting
 
 SpareHub includes a reusable table-search utility in:
 - `resources/js/app.js`
@@ -616,10 +616,13 @@ It initializes automatically on DOM ready for any container with `data-ajax-tabl
 - Debounced keyword search (default `350ms`)
 - In-flight request cancellation (AbortController)
 - Partial HTML refresh of:
+  - table head
   - table body
   - pagination container
 - URL query sync via `history.replaceState`
 - Search spinner lifecycle with minimum visible duration
+- Sort link interception (`data-ajax-sort-link`)
+- Sort cycle support: unsorted -> asc -> desc -> unsorted
 
 ### 15.2 Required markup contract
 
@@ -630,9 +633,11 @@ Add a root container and configure selectors using data attributes:
   data-ajax-table-search
   data-form-selector="#brands-search-form"
   data-input-selector="#search"
+  data-table-head-selector="#brands-table thead"
   data-table-body-selector="#brands-table tbody"
   data-pagination-selector="[data-brands-pagination]"
   data-loading-selector="#brands-search-loading"
+  data-sort-link-selector="[data-ajax-sort-link]"
   data-search-param="search"
   data-debounce="350"
   data-min-loading-visible="220"
@@ -643,15 +648,19 @@ Add a root container and configure selectors using data attributes:
 
 Inside this container, ensure:
 - Search form + input exist and submit with `GET`
+- Table has stable `<thead>` selector
 - Table has stable `<tbody>` selector
 - Pagination wrapper has stable selector
 - Loading element toggles with `opacity-0 pe-none` classes
+- Sortable header links use `data-ajax-sort-link`
 
 ### 15.3 Notes for new modules
 
 - Keep server filtering in controller (`request('search')`) so it works for full-page and AJAX refresh.
 - Do not duplicate fetch/debounce logic inline in each Blade view; prefer this global utility.
 - Keep row action handlers delegated (`document.addEventListener('click', ...)`) if rows are replaced dynamically.
+- Keep sorting on server (`sort_by`, `sort_direction`) and whitelist columns in controller.
+- For better UX, implement 3-state sort reset so third click removes sorting and returns default order.
 
 ### 15.4 Search Skeleton (Copy/Paste)
 
@@ -681,9 +690,11 @@ $items = Model::query()
     data-ajax-table-search
     data-form-selector="#module-search-form"
     data-input-selector="#module-search"
+    data-table-head-selector="#module-table thead"
     data-table-body-selector="#module-table tbody"
     data-pagination-selector="[data-module-pagination]"
     data-loading-selector="#module-search-loading"
+    data-sort-link-selector="[data-ajax-sort-link]"
     data-search-param="search"
     data-debounce="350"
     data-min-loading-visible="220">
@@ -715,7 +726,13 @@ $items = Model::query()
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-striped align-middle mb-0" id="module-table">
-                <thead>...</thead>
+                <thead>
+                    <tr>
+                        <x-sortable-column :label="__('Name')" column="name" :current-sort-by="$sortBy"
+                            :current-sort-direction="$sortDirection" />
+                        <th class="text-end">{{ __('Actions') }}</th>
+                    </tr>
+                </thead>
                 <tbody>...</tbody>
             </table>
         </div>
@@ -727,9 +744,47 @@ $items = Model::query()
 </div>
 ```
 
+```php
+// Sorting skeleton (Controller@index)
+$sortBy = $request->string('sort_by')->toString();
+$sortDirection = $request->string('sort_direction')->toString();
+$allowedSortColumns = ['created_at', 'name'];
+$activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+$activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
+
+$itemsQuery = Model::query();
+
+if ($activeSortBy !== null) {
+    $itemsQuery->orderBy($activeSortBy, $activeSortDirection);
+} else {
+    $itemsQuery->latest();
+}
+
+$items = $itemsQuery
+    ->paginate($perPage)
+    ->withQueryString();
+
+return view('tenants.module.index', [
+    'items' => $items,
+    'sortBy' => $activeSortBy,
+    'sortDirection' => $activeSortDirection,
+]);
+```
+
+```blade
+{{-- Reusable sortable header component --}}
+{{-- resources/views/components/sortable-column.blade.php --}}
+{{-- 3-state click: unsorted -> asc -> desc -> unsorted --}}
+```
+
 Testing checklist for converted pages:
 - Index test should assert:
   - `data-ajax-table-search`
+  - `data-ajax-sort-link`
   - search form id (example `module-search-form`)
   - loading spinner id (example `module-search-loading`)
 - Search test should assert filtered paginator collection values from `viewData('items')`.
+- Sorting tests should assert:
+  - asc/desc ordering with `sort_by` + `sort_direction`
+  - invalid sort falls back to default ordering
+  - descending column link clears sort params on next click

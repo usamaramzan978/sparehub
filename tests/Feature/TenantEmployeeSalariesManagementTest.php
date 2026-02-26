@@ -94,6 +94,7 @@ it('shows salary index and summary', function (): void {
 
     $response->assertSuccessful();
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('id="employee-salaries-search-form"', false);
 
     $summary = $response->viewData('summary');
@@ -101,6 +102,42 @@ it('shows salary index and summary', function (): void {
     expect($summary['employees_count'])->toBe(2);
     expect($summary['configured_count'])->toBe(1);
     expect($summary['paid_total'])->toBe(1050.0);
+});
+
+it('sorts salary employees by name ascending and descending', function (): void {
+    $fixture = authenticateSalaryUser();
+
+    User::query()->create([
+        'branch_id' => $fixture['branch']->id,
+        'name' => 'Salary Sort A',
+        'email' => 'salary.sort.a+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+
+    User::query()->create([
+        'branch_id' => $fixture['branch']->id,
+        'name' => 'Salary Sort Z',
+        'email' => 'salary.sort.z+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(salaryTenantRoute('employee-salaries.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(salaryTenantRoute('employee-salaries.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingNames = $ascending->viewData('employees')->pluck('name')->values()->all();
+    $descendingNames = $descending->viewData('employees')->pluck('name')->values()->all();
+
+    expect(array_search('Salary Sort A', $ascendingNames, true))->toBeLessThan(array_search('Salary Sort Z', $ascendingNames, true));
+    expect(array_search('Salary Sort A', $descendingNames, true))->toBeGreaterThan(array_search('Salary Sort Z', $descendingNames, true));
 });
 
 it('searches salary employees by name', function (): void {

@@ -21,6 +21,11 @@ final class MechanicPayableController extends Controller
         $dateFrom = mb_trim($request->string('date_from')->toString());
         $dateTo = mb_trim($request->string('date_to')->toString());
         $perPage = min(max($request->integer('per_page', 20), 5), 100);
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['line_total', 'mechanic_charge', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
         $baseQuery = SaleItem::query()
             ->with(['sale', 'mechanic', 'serviceCatalog'])
@@ -42,8 +47,15 @@ final class MechanicPayableController extends Controller
             ->when($dateFrom !== '', fn (Builder $query) => $query->whereHas('sale', fn (Builder $saleQuery) => $saleQuery->whereDate('invoice_date', '>=', $dateFrom)))
             ->when($dateTo !== '', fn (Builder $query) => $query->whereHas('sale', fn (Builder $saleQuery) => $saleQuery->whereDate('invoice_date', '<=', $dateTo)));
 
-        $items = (clone $baseQuery)
-            ->latest('created_at')
+        $itemsQuery = clone $baseQuery;
+
+        if ($activeSortBy !== null) {
+            $itemsQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $itemsQuery->latest('created_at');
+        }
+
+        $items = $itemsQuery
             ->paginate($perPage)
             ->withQueryString();
 
@@ -83,6 +95,8 @@ final class MechanicPayableController extends Controller
                 ->active()
                 ->orderBy('name')
                 ->get(['id', 'name']),
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 }

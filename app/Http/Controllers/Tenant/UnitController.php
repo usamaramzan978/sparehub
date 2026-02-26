@@ -22,16 +22,28 @@ final class UnitController extends Controller
     {
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['code', 'name', 'is_fractional', 'status', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $units = Unit::query()
+        $unitsQuery = Unit::query()
             ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('code', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('name', 'like', sprintf('%%%s%%', $search));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $unitsQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $unitsQuery->latest();
+        }
+
+        $units = $unitsQuery
             ->paginate($perPage)
             ->withQueryString();
         $statuses = RecordStatus::cases();
@@ -39,6 +51,8 @@ final class UnitController extends Controller
         return view('tenants.units.index', [
             'items' => $units,
             'statuses' => $statuses,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

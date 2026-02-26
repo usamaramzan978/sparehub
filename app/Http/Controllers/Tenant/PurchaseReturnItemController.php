@@ -27,23 +27,37 @@ final class PurchaseReturnItemController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $sortBy = $request->string('sort_by')->toString();
+        $sortDirection = $request->string('sort_direction')->toString();
+        $allowedSortColumns = ['qty', 'unit_cost', 'line_total', 'created_at'];
+        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
+        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
 
-        $items = PurchaseReturnItem::query()
+        $purchaseReturnItemsQuery = PurchaseReturnItem::query()
             ->with(['purchaseReturn', 'purchaseItem', 'product', 'tax'])
-            ->whereHas('purchaseReturn', fn ($query) => $query->where('branch_id', $branchId))
+            ->whereHas('purchaseReturn', fn (Builder $query): Builder => $query->where('branch_id', $branchId))
             ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->whereHas('purchaseReturn', fn (Builder $purchaseReturnQuery) => $purchaseReturnQuery->where('return_no', 'like', sprintf('%%%s%%', $search)))
                         ->orWhereHas('product', fn (Builder $productQuery) => $productQuery->where('name', 'like', sprintf('%%%s%%', $search)));
                 });
-            })
-            ->latest()
+            });
+
+        if ($activeSortBy !== null) {
+            $purchaseReturnItemsQuery->orderBy($activeSortBy, $activeSortDirection);
+        } else {
+            $purchaseReturnItemsQuery->latest();
+        }
+
+        $items = $purchaseReturnItemsQuery
             ->paginate($perPage)
             ->withQueryString();
 
         return view('tenants.purchase-return-items.index', [
             'items' => $items,
+            'sortBy' => $activeSortBy,
+            'sortDirection' => $activeSortDirection,
         ]);
     }
 

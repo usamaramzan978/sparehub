@@ -88,6 +88,7 @@ it('shows branches index', function (): void {
     $response->assertSee('Branches');
     $response->assertSee('North Branch');
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('branches-search-form');
     $response->assertSee('branches-search-loading');
 });
@@ -117,6 +118,38 @@ it('filters branches by code or name', function (): void {
     $byNameResponse->assertSuccessful();
     expect($byNameResponse->viewData('items')->pluck('name')->values()->all())->toContain('South Branch');
     expect($byNameResponse->viewData('items')->pluck('name')->values()->all())->not->toContain('North Branch');
+});
+
+it('sorts branches by name ascending and descending', function (): void {
+    createAuthenticatedTenantUser();
+
+    Branch::query()->create([
+        'code' => 'SRT-A',
+        'name' => 'AAA Branch',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    Branch::query()->create([
+        'code' => 'SRT-Z',
+        'name' => 'ZZZ Branch',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    $ascending = $this->get(tenantRoute('branches.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(tenantRoute('branches.index', [
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingNames = $ascending->viewData('items')->pluck('name')->values()->all();
+    $descendingNames = $descending->viewData('items')->pluck('name')->values()->all();
+
+    expect(array_search('AAA Branch', $ascendingNames, true))->toBeLessThan(array_search('ZZZ Branch', $ascendingNames, true));
+    expect(array_search('AAA Branch', $descendingNames, true))->toBeGreaterThan(array_search('ZZZ Branch', $descendingNames, true));
 });
 
 it('shows branch create page with warehouse options', function (): void {

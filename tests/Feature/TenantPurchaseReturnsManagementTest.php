@@ -159,9 +159,50 @@ it('shows purchase returns index for current branch only', function (): void {
 
     $response->assertSuccessful();
     $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('data-ajax-sort-link', false);
     $response->assertSee('id="purchase-returns-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
+});
+
+it('sorts purchase returns by return number ascending and descending', function (): void {
+    $fixture = authenticatePurchaseReturnsUser();
+
+    PurchaseReturn::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $fixture['purchase']->id,
+        'created_by' => $fixture['user']->id,
+        'return_no' => 'RET-SORT-A',
+        'return_date' => now()->toDateString(),
+        'status' => PurchaseReturnStatus::POSTED->value,
+    ]);
+
+    PurchaseReturn::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $fixture['purchase']->id,
+        'created_by' => $fixture['user']->id,
+        'return_no' => 'RET-SORT-Z',
+        'return_date' => now()->toDateString(),
+        'status' => PurchaseReturnStatus::POSTED->value,
+    ]);
+
+    $ascending = $this->get(purchaseReturnsTenantRoute('purchase-returns.index', [
+        'sort_by' => 'return_no',
+        'sort_direction' => 'asc',
+    ]));
+
+    $descending = $this->get(purchaseReturnsTenantRoute('purchase-returns.index', [
+        'sort_by' => 'return_no',
+        'sort_direction' => 'desc',
+    ]));
+
+    $ascendingReturnNumbers = $ascending->viewData('items')->pluck('return_no')->values()->all();
+    $descendingReturnNumbers = $descending->viewData('items')->pluck('return_no')->values()->all();
+
+    expect(array_search('RET-SORT-A', $ascendingReturnNumbers, true))->toBeLessThan(array_search('RET-SORT-Z', $ascendingReturnNumbers, true));
+    expect(array_search('RET-SORT-A', $descendingReturnNumbers, true))->toBeGreaterThan(array_search('RET-SORT-Z', $descendingReturnNumbers, true));
 });
 
 it('clamps purchase returns pagination limits', function (): void {
