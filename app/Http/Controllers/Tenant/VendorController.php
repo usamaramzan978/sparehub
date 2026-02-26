@@ -27,7 +27,7 @@ final class VendorController extends Controller
 
         $vendors = Vendor::query()
             ->where('branch_id', $branchId)
-            ->when($search !== '', function (Builder $query) use ($search): void {
+            ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('code', 'like', sprintf('%%%s%%', $search))

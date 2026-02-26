@@ -25,10 +25,31 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100">
+    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search data-form-selector="#taxes-search-form"
+        data-input-selector="#taxes-search" data-table-body-selector="#taxes-table tbody"
+        data-pagination-selector="[data-taxes-pagination]" data-loading-selector="#taxes-search-loading"
+        data-search-param="search" data-debounce="350" data-min-loading-visible="220">
+        <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="card-title mb-0">
+                {{ __('Taxes') }}
+            </div>
+            <form method="GET" action="{{ route('tenant.taxes.index') }}" class="d-flex align-items-end gap-2 flex-wrap"
+                id="taxes-search-form">
+                <div class="position-relative">
+                    <input type="text" name="search" id="taxes-search" class="form-control pe-5"
+                        value="{{ request('search') }}" placeholder="{{ __('Search by code, name') }}">
+                    <span id="taxes-search-loading"
+                        class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                        style="transition: opacity 0.2s ease;" aria-hidden="true">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
+                </div>
+            </form>
+        </div>
         <div class="card-body">
+
             <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0" id="taxes-table">
                     <thead>
                         <tr>
                             <th>{{ __('Code') }}</th>
@@ -97,7 +118,7 @@
                 </table>
             </div>
 
-            <div class="mt-3">
+            <div class="mt-3" data-taxes-pagination>
                 {{ $items->links() }}
             </div>
         </div>
@@ -132,14 +153,24 @@
 
     @push('scripts')
         <script>
-            document.querySelectorAll('.js-view-tax').forEach((button) => {
-                button.addEventListener('click', () => {
-                    document.getElementById('tax-view-code').textContent = button.dataset.code || '-';
-                    document.getElementById('tax-view-name').textContent = button.dataset.name || '-';
-                    document.getElementById('tax-view-rate').textContent = button.dataset.rate || '-';
-                    document.getElementById('tax-view-inclusive').textContent = button.dataset.inclusive || '-';
-                    document.getElementById('tax-view-status').textContent = button.dataset.status || '-';
-                });
+            document.addEventListener('click', (event) => {
+                const target = event.target;
+
+                if (!(target instanceof HTMLElement)) {
+                    return;
+                }
+
+                const button = target.closest('.js-view-tax');
+
+                if (!button) {
+                    return;
+                }
+
+                document.getElementById('tax-view-code').textContent = button.dataset.code || '-';
+                document.getElementById('tax-view-name').textContent = button.dataset.name || '-';
+                document.getElementById('tax-view-rate').textContent = button.dataset.rate || '-';
+                document.getElementById('tax-view-inclusive').textContent = button.dataset.inclusive || '-';
+                document.getElementById('tax-view-status').textContent = button.dataset.status || '-';
             });
         </script>
     @endpush

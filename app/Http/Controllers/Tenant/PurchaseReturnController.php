@@ -33,7 +33,7 @@ final class PurchaseReturnController extends Controller
         $items = PurchaseReturn::query()
             ->with(['vendor', 'purchase'])
             ->where('branch_id', $branchId)
-            ->when($search !== '', function (Builder $query) use ($search): void {
+            ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('return_no', 'like', sprintf('%%%s%%', $search))

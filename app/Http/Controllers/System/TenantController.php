@@ -30,7 +30,7 @@ final class TenantController extends Controller
 
         $tenants = Tenant::query()
             ->with(['plan'])
-            ->when($search !== '', function ($query) use ($search): void {
+            ->when(filled($search), function ($query) use ($search): void {
                 $query->where(function ($tenantQuery) use ($search): void {
                     $tenantQuery->where('name', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('slug', 'like', sprintf('%%%s%%', $search));

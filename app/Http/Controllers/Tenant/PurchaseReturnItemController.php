@@ -16,6 +16,7 @@ use App\Models\PurchaseReturn;
 use App\Models\PurchaseReturnItem;
 use App\Models\Tax;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -25,12 +26,21 @@ final class PurchaseReturnItemController extends Controller
     {
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
+        $search = mb_trim($request->string('search')->toString());
 
         $items = PurchaseReturnItem::query()
             ->with(['purchaseReturn', 'purchaseItem', 'product', 'tax'])
             ->whereHas('purchaseReturn', fn ($query) => $query->where('branch_id', $branchId))
+            ->when(filled($search), function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->whereHas('purchaseReturn', fn (Builder $purchaseReturnQuery) => $purchaseReturnQuery->where('return_no', 'like', sprintf('%%%s%%', $search)))
+                        ->orWhereHas('product', fn (Builder $productQuery) => $productQuery->where('name', 'like', sprintf('%%%s%%', $search)));
+                });
+            })
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('tenants.purchase-return-items.index', [
             'items' => $items,

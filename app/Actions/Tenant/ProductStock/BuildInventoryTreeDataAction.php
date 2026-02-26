@@ -24,7 +24,7 @@ final class BuildInventoryTreeDataAction
         $products = Product::query()
             ->with(['category:id,name', 'brand:id,name', 'defaultUnit:id,name'])
             ->unless($showInactive, fn ($query) => $query->where('status', RecordStatus::ACTIVE->value))
-            ->when($search !== '', function ($query) use ($search): void {
+            ->when(filled($search), function ($query) use ($search): void {
                 $query->where(function ($builder) use ($search): void {
                     $builder
                         ->where('name', 'like', sprintf('%%%s%%', $search))

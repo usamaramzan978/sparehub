@@ -158,6 +158,8 @@ it('shows purchase returns index for current branch only', function (): void {
     $response = $this->get(purchaseReturnsTenantRoute('purchase-returns.index'));
 
     $response->assertSuccessful();
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('id="purchase-returns-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
 });

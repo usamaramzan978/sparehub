@@ -81,6 +81,38 @@ it('shows taxes index', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Taxes');
     $response->assertSee('GST 17%');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('taxes-search-form');
+    $response->assertSee('taxes-search-loading');
+});
+
+it('filters taxes by code or name', function (): void {
+    authenticateTaxUser();
+
+    Tax::query()->create([
+        'code' => 'GST17',
+        'name' => 'GST 17%',
+        'rate' => 17,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    Tax::query()->create([
+        'code' => 'VAT5',
+        'name' => 'VAT 5%',
+        'rate' => 5,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $byCodeResponse = $this->get(taxesTenantRoute('taxes.index', ['search' => 'GST']));
+    $byNameResponse = $this->get(taxesTenantRoute('taxes.index', ['search' => 'VAT']));
+
+    $byCodeResponse->assertSuccessful();
+    $byCodeResponse->assertSee('GST 17%');
+    $byCodeResponse->assertDontSee('VAT 5%');
+
+    $byNameResponse->assertSuccessful();
+    $byNameResponse->assertSee('VAT 5%');
+    $byNameResponse->assertDontSee('GST 17%');
 });
 
 it('stores tax with inclusive flag', function (): void {

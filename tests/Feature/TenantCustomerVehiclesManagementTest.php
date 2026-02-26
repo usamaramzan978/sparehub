@@ -124,6 +124,9 @@ it('shows customer vehicles index scoped by customer branch', function (): void 
 
     expect($registrationNumbers)->toContain('ABC-123');
     expect($registrationNumbers)->not->toContain('XYZ-999');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('customer-vehicles-search-form');
+    $response->assertSee('customer-vehicles-search-loading');
 });
 
 it('filters customer vehicles by search', function (): void {

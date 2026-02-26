@@ -91,12 +91,24 @@ it('shows attendance index and summary', function (): void {
     $response = $this->get(attendanceTenantRoute('employee-attendances.index'));
 
     $response->assertSuccessful();
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('id="employee-attendances-search-form"', false);
 
     $summary = $response->viewData('summary');
 
     expect($summary['employees_count'])->toBe(2);
     expect($summary['checked_in_count'])->toBe(1);
     expect($summary['checked_out_count'])->toBe(1);
+});
+
+it('searches attendance employees by name', function (): void {
+    authenticateAttendanceUser();
+
+    $response = $this->get(attendanceTenantRoute('employee-attendances.index', ['search' => 'Employee One']));
+
+    $response->assertSuccessful();
+
+    expect($response->viewData('employees')->count())->toBe(1);
 });
 
 it('stores check in attendance action', function (): void {

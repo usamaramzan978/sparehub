@@ -35,7 +35,7 @@ final class PurchasesTreeController extends Controller
             ->when($dateTo !== '', fn ($query) => $query->whereDate('purchase_date', '<=', $dateTo))
             ->when($vendorId !== '', fn ($query) => $query->where('vendor_id', $vendorId))
             ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when($search !== '', function ($query) use ($search): void {
+            ->when(filled($search), function ($query) use ($search): void {
                 $query->where(function ($builder) use ($search): void {
                     $builder
                         ->where('purchase_no', 'like', sprintf('%%%s%%', $search))

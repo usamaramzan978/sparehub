@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\UnitRequest;
 use App\Models\Unit;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -20,10 +21,19 @@ final class UnitController extends Controller
     public function index(Request $request): View
     {
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
+        $search = mb_trim($request->string('search')->toString());
 
         $units = Unit::query()
+            ->when(filled($search), function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->where('code', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('name', 'like', sprintf('%%%s%%', $search));
+                });
+            })
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
         $statuses = RecordStatus::cases();
 
         return view('tenants.units.index', [

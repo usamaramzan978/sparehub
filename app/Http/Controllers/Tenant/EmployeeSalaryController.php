@@ -20,18 +20,27 @@ final class EmployeeSalaryController extends Controller
     {
         $branchId = $this->currentBranchId();
         $salaryMonth = $request->string('salary_month')->toString();
+        $search = mb_trim($request->string('search')->toString());
         $selectedMonth = $salaryMonth !== ''
             ? Date::createFromFormat('Y-m', $salaryMonth)->startOfMonth()
             : now()->startOfMonth();
 
         $employees = User::query()
             ->where('branch_id', $branchId)
+            ->when(filled($search), function ($query) use ($search): void {
+                $query->where(function ($builder) use ($search): void {
+                    $builder
+                        ->where('name', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('email', 'like', sprintf('%%%s%%', $search));
+                });
+            })
             ->orderBy('name')
             ->get();
 
         $records = EmployeeSalary::query()
             ->where('branch_id', $branchId)
             ->whereDate('salary_month', $selectedMonth->toDateString())
+            ->whereIn('user_id', $employees->pluck('id'))
             ->get()
             ->keyBy('user_id');
 

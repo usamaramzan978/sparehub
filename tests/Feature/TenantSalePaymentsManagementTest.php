@@ -144,6 +144,8 @@ it('shows sale payments index for current branch only', function (): void {
     $response = $this->get(salePaymentsTenantRoute('sale-payments.index'));
 
     $response->assertSuccessful();
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('id="sale-payments-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
 });
@@ -156,6 +158,53 @@ it('clamps sale payments pagination limits', function (): void {
 
     expect($minResponse->viewData('items')->perPage())->toBe(5);
     expect($maxResponse->viewData('items')->perPage())->toBe(100);
+});
+
+it('searches sale payments by invoice, reference, and receiver', function (): void {
+    $fixture = authenticateSalePaymentsUser();
+
+    $saleTwo = Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'SP-INV-SEARCH-2',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+        'sub_total' => 200,
+        'discount_total' => 0,
+        'tax_total' => 0,
+        'grand_total' => 200,
+        'paid_total' => 0,
+        'balance_due' => 200,
+    ]);
+
+    SalePayment::query()->withoutGlobalScopes()->create([
+        'sale_id' => $fixture['sale']->id,
+        'branch_id' => $fixture['current']->id,
+        'received_by' => $fixture['user']->id,
+        'payment_method' => PaymentMethodType::CASH->value,
+        'amount' => 100,
+        'paid_at' => now(),
+        'reference_no' => 'SP-REF-111',
+    ]);
+
+    SalePayment::query()->withoutGlobalScopes()->create([
+        'sale_id' => $saleTwo->id,
+        'branch_id' => $fixture['current']->id,
+        'received_by' => $fixture['user']->id,
+        'payment_method' => PaymentMethodType::BANK->value,
+        'amount' => 80,
+        'paid_at' => now(),
+        'reference_no' => 'SP-REF-222',
+    ]);
+
+    $byInvoice = $this->get(salePaymentsTenantRoute('sale-payments.index', ['search' => 'SP-INV-SEARCH-2']));
+    $byReference = $this->get(salePaymentsTenantRoute('sale-payments.index', ['search' => 'SP-REF-111']));
+    $byReceiver = $this->get(salePaymentsTenantRoute('sale-payments.index', ['search' => 'SalePayment User']));
+
+    expect($byInvoice->viewData('items')->total())->toBe(1);
+    expect($byReference->viewData('items')->total())->toBe(1);
+    expect($byReceiver->viewData('items')->total())->toBe(2);
 });
 
 it('stores sale payment and recalculates sale paid and balance totals', function (): void {

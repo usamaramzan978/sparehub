@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="SpareHub" />
     <link rel="manifest" href="{{ asset('favicon/site.webmanifest') }}" />
 
-    @vite(['resources/scss/theme.scss', 'resources/assets/css/styles.css', 'resources/assets/css/icons.css', 'resources/js/theme.js', 'resources/assets/js/main.js'])
+    @vite(['resources/scss/theme.scss', 'resources/assets/css/styles.css', 'resources/assets/css/icons.css', 'resources/js/app.js', 'resources/js/theme.js', 'resources/assets/js/main.js'])
 
     @yield('styles')
     @stack('styles')

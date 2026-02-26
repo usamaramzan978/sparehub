@@ -603,3 +603,133 @@ Where version bump is currently applied:
 
 Operational rule:
 - Any new mutation that affects header payload (`branches`, selected-branch settings, displayed role/context) must call `HeaderContextCache::bumpForCurrentTenant()`.
+
+## 15. Global AJAX Table Search
+
+SpareHub includes a reusable table-search utility in:
+- `resources/js/app.js`
+
+It initializes automatically on DOM ready for any container with `data-ajax-table-search`.
+
+### 15.1 What it handles
+
+- Debounced keyword search (default `350ms`)
+- In-flight request cancellation (AbortController)
+- Partial HTML refresh of:
+  - table body
+  - pagination container
+- URL query sync via `history.replaceState`
+- Search spinner lifecycle with minimum visible duration
+
+### 15.2 Required markup contract
+
+Add a root container and configure selectors using data attributes:
+
+```html
+<div
+  data-ajax-table-search
+  data-form-selector="#brands-search-form"
+  data-input-selector="#search"
+  data-table-body-selector="#brands-table tbody"
+  data-pagination-selector="[data-brands-pagination]"
+  data-loading-selector="#brands-search-loading"
+  data-search-param="search"
+  data-debounce="350"
+  data-min-loading-visible="220"
+>
+  ...
+</div>
+```
+
+Inside this container, ensure:
+- Search form + input exist and submit with `GET`
+- Table has stable `<tbody>` selector
+- Pagination wrapper has stable selector
+- Loading element toggles with `opacity-0 pe-none` classes
+
+### 15.3 Notes for new modules
+
+- Keep server filtering in controller (`request('search')`) so it works for full-page and AJAX refresh.
+- Do not duplicate fetch/debounce logic inline in each Blade view; prefer this global utility.
+- Keep row action handlers delegated (`document.addEventListener('click', ...)`) if rows are replaced dynamically.
+
+### 15.4 Search Skeleton (Copy/Paste)
+
+Use this starter when converting a table page:
+
+```php
+// Controller@index skeleton
+$perPage = min(max($request->integer('per_page', 15), 5), 100);
+$search = mb_trim($request->string('search')->toString());
+
+$items = Model::query()
+    ->when($search !== '', function (Builder $query) use ($search): void {
+        $query->where(function (Builder $builder) use ($search): void {
+            $builder
+                ->where('code', 'like', sprintf('%%%s%%', $search))
+                ->orWhere('name', 'like', sprintf('%%%s%%', $search));
+        });
+    })
+    ->latest()
+    ->paginate($perPage)
+    ->withQueryString();
+```
+
+```blade
+{{-- Blade skeleton --}}
+<div class="card custom-card border-0 shadow-sm h-100"
+    data-ajax-table-search
+    data-form-selector="#module-search-form"
+    data-input-selector="#module-search"
+    data-table-body-selector="#module-table tbody"
+    data-pagination-selector="[data-module-pagination]"
+    data-loading-selector="#module-search-loading"
+    data-search-param="search"
+    data-debounce="350"
+    data-min-loading-visible="220">
+
+    <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+        <div class="card-title mb-0">{{ __('Module Name') }}</div>
+
+        <form method="GET" action="{{ route('tenant.module.index') }}"
+            class="d-flex align-items-end gap-2 flex-wrap"
+            id="module-search-form">
+            <div class="position-relative">
+                <input type="text"
+                    name="search"
+                    id="module-search"
+                    class="form-control pe-5"
+                    value="{{ request('search') }}"
+                    placeholder="{{ __('Search...') }}">
+
+                <span id="module-search-loading"
+                    class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                    style="transition: opacity 0.2s ease;"
+                    aria-hidden="true">
+                    <span class="spinner-border spinner-border-sm"></span>
+                </span>
+            </div>
+        </form>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle mb-0" id="module-table">
+                <thead>...</thead>
+                <tbody>...</tbody>
+            </table>
+        </div>
+
+        <div class="mt-3" data-module-pagination>
+            {{ $items->links() }}
+        </div>
+    </div>
+</div>
+```
+
+Testing checklist for converted pages:
+- Index test should assert:
+  - `data-ajax-table-search`
+  - search form id (example `module-search-form`)
+  - loading spinner id (example `module-search-loading`)
+- Search test should assert filtered paginator collection values from `viewData('items')`.

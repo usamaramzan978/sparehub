@@ -28,7 +28,7 @@ final class CustomerVehicleController extends Controller
         $vehicles = CustomerVehicle::query()
             ->with('customer')
             ->whereHas('customer', fn (Builder $query) => $query->where('branch_id', $branchId))
-            ->when($search !== '', function (Builder $query) use ($search): void {
+            ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('registration_no', 'like', sprintf('%%%s%%', $search))

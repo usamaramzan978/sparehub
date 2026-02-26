@@ -134,6 +134,8 @@ it('shows vendor payments index for current branch only', function (): void {
     $response = $this->get(vendorPaymentsTenantRoute('vendor-payments.index'));
 
     $response->assertSuccessful();
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('id="vendor-payments-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
 });
@@ -146,6 +148,54 @@ it('clamps vendor payments pagination limits', function (): void {
 
     expect($minResponse->viewData('items')->perPage())->toBe(5);
     expect($maxResponse->viewData('items')->perPage())->toBe(100);
+});
+
+it('searches vendor payments by payment number, vendor, purchase, and method', function (): void {
+    $fixture = authenticateVendorPaymentsUser();
+
+    VendorPayment::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $fixture['purchase']->id,
+        'created_by' => $fixture['user']->id,
+        'payment_no' => 'VP-SEARCH-1',
+        'payment_method' => PaymentMethodType::CASH->value,
+        'amount' => 100,
+        'paid_at' => now(),
+    ]);
+
+    $purchaseTwo = Purchase::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'created_by' => $fixture['user']->id,
+        'purchase_no' => 'VP-PUR-SEARCH-2',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+        'grand_total' => 200,
+        'paid_total' => 0,
+        'balance_due' => 200,
+    ]);
+
+    VendorPayment::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $purchaseTwo->id,
+        'created_by' => $fixture['user']->id,
+        'payment_no' => 'VP-SEARCH-2',
+        'payment_method' => PaymentMethodType::BANK->value,
+        'amount' => 50,
+        'paid_at' => now(),
+    ]);
+
+    $byPaymentNo = $this->get(vendorPaymentsTenantRoute('vendor-payments.index', ['search' => 'VP-SEARCH-2']));
+    $byVendor = $this->get(vendorPaymentsTenantRoute('vendor-payments.index', ['search' => 'Payment Vendor']));
+    $byPurchase = $this->get(vendorPaymentsTenantRoute('vendor-payments.index', ['search' => 'VP-PUR-SEARCH-2']));
+    $byMethod = $this->get(vendorPaymentsTenantRoute('vendor-payments.index', ['search' => 'bank']));
+
+    expect($byPaymentNo->viewData('items')->total())->toBe(1);
+    expect($byVendor->viewData('items')->total())->toBe(2);
+    expect($byPurchase->viewData('items')->total())->toBe(1);
+    expect($byMethod->viewData('items')->total())->toBe(1);
 });
 
 it('stores vendor payment and recalculates purchase totals', function (): void {

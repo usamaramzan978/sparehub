@@ -30,7 +30,7 @@ final class MechanicPayableController extends Controller
             ->where('mechanic_charge', '>', 0)
             ->whereHas('sale')
             ->when($mechanicId !== '', fn (Builder $query) => $query->where('mechanic_id', $mechanicId))
-            ->when($search !== '', function (Builder $query) use ($search): void {
+            ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('description', 'like', sprintf('%%%s%%', $search))

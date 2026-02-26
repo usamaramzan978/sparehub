@@ -14,6 +14,7 @@ use App\Http\Requests\Tenant\BranchRequest;
 use App\Models\Branch;
 use App\Models\Warehouse;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -23,13 +24,27 @@ final class BranchController extends Controller
     {
         $perPage = $request->integer('per_page', 15);
         $perPage = min(max($perPage, 5), 100);
+        $search = mb_trim($request->string('search')->toString());
 
         $branches = Branch::query()
             ->with('warehouse')
+            ->when(filled($search), function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->where('code', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('name', 'like', sprintf('%%%s%%', $search));
+                });
+            })
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
-        return view('tenants.branches.index', ['items' => $branches]);
+        $canDeleteBranch = Branch::query()->count() > 1;
+
+        return view('tenants.branches.index', [
+            'items' => $branches,
+            'canDeleteBranch' => $canDeleteBranch,
+        ]);
     }
 
     public function store(BranchRequest $request, CreateBranchAction $action): RedirectResponse

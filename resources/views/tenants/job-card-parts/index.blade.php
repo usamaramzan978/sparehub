@@ -11,10 +11,32 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100">
+    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
+        data-form-selector="#job-card-parts-search-form" data-input-selector="#job-card-parts-search"
+        data-table-body-selector="#job-card-parts-table tbody"
+        data-pagination-selector="[data-job-card-parts-pagination]"
+        data-loading-selector="#job-card-parts-search-loading" data-search-param="search" data-debounce="350"
+        data-min-loading-visible="220">
+        <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="card-title mb-0">
+                {{ __('Job Card Parts') }}
+            </div>
+            <form method="GET" action="{{ route('tenant.job-card-parts.index') }}"
+                class="d-flex align-items-end gap-2 flex-wrap" id="job-card-parts-search-form">
+                <div class="position-relative">
+                    <input type="text" name="search" id="job-card-parts-search" class="form-control pe-5"
+                        value="{{ request('search') }}" placeholder="{{ __('Job card, product') }}">
+                    <span id="job-card-parts-search-loading"
+                        class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                        style="transition: opacity 0.2s ease;" aria-hidden="true">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
+                </div>
+            </form>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0" id="job-card-parts-table">
                     <thead>
                         <tr>
                             <th>{{ __('Job Card') }}</th>
@@ -67,7 +89,7 @@
                 </table>
             </div>
 
-            <div class="mt-3">
+            <div class="mt-3" data-job-card-parts-pagination>
                 {{ $items->links() }}
             </div>
         </div>

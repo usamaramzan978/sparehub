@@ -81,6 +81,10 @@ it('shows brands index', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Brands');
     $response->assertSee('Bosch');
+    $response->assertSee('brands-search-form');
+    $response->assertSee('brands-search-loading');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('Search by brand name');
 });
 
 it('shows products count per brand on index', function (): void {

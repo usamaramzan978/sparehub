@@ -93,12 +93,24 @@ it('shows salary index and summary', function (): void {
     $response = $this->get(salaryTenantRoute('employee-salaries.index'));
 
     $response->assertSuccessful();
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('id="employee-salaries-search-form"', false);
 
     $summary = $response->viewData('summary');
 
     expect($summary['employees_count'])->toBe(2);
     expect($summary['configured_count'])->toBe(1);
     expect($summary['paid_total'])->toBe(1050.0);
+});
+
+it('searches salary employees by name', function (): void {
+    authenticateSalaryUser();
+
+    $response = $this->get(salaryTenantRoute('employee-salaries.index', ['search' => 'Salary Employee']));
+
+    $response->assertSuccessful();
+
+    expect($response->viewData('employees')->count())->toBe(1);
 });
 
 it('stores salary record with computed net salary', function (): void {

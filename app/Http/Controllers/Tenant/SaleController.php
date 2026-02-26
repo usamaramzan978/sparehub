@@ -34,7 +34,7 @@ final class SaleController extends Controller
         $sales = Sale::query()
             ->with(['customer', 'jobCard'])
             ->where('branch_id', $branchId)
-            ->when($search !== '', function (Builder $query) use ($search): void {
+            ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('invoice_no', 'like', sprintf('%%%s%%', $search))

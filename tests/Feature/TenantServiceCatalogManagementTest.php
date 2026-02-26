@@ -106,6 +106,38 @@ it('shows service catalog index for current branch only', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Oil Change');
     $response->assertDontSee('Engine Tuning');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('service-catalog-search-form');
+    $response->assertSee('service-catalog-search-loading');
+});
+
+it('filters service catalog by search keyword in current branch', function (): void {
+    $branches = authenticateServiceCatalogUser();
+
+    ServiceCatalog::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branches['current']->id,
+        'code' => 'SRV-OIL',
+        'name' => 'Oil Service',
+        'category' => 'General',
+        'base_price' => 120,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    ServiceCatalog::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branches['current']->id,
+        'code' => 'SRV-BRK',
+        'name' => 'Brake Service',
+        'category' => 'Brake',
+        'base_price' => 140,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $response = $this->get(serviceCatalogTenantRoute('service-catalog.index', ['search' => 'OIL']));
+
+    $response->assertSuccessful();
+    $serviceNames = $response->viewData('items')->getCollection()->pluck('name')->all();
+    expect($serviceNames)->toContain('Oil Service');
+    expect($serviceNames)->not->toContain('Brake Service');
 });
 
 it('shows create service catalog page with active taxes only', function (): void {

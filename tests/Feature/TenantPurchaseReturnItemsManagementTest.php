@@ -208,6 +208,8 @@ it('shows purchase return items index for current branch only', function (): voi
     $response = $this->get(purchaseReturnItemsTenantRoute('purchase-return-items.index'));
 
     $response->assertSuccessful();
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('id="purchase-return-items-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
 });
@@ -220,6 +222,56 @@ it('clamps purchase return items pagination limits', function (): void {
 
     expect($minResponse->viewData('items')->perPage())->toBe(5);
     expect($maxResponse->viewData('items')->perPage())->toBe(100);
+});
+
+it('searches purchase return items by return number and product', function (): void {
+    $fixture = authenticatePurchaseReturnItemsUser();
+
+    PurchaseReturnItem::query()->create([
+        'purchase_return_id' => $fixture['purchaseReturn']->id,
+        'purchase_item_id' => $fixture['purchaseItem']->id,
+        'product_id' => $fixture['product']->id,
+        'tax_id' => $fixture['tax']->id,
+        'qty' => 1,
+        'unit_cost' => 100,
+        'tax_amount' => 10,
+        'line_total' => 110,
+    ]);
+
+    $purchaseTwo = Purchase::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['purchaseReturn']->vendor_id,
+        'created_by' => $fixture['user']->id,
+        'purchase_no' => 'PRI-PUR-SEARCH-2',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+    ]);
+
+    $returnTwo = PurchaseReturn::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['purchaseReturn']->vendor_id,
+        'purchase_id' => $purchaseTwo->id,
+        'created_by' => $fixture['user']->id,
+        'return_no' => 'PRI-RET-SEARCH-2',
+        'return_date' => now()->toDateString(),
+        'status' => PurchaseReturnStatus::POSTED->value,
+    ]);
+
+    PurchaseReturnItem::query()->create([
+        'purchase_return_id' => $returnTwo->id,
+        'product_id' => $fixture['product']->id,
+        'tax_id' => $fixture['tax']->id,
+        'qty' => 1,
+        'unit_cost' => 60,
+        'tax_amount' => 0,
+        'line_total' => 60,
+    ]);
+
+    $byReturn = $this->get(purchaseReturnItemsTenantRoute('purchase-return-items.index', ['search' => 'SEARCH-2']));
+    $byProduct = $this->get(purchaseReturnItemsTenantRoute('purchase-return-items.index', ['search' => 'Shock Absorber']));
+
+    expect($byReturn->viewData('items')->total())->toBe(1);
+    expect($byProduct->viewData('items')->total())->toBe(2);
 });
 
 it('stores purchase return item and recalculates parent return totals', function (): void {

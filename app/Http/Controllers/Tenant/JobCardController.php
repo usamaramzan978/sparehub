@@ -31,7 +31,7 @@ final class JobCardController extends Controller
         $jobCards = JobCard::query()
             ->with(['customer', 'vehicle', 'assignedEmployee'])
             ->where('branch_id', $branchId)
-            ->when($search !== '', function (Builder $query) use ($search): void {
+            ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('job_no', 'like', sprintf('%%%s%%', $search))

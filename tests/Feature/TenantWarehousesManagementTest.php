@@ -102,6 +102,9 @@ it('shows warehouse index with warehouses from available branches', function ():
     $response->assertSuccessful();
     $response->assertSee('Main Branch Warehouse');
     $response->assertSee('Other Branch Warehouse');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('warehouses-search-form');
+    $response->assertSee('warehouses-search-loading');
 });
 
 it('filters warehouses by name or code', function (): void {

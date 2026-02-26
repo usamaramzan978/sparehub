@@ -11,22 +11,32 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100">
-        <div class="card-body">
-            <form method="GET" action="{{ route('tenant.products.index') }}" class="row g-2 mb-3">
-                <div class="col-md-10">
-                    <label class="form-label" for="search">{{ __('Search') }}</label>
-                    <input type="text" name="search" id="search" class="form-control" value="{{ request('search') }}"
-                        placeholder="{{ __('Name, SKU, part number') }}">
-                </div>
-                <div class="col-md-2 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary w-100">{{ __('Filter') }}</button>
-                    <a href="{{ route('tenant.products.index') }}" class="btn btn-outline-secondary">{{ __('Reset') }}</a>
+    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
+        data-form-selector="#products-search-form" data-input-selector="#products-search"
+        data-table-body-selector="#products-table tbody" data-pagination-selector="[data-products-pagination]"
+        data-loading-selector="#products-search-loading" data-search-param="search" data-debounce="350"
+        data-min-loading-visible="220">
+        <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="card-title mb-0">
+                {{ __('Products') }}
+            </div>
+            <form method="GET" action="{{ route('tenant.products.index') }}" class="d-flex align-items-end gap-2 flex-wrap"
+                id="products-search-form">
+                <div class="position-relative">
+                    <input type="text" name="search" id="products-search" class="form-control pe-5"
+                        value="{{ request('search') }}" placeholder="{{ __('Name, SKU, part number') }}">
+                    <span id="products-search-loading"
+                        class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                        style="transition: opacity 0.2s ease;" aria-hidden="true">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
                 </div>
             </form>
+        </div>
+        <div class="card-body">
 
             <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0" id="products-table">
                     <thead>
                         <tr>
                             <th>{{ __('Name') }}</th>
@@ -92,7 +102,7 @@
                 </table>
             </div>
 
-            <div class="mt-3">
+            <div class="mt-3" data-products-pagination>
                 {{ $items->links() }}
             </div>
         </div>

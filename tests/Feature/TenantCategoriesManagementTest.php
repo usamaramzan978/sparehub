@@ -90,6 +90,9 @@ it('shows categories index', function (): void {
     $response->assertSee('Categories');
     $response->assertSee('Engine');
     $response->assertSee('1 Products');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('categories-search-form');
+    $response->assertSee('categories-search-loading');
 });
 
 it('filters categories by search', function (): void {

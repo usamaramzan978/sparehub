@@ -20,18 +20,27 @@ final class EmployeeAttendanceController extends Controller
     {
         $branchId = $this->currentBranchId();
         $attendanceDateInput = mb_trim($request->string('attendance_date')->toString());
+        $search = mb_trim($request->string('search')->toString());
         $attendanceDate = $attendanceDateInput !== ''
             ? Date::parse($attendanceDateInput)->toDateString()
             : now()->toDateString();
 
         $employees = User::query()
             ->where('branch_id', $branchId)
+            ->when(filled($search), function ($query) use ($search): void {
+                $query->where(function ($builder) use ($search): void {
+                    $builder
+                        ->where('name', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('email', 'like', sprintf('%%%s%%', $search));
+                });
+            })
             ->orderBy('name')
             ->get();
 
         $records = EmployeeAttendance::query()
             ->where('branch_id', $branchId)
             ->whereDate('attendance_date', $attendanceDate)
+            ->whereIn('user_id', $employees->pluck('id'))
             ->get()
             ->keyBy('user_id');
 

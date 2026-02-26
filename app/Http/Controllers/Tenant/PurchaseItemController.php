@@ -15,6 +15,7 @@ use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Tax;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -24,12 +25,21 @@ final class PurchaseItemController extends Controller
     {
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
+        $search = mb_trim($request->string('search')->toString());
 
         $items = PurchaseItem::query()
             ->with(['purchase', 'product', 'tax'])
             ->where('branch_id', $branchId)
+            ->when(filled($search), function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->whereHas('purchase', fn (Builder $purchaseQuery) => $purchaseQuery->where('purchase_no', 'like', sprintf('%%%s%%', $search)))
+                        ->orWhereHas('product', fn (Builder $productQuery) => $productQuery->where('name', 'like', sprintf('%%%s%%', $search)));
+                });
+            })
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('tenants.purchase-items.index', [
             'items' => $items,

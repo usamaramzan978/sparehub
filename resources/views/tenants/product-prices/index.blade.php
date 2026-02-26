@@ -25,10 +25,31 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100">
+    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
+        data-form-selector="#product-prices-search-form" data-input-selector="#product-prices-search"
+        data-table-body-selector="#product-prices-table tbody"
+        data-pagination-selector="[data-product-prices-pagination]" data-loading-selector="#product-prices-search-loading"
+        data-search-param="search" data-debounce="350" data-min-loading-visible="220">
+        <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="card-title mb-0">
+                {{ __('Product Prices') }}
+            </div>
+            <form method="GET" action="{{ route('tenant.product-prices.index') }}"
+                class="d-flex align-items-end gap-2 flex-wrap" id="product-prices-search-form">
+                <div class="position-relative">
+                    <input type="text" name="search" id="product-prices-search" class="form-control pe-5"
+                        value="{{ request('search') }}" placeholder="{{ __('Search by product name or SKU') }}">
+                    <span id="product-prices-search-loading"
+                        class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                        style="transition: opacity 0.2s ease;" aria-hidden="true">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
+                </div>
+            </form>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0" id="product-prices-table">
                     <thead>
                         <tr>
                             <th>{{ __('Product') }}</th>
@@ -92,7 +113,7 @@
                 </table>
             </div>
 
-            <div class="mt-3">
+            <div class="mt-3" data-product-prices-pagination>
                 {{ $items->links() }}
             </div>
         </div>

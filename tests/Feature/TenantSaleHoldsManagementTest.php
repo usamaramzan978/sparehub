@@ -111,6 +111,8 @@ it('shows sale holds index for current branch only', function (): void {
     $response = $this->get(saleHoldsTenantRoute('sale-holds.index'));
 
     $response->assertSuccessful();
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('id="sale-holds-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
     expect($response->viewData('items')->items()[0]->hold_no)->toBe('HOLD-MAIN-1');

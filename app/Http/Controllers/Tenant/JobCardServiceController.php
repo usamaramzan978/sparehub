@@ -16,6 +16,7 @@ use App\Models\JobCardService;
 use App\Models\ServiceCatalog;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -25,12 +26,22 @@ final class JobCardServiceController extends Controller
     {
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
+        $search = mb_trim($request->string('search')->toString());
 
         $services = JobCardService::query()
             ->with(['jobCard.customer', 'serviceCatalog', 'technician'])
             ->whereHas('jobCard', fn ($query) => $query->where('branch_id', $branchId))
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->where('service_name', 'like', sprintf('%%%s%%', $search))
+                        ->orWhereHas('jobCard', fn (Builder $q) => $q->where('job_no', 'like', sprintf('%%%s%%', $search)))
+                        ->orWhereHas('technician', fn (Builder $q) => $q->where('name', 'like', sprintf('%%%s%%', $search)));
+                });
+            })
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('tenants.job-card-services.index', [
             'items' => $services,

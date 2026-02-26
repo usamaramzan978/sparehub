@@ -13,6 +13,7 @@ use App\Http\Requests\Tenant\ServiceCatalogRequest;
 use App\Models\ServiceCatalog;
 use App\Models\Tax;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -22,12 +23,22 @@ final class ServiceCatalogController extends Controller
     {
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
+        $search = mb_trim($request->string('search')->toString());
 
         $services = ServiceCatalog::query()
             ->with('defaultTax')
             ->where('branch_id', $branchId)
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->where('code', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('name', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('category', 'like', sprintf('%%%s%%', $search));
+                });
+            })
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('tenants.service-catalog.index', [
             'items' => $services,

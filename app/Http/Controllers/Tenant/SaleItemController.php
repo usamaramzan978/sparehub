@@ -18,6 +18,7 @@ use App\Models\SaleItem;
 use App\Models\ServiceCatalog;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -27,12 +28,24 @@ final class SaleItemController extends Controller
     {
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
+        $search = mb_trim($request->string('search')->toString());
 
         $items = SaleItem::query()
             ->with(['sale', 'product', 'serviceCatalog', 'jobCardService', 'mechanic'])
             ->where('branch_id', $branchId)
+            ->when(filled($search), function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->whereHas('sale', fn (Builder $saleQuery) => $saleQuery->where('invoice_no', 'like', sprintf('%%%s%%', $search)))
+                        ->orWhere('description', 'like', sprintf('%%%s%%', $search))
+                        ->orWhereHas('product', fn (Builder $productQuery) => $productQuery->where('name', 'like', sprintf('%%%s%%', $search)))
+                        ->orWhereHas('serviceCatalog', fn (Builder $serviceQuery) => $serviceQuery->where('name', 'like', sprintf('%%%s%%', $search)))
+                        ->orWhereHas('mechanic', fn (Builder $mechanicQuery) => $mechanicQuery->where('name', 'like', sprintf('%%%s%%', $search)));
+                });
+            })
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('tenants.sale-items.index', [
             'items' => $items,

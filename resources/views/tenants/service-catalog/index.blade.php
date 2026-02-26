@@ -21,10 +21,32 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100">
+    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
+        data-form-selector="#service-catalog-search-form" data-input-selector="#service-catalog-search"
+        data-table-body-selector="#service-catalog-table tbody"
+        data-pagination-selector="[data-service-catalog-pagination]"
+        data-loading-selector="#service-catalog-search-loading" data-search-param="search" data-debounce="350"
+        data-min-loading-visible="220">
+        <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="card-title mb-0">
+                {{ __('Service Catalog') }}
+            </div>
+            <form method="GET" action="{{ route('tenant.service-catalog.index') }}"
+                class="d-flex align-items-end gap-2 flex-wrap" id="service-catalog-search-form">
+                <div class="position-relative">
+                    <input type="text" name="search" id="service-catalog-search" class="form-control pe-5"
+                        value="{{ request('search') }}" placeholder="{{ __('Search by code, name, category') }}">
+                    <span id="service-catalog-search-loading"
+                        class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                        style="transition: opacity 0.2s ease;" aria-hidden="true">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
+                </div>
+            </form>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0" id="service-catalog-table">
                     <thead>
                         <tr>
                             <th>{{ __('Code') }}</th>
@@ -89,7 +111,7 @@
                 </table>
             </div>
 
-            <div class="mt-3">
+            <div class="mt-3" data-service-catalog-pagination>
                 {{ $items->links() }}
             </div>
         </div>

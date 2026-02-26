@@ -47,7 +47,7 @@ final class BuildReportDataAction
             ->when($saleStatus !== '', fn (Builder $query) => $query->where('status', $saleStatus))
             ->when($invoiceType !== '', fn (Builder $query) => $query->where('invoice_type', $invoiceType))
             ->when($customerId !== '', fn (Builder $query) => $query->where('customer_id', $customerId))
-            ->when($search !== '', function (Builder $query) use ($search): void {
+            ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('invoice_no', 'like', sprintf('%%%s%%', $search))
@@ -64,7 +64,7 @@ final class BuildReportDataAction
             ->when($dateTo !== '', fn (Builder $query) => $query->whereDate('purchase_date', '<=', $dateTo))
             ->when($purchaseStatus !== '', fn (Builder $query) => $query->where('status', $purchaseStatus))
             ->when($vendorId !== '', fn (Builder $query) => $query->where('vendor_id', $vendorId))
-            ->when($search !== '', function (Builder $query) use ($search): void {
+            ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('purchase_no', 'like', sprintf('%%%s%%', $search))
@@ -82,7 +82,7 @@ final class BuildReportDataAction
             ->when($dateToAt !== null, fn (Builder $query) => $query->where('paid_at', '<=', $dateToAt))
             ->when($paymentMethod !== '', fn (Builder $query) => $query->where('payment_method', $paymentMethod))
             ->when($customerId !== '', fn (Builder $query) => $query->whereHas('sale', fn (Builder $saleQuery) => $saleQuery->where('customer_id', $customerId)))
-            ->when($search !== '', function (Builder $query) use ($search): void {
+            ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('reference_no', 'like', sprintf('%%%s%%', $search))
@@ -97,7 +97,7 @@ final class BuildReportDataAction
             ->when($dateToAt !== null, fn (Builder $query) => $query->where('paid_at', '<=', $dateToAt))
             ->when($paymentMethod !== '', fn (Builder $query) => $query->where('payment_method', $paymentMethod))
             ->when($vendorId !== '', fn (Builder $query) => $query->where('vendor_id', $vendorId))
-            ->when($search !== '', function (Builder $query) use ($search): void {
+            ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('payment_no', 'like', sprintf('%%%s%%', $search))

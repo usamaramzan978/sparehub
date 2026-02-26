@@ -201,6 +201,8 @@ it('shows sale items index for current branch only', function (): void {
     $response = $this->get(saleItemsTenantRoute('sale-items.index'));
 
     $response->assertSuccessful();
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('id="sale-items-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
 });
@@ -213,6 +215,57 @@ it('clamps sale items pagination limits', function (): void {
 
     expect($minResponse->viewData('items')->perPage())->toBe(5);
     expect($maxResponse->viewData('items')->perPage())->toBe(100);
+});
+
+it('searches sale items by invoice and description', function (): void {
+    $fixture = authenticateSaleItemsUser();
+
+    $saleTwo = Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'SI-INV-SEARCH-2',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+        'sub_total' => 0,
+        'discount_total' => 0,
+        'tax_total' => 0,
+        'grand_total' => 0,
+        'paid_total' => 0,
+        'balance_due' => 0,
+    ]);
+
+    SaleItem::query()->withoutGlobalScopes()->create([
+        'sale_id' => $fixture['sale']->id,
+        'branch_id' => $fixture['current']->id,
+        'line_type' => SaleLineType::PRODUCT->value,
+        'product_id' => $fixture['product']->id,
+        'description' => 'Needle Bearing',
+        'qty' => 1,
+        'unit_price' => 100,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'line_total' => 100,
+    ]);
+
+    SaleItem::query()->withoutGlobalScopes()->create([
+        'sale_id' => $saleTwo->id,
+        'branch_id' => $fixture['current']->id,
+        'line_type' => SaleLineType::PRODUCT->value,
+        'product_id' => $fixture['product']->id,
+        'description' => 'Brake Pad',
+        'qty' => 1,
+        'unit_price' => 150,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'line_total' => 150,
+    ]);
+
+    $byDescription = $this->get(saleItemsTenantRoute('sale-items.index', ['search' => 'Needle']));
+    $byInvoice = $this->get(saleItemsTenantRoute('sale-items.index', ['search' => 'SI-INV-SEARCH-2']));
+
+    expect($byDescription->viewData('items')->total())->toBe(1);
+    expect($byInvoice->viewData('items')->total())->toBe(1);
 });
 
 it('stores sale item and recalculates parent sale totals', function (): void {

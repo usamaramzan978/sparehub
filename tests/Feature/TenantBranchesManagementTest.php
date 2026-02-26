@@ -87,6 +87,36 @@ it('shows branches index', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Branches');
     $response->assertSee('North Branch');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('branches-search-form');
+    $response->assertSee('branches-search-loading');
+});
+
+it('filters branches by code or name', function (): void {
+    createAuthenticatedTenantUser();
+
+    Branch::query()->create([
+        'code' => 'BR-001',
+        'name' => 'North Branch',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    Branch::query()->create([
+        'code' => 'BR-002',
+        'name' => 'South Branch',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    $byCodeResponse = $this->get(tenantRoute('branches.index', ['search' => 'BR-001']));
+    $byNameResponse = $this->get(tenantRoute('branches.index', ['search' => 'South']));
+
+    $byCodeResponse->assertSuccessful();
+    expect($byCodeResponse->viewData('items')->pluck('name')->values()->all())->toContain('North Branch');
+    expect($byCodeResponse->viewData('items')->pluck('name')->values()->all())->not->toContain('South Branch');
+
+    $byNameResponse->assertSuccessful();
+    expect($byNameResponse->viewData('items')->pluck('name')->values()->all())->toContain('South Branch');
+    expect($byNameResponse->viewData('items')->pluck('name')->values()->all())->not->toContain('North Branch');
 });
 
 it('shows branch create page with warehouse options', function (): void {

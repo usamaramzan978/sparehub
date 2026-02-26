@@ -25,10 +25,31 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100">
+    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search data-form-selector="#units-search-form"
+        data-input-selector="#units-search" data-table-body-selector="#units-table tbody"
+        data-pagination-selector="[data-units-pagination]" data-loading-selector="#units-search-loading"
+        data-search-param="search" data-debounce="350" data-min-loading-visible="220">
+        <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="card-title mb-0">
+                {{ __('Units') }}
+            </div>
+            <form method="GET" action="{{ route('tenant.units.index') }}" class="d-flex align-items-end gap-2 flex-wrap"
+                id="units-search-form">
+                <div class="position-relative">
+                    <input type="text" name="search" id="units-search" class="form-control pe-5"
+                        value="{{ request('search') }}" placeholder="{{ __('Search by code, name') }}">
+                    <span id="units-search-loading"
+                        class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                        style="transition: opacity 0.2s ease;" aria-hidden="true">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
+                </div>
+            </form>
+        </div>
         <div class="card-body">
+
             <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0" id="units-table">
                     <thead>
                         <tr>
                             <th>{{ __('Code') }}</th>
@@ -96,7 +117,7 @@
                 </table>
             </div>
 
-            <div class="mt-3">
+            <div class="mt-3" data-units-pagination>
                 {{ $items->links() }}
             </div>
         </div>
@@ -129,14 +150,23 @@
 
     @push('scripts')
         <script>
-            document.querySelectorAll('.js-view-unit').forEach((button) => {
-                button.addEventListener('click', () => {
-                    document.getElementById('unit-view-code').textContent = button.dataset.code || '-';
-                    document.getElementById('unit-view-name').textContent = button.dataset.name || '-';
-                    document.getElementById('unit-view-fractional').textContent = button.dataset.fractional ||
-                        '-';
-                    document.getElementById('unit-view-status').textContent = button.dataset.status || '-';
-                });
+            document.addEventListener('click', (event) => {
+                const target = event.target;
+
+                if (!(target instanceof HTMLElement)) {
+                    return;
+                }
+
+                const button = target.closest('.js-view-unit');
+
+                if (!button) {
+                    return;
+                }
+
+                document.getElementById('unit-view-code').textContent = button.dataset.code || '-';
+                document.getElementById('unit-view-name').textContent = button.dataset.name || '-';
+                document.getElementById('unit-view-fractional').textContent = button.dataset.fractional || '-';
+                document.getElementById('unit-view-status').textContent = button.dataset.status || '-';
             });
         </script>
     @endpush

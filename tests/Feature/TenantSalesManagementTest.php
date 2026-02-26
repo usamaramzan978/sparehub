@@ -170,6 +170,8 @@ it('shows sales index for current branch only', function (): void {
     $response = $this->get(salesTenantRoute('sales.index'));
 
     $response->assertSuccessful();
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('id="sales-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
     expect($response->viewData('items')->items()[0]->invoice_no)->toBe('INV-MAIN-1');

@@ -107,6 +107,9 @@ it('shows products index', function (): void {
     $response->assertSee('Products');
     $response->assertSee('Engine Oil');
     $response->assertSee('20 /');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('products-search-form');
+    $response->assertSee('products-search-loading');
 });
 
 it('filters products by search', function (): void {

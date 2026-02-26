@@ -151,6 +151,9 @@ it('shows job cards index scoped to current branch', function (): void {
     $response->assertSuccessful();
     $response->assertSee('JC-MAIN');
     $response->assertDontSee('JC-ALT');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('job-cards-search-form');
+    $response->assertSee('job-cards-search-loading');
 });
 
 it('filters job cards by customer, vehicle and job number', function (): void {

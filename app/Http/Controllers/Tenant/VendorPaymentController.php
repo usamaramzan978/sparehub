@@ -15,6 +15,7 @@ use App\Models\Purchase;
 use App\Models\Vendor;
 use App\Models\VendorPayment;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,12 +26,23 @@ final class VendorPaymentController extends Controller
     {
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
+        $search = mb_trim($request->string('search')->toString());
 
         $items = VendorPayment::query()
             ->with(['vendor', 'purchase', 'creator'])
             ->where('branch_id', $branchId)
+            ->when(filled($search), function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->where('payment_no', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('payment_method', 'like', sprintf('%%%s%%', $search))
+                        ->orWhereHas('vendor', fn (Builder $vendorQuery) => $vendorQuery->where('name', 'like', sprintf('%%%s%%', $search)))
+                        ->orWhereHas('purchase', fn (Builder $purchaseQuery) => $purchaseQuery->where('purchase_no', 'like', sprintf('%%%s%%', $search)));
+                });
+            })
             ->latest('paid_at')
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('tenants.vendor-payments.index', [
             'items' => $items,

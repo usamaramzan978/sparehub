@@ -14,6 +14,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\CustomerRequest;
 use App\Models\Customer;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -22,10 +23,21 @@ final class CustomerController extends Controller
     public function index(Request $request): View
     {
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
+        $search = mb_trim($request->string('search')->toString());
 
         $customers = Customer::query()
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->where('code', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('name', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('phone', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('email', 'like', sprintf('%%%s%%', $search));
+                });
+            })
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('tenants.customers.index', ['items' => $customers]);
     }

@@ -12,10 +12,32 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100">
+    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
+        data-form-selector="#purchase-return-items-search-form" data-input-selector="#purchase-return-items-search"
+        data-table-body-selector="#purchase-return-items-table tbody"
+        data-pagination-selector="[data-purchase-return-items-pagination]"
+        data-loading-selector="#purchase-return-items-search-loading" data-search-param="search" data-debounce="350"
+        data-min-loading-visible="220">
+        <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="card-title mb-0">
+                {{ __('Purchase Return Items') }}
+            </div>
+            <form method="GET" action="{{ route('tenant.purchase-return-items.index') }}"
+                class="d-flex align-items-end gap-2 flex-wrap" id="purchase-return-items-search-form">
+                <div class="position-relative">
+                    <input type="text" name="search" id="purchase-return-items-search" class="form-control pe-5"
+                        value="{{ request('search') }}" placeholder="{{ __('Search by return no or product') }}">
+                    <span id="purchase-return-items-search-loading"
+                        class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                        style="transition: opacity 0.2s ease;" aria-hidden="true">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
+                </div>
+            </form>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0" id="purchase-return-items-table">
                     <thead>
                         <tr>
                             <th>{{ __('Return') }}</th>
@@ -64,7 +86,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="mt-3">{{ $items->links() }}</div>
+            <div class="mt-3" data-purchase-return-items-pagination>{{ $items->links() }}</div>
         </div>
     </div>
 

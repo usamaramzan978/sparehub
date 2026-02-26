@@ -79,6 +79,36 @@ it('shows units index', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Units');
     $response->assertSee('Pieces');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('units-search-form');
+    $response->assertSee('units-search-loading');
+});
+
+it('filters units by code or name', function (): void {
+    authenticateUnitUser();
+
+    Unit::query()->create([
+        'code' => 'PCS',
+        'name' => 'Pieces',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    Unit::query()->create([
+        'code' => 'LTR',
+        'name' => 'Liter',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $byCodeResponse = $this->get(unitsTenantRoute('units.index', ['search' => 'PCS']));
+    $byNameResponse = $this->get(unitsTenantRoute('units.index', ['search' => 'Liter']));
+
+    $byCodeResponse->assertSuccessful();
+    $byCodeResponse->assertSee('Pieces');
+    $byCodeResponse->assertDontSee('Liter');
+
+    $byNameResponse->assertSuccessful();
+    $byNameResponse->assertSee('Liter');
+    $byNameResponse->assertDontSee('Pieces');
 });
 
 it('stores unit with fractional flag', function (): void {

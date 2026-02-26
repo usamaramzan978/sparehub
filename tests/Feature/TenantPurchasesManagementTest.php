@@ -154,6 +154,8 @@ it('shows purchases index for current branch only', function (): void {
     $response = $this->get(purchasesTenantRoute('purchases.index'));
 
     $response->assertSuccessful();
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('id="purchases-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
 });

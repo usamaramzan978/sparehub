@@ -103,6 +103,9 @@ it('shows vendors index scoped to current branch', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Main Vendor');
     $response->assertDontSee('Other Vendor');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('vendors-search-form');
+    $response->assertSee('vendors-search-loading');
 });
 
 it('filters vendors by search', function (): void {

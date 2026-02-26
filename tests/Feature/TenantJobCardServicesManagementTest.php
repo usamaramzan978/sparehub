@@ -194,6 +194,38 @@ it('shows job card services index for current branch job cards', function (): vo
     $names = $response->viewData('items')->getCollection()->pluck('service_name')->all();
     expect($names)->toContain('Main Line');
     expect($names)->not->toContain('Alt Line');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('job-card-services-search-form');
+    $response->assertSee('job-card-services-search-loading');
+});
+
+it('filters job card services by search keyword', function (): void {
+    $fixture = authenticateJobCardServiceUser();
+
+    JobCardService::query()->create([
+        'job_card_id' => $fixture['currentJobCard']->id,
+        'service_name' => 'Axle Service',
+        'qty' => 1,
+        'rate' => 100,
+        'line_total' => 100,
+        'status' => JobCardServiceStatus::PENDING->value,
+    ]);
+
+    JobCardService::query()->create([
+        'job_card_id' => $fixture['currentJobCard']->id,
+        'service_name' => 'Brake Service',
+        'qty' => 1,
+        'rate' => 100,
+        'line_total' => 100,
+        'status' => JobCardServiceStatus::PENDING->value,
+    ]);
+
+    $response = $this->get(jobCardServicesTenantRoute('job-card-services.index', ['search' => 'Axle']));
+
+    $response->assertSuccessful();
+    $names = $response->viewData('items')->getCollection()->pluck('service_name')->all();
+    expect($names)->toContain('Axle Service');
+    expect($names)->not->toContain('Brake Service');
 });
 
 it('shows create job card services page with current branch options', function (): void {

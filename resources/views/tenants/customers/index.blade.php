@@ -11,10 +11,31 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100">
+    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
+        data-form-selector="#customers-search-form" data-input-selector="#customers-search"
+        data-table-body-selector="#customers-table tbody" data-pagination-selector="[data-customers-pagination]"
+        data-loading-selector="#customers-search-loading" data-search-param="search" data-debounce="350"
+        data-min-loading-visible="220">
+        <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="card-title mb-0">
+                {{ __('Customers') }}
+            </div>
+            <form method="GET" action="{{ route('tenant.customers.index') }}" class="d-flex align-items-end gap-2 flex-wrap"
+                id="customers-search-form">
+                <div class="position-relative">
+                    <input type="text" name="search" id="customers-search" class="form-control pe-5"
+                        value="{{ request('search') }}" placeholder="{{ __('Search by code, name, phone, email') }}">
+                    <span id="customers-search-loading"
+                        class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                        style="transition: opacity 0.2s ease;" aria-hidden="true">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
+                </div>
+            </form>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0" id="customers-table">
                     <thead>
                         <tr>
                             <th>{{ __('Code') }}</th>
@@ -74,7 +95,7 @@
                 </table>
             </div>
 
-            <div class="mt-3">
+            <div class="mt-3" data-customers-pagination>
                 {{ $items->links() }}
             </div>
         </div>

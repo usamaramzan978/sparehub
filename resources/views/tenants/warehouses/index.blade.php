@@ -25,23 +25,32 @@
         </div>
     @endif
 
-    <div class="card custom-card border-0 shadow-sm h-100">
-        <div class="card-body">
-            <form method="GET" action="{{ route('tenant.warehouses.index') }}" class="row g-2 mb-3">
-                <div class="col-md-10">
-                    <label class="form-label" for="search">{{ __('Search') }}</label>
-                    <input type="text" name="search" id="search" class="form-control" value="{{ request('search') }}"
-                        placeholder="{{ __('Search by warehouse name or code') }}">
-                </div>
-                <div class="col-md-2 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary w-100">{{ __('Filter') }}</button>
-                    <a href="{{ route('tenant.warehouses.index') }}"
-                        class="btn btn-outline-secondary">{{ __('Reset') }}</a>
+    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
+        data-form-selector="#warehouses-search-form" data-input-selector="#warehouses-search"
+        data-table-body-selector="#warehouses-table tbody" data-pagination-selector="[data-warehouses-pagination]"
+        data-loading-selector="#warehouses-search-loading" data-search-param="search" data-debounce="350"
+        data-min-loading-visible="220">
+        <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="card-title mb-0">
+                {{ __('Warehouses') }}
+            </div>
+            <form method="GET" action="{{ route('tenant.warehouses.index') }}"
+                class="d-flex align-items-end gap-2 flex-wrap" id="warehouses-search-form">
+                <div class="position-relative">
+                    <input type="text" name="search" id="warehouses-search" class="form-control pe-5"
+                        value="{{ request('search') }}" placeholder="{{ __('Search by name, code') }}">
+                    <span id="warehouses-search-loading"
+                        class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                        style="transition: opacity 0.2s ease;" aria-hidden="true">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
                 </div>
             </form>
+        </div>
+        <div class="card-body">
 
             <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0" id="warehouses-table">
                     <thead>
                         <tr>
                             <th>{{ __('Code') }}</th>
@@ -111,7 +120,7 @@
                 </table>
             </div>
 
-            <div class="mt-3">
+            <div class="mt-3" data-warehouses-pagination>
                 {{ $items->links() }}
             </div>
         </div>
@@ -144,13 +153,23 @@
 
     @push('scripts')
         <script>
-            document.querySelectorAll('.js-view-warehouse').forEach((button) => {
-                button.addEventListener('click', () => {
-                    document.getElementById('warehouse-view-code').textContent = button.dataset.code || '-';
-                    document.getElementById('warehouse-view-name').textContent = button.dataset.name || '-';
-                    document.getElementById('warehouse-view-branch').textContent = button.dataset.branch || '-';
-                    document.getElementById('warehouse-view-status').textContent = button.dataset.status || '-';
-                });
+            document.addEventListener('click', (event) => {
+                const target = event.target;
+
+                if (!(target instanceof HTMLElement)) {
+                    return;
+                }
+
+                const button = target.closest('.js-view-warehouse');
+
+                if (!button) {
+                    return;
+                }
+
+                document.getElementById('warehouse-view-code').textContent = button.dataset.code || '-';
+                document.getElementById('warehouse-view-name').textContent = button.dataset.name || '-';
+                document.getElementById('warehouse-view-branch').textContent = button.dataset.branch || '-';
+                document.getElementById('warehouse-view-status').textContent = button.dataset.status || '-';
             });
         </script>
     @endpush

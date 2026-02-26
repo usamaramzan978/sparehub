@@ -35,7 +35,7 @@ final class SalesTreeController extends Controller
             ->when($dateTo !== '', fn ($query) => $query->whereDate('invoice_date', '<=', $dateTo))
             ->when($customerId !== '', fn ($query) => $query->where('customer_id', $customerId))
             ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when($search !== '', function ($query) use ($search): void {
+            ->when(filled($search), function ($query) use ($search): void {
                 $query->where(function ($builder) use ($search): void {
                     $builder
                         ->where('invoice_no', 'like', sprintf('%%%s%%', $search))

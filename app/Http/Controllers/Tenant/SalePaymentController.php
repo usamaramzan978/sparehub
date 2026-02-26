@@ -15,6 +15,7 @@ use App\Models\Sale;
 use App\Models\SalePayment;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,12 +26,23 @@ final class SalePaymentController extends Controller
     {
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
+        $search = mb_trim($request->string('search')->toString());
 
         $payments = SalePayment::query()
             ->with(['sale', 'receiver'])
             ->where('branch_id', $branchId)
+            ->when(filled($search), function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->whereHas('sale', fn (Builder $saleQuery) => $saleQuery->where('invoice_no', 'like', sprintf('%%%s%%', $search)))
+                        ->orWhereHas('receiver', fn (Builder $receiverQuery) => $receiverQuery->where('name', 'like', sprintf('%%%s%%', $search)))
+                        ->orWhere('reference_no', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('payment_method', 'like', sprintf('%%%s%%', $search));
+                });
+            })
             ->latest('paid_at')
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('tenants.sale-payments.index', [
             'items' => $payments,

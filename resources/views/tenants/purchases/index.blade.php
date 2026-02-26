@@ -11,23 +11,32 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100">
-        <div class="card-body">
-            <form method="GET" action="{{ route('tenant.purchases.index') }}" class="row g-2 mb-3">
-                <div class="col-md-10">
-                    <label class="form-label" for="search">{{ __('Search') }}</label>
-                    <input type="text" class="form-control" id="search" name="search" value="{{ request('search') }}"
-                        placeholder="{{ __('Purchase no, vendor invoice or vendor') }}">
-                </div>
-                <div class="col-md-2 d-flex align-items-end gap-2">
-                    <button class="btn btn-primary w-100" type="submit">{{ __('Filter') }}</button>
-                    <a href="{{ route('tenant.purchases.index') }}"
-                        class="btn btn-outline-secondary">{{ __('Reset') }}</a>
+    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
+        data-form-selector="#purchases-search-form" data-input-selector="#purchases-search"
+        data-table-body-selector="#purchases-table tbody" data-pagination-selector="[data-purchases-pagination]"
+        data-loading-selector="#purchases-search-loading" data-search-param="search" data-debounce="350"
+        data-min-loading-visible="220">
+        <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="card-title mb-0">
+                {{ __('Purchase Orders') }}
+            </div>
+            <form method="GET" action="{{ route('tenant.purchases.index') }}"
+                class="d-flex align-items-end gap-2 flex-wrap" id="purchases-search-form">
+                <div class="position-relative">
+                    <input type="text" class="form-control pe-5" id="purchases-search" name="search"
+                        value="{{ request('search') }}"
+                        placeholder="{{ __('Search by purchase no, vendor invoice, or vendor') }}">
+                    <span id="purchases-search-loading"
+                        class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                        style="transition: opacity 0.2s ease;" aria-hidden="true">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
                 </div>
             </form>
-
+        </div>
+        <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0" id="purchases-table">
                     <thead>
                         <tr>
                             <th>{{ __('Purchase No') }}</th>
@@ -81,7 +90,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="mt-3">{{ $items->links() }}</div>
+            <div class="mt-3" data-purchases-pagination>{{ $items->links() }}</div>
         </div>
     </div>
 

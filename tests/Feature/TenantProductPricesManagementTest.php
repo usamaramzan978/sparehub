@@ -128,6 +128,48 @@ it('shows product prices index only for current branch', function (): void {
 
     expect($pricedProductNames)->toContain('Product A');
     expect($pricedProductNames)->not->toContain('Product B');
+
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('product-prices-search-form');
+    $response->assertSee('product-prices-search-loading');
+});
+
+it('filters product prices by product name or sku in current branch', function (): void {
+    $branches = authenticateProductPriceUser();
+
+    $productAxle = makeProduct('SKU-AXL', 'Axle Kit');
+    $productBrake = makeProduct('SKU-BRK', 'Brake Kit');
+
+    ProductPrice::query()->withoutGlobalScopes()->create([
+        'product_id' => $productAxle->id,
+        'branch_id' => $branches['current']->id,
+        'cost' => 100,
+        'mrp' => 130,
+        'retail_price' => 120,
+        'wholesale_price' => 110,
+        'effective_from' => now(),
+    ]);
+
+    ProductPrice::query()->withoutGlobalScopes()->create([
+        'product_id' => $productBrake->id,
+        'branch_id' => $branches['current']->id,
+        'cost' => 90,
+        'mrp' => 120,
+        'retail_price' => 110,
+        'wholesale_price' => 100,
+        'effective_from' => now(),
+    ]);
+
+    $bySkuResponse = $this->get(productPricesTenantRoute('product-prices.index', ['search' => 'AXL']));
+    $byNameResponse = $this->get(productPricesTenantRoute('product-prices.index', ['search' => 'Brake']));
+
+    $bySkuResponse->assertSuccessful();
+    expect($bySkuResponse->viewData('items')->getCollection()->pluck('product.name')->all())->toContain('Axle Kit');
+    expect($bySkuResponse->viewData('items')->getCollection()->pluck('product.name')->all())->not->toContain('Brake Kit');
+
+    $byNameResponse->assertSuccessful();
+    expect($byNameResponse->viewData('items')->getCollection()->pluck('product.name')->all())->toContain('Brake Kit');
+    expect($byNameResponse->viewData('items')->getCollection()->pluck('product.name')->all())->not->toContain('Axle Kit');
 });
 
 it('stores product price with current branch id', function (): void {

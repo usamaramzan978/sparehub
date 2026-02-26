@@ -176,6 +176,42 @@ it('shows job card parts index for current branch job cards', function (): void 
     $lineTotals = $response->viewData('items')->getCollection()->pluck('line_total')->map(fn ($v): float => (float) $v)->all();
     expect($lineTotals)->toContain(50.0);
     expect($lineTotals)->not->toContain(70.0);
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('job-card-parts-search-form');
+    $response->assertSee('job-card-parts-search-loading');
+});
+
+it('filters job card parts by search keyword', function (): void {
+    $fixture = authenticateJobCardPartUser();
+
+    $partProduct = Product::query()->create([
+        'sku' => 'PART-AXL',
+        'name' => 'Axle Part',
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    JobCardPart::query()->create([
+        'job_card_id' => $fixture['currentJobCard']->id,
+        'product_id' => $partProduct->id,
+        'qty' => 1,
+        'unit_price' => 50,
+        'line_total' => 50,
+    ]);
+
+    JobCardPart::query()->create([
+        'job_card_id' => $fixture['currentJobCard']->id,
+        'product_id' => $fixture['productA']->id,
+        'qty' => 1,
+        'unit_price' => 70,
+        'line_total' => 70,
+    ]);
+
+    $response = $this->get(jobCardPartsTenantRoute('job-card-parts.index', ['search' => 'Axle']));
+
+    $response->assertSuccessful();
+    $productNames = $response->viewData('items')->getCollection()->pluck('product.name')->all();
+    expect($productNames)->toContain('Axle Part');
+    expect($productNames)->not->toContain('Oil Filter');
 });
 
 it('shows create job card parts page with branch job cards', function (): void {

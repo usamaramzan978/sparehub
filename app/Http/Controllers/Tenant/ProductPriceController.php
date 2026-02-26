@@ -13,6 +13,7 @@ use App\Http\Requests\Tenant\ProductPriceRequest;
 use App\Models\Product;
 use App\Models\ProductPrice;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -22,12 +23,21 @@ final class ProductPriceController extends Controller
     {
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
+        $search = mb_trim($request->string('search')->toString());
 
         $prices = ProductPrice::query()
             ->with('product')
             ->where('branch_id', $branchId)
+            ->when(filled($search), function (Builder $query) use ($search): void {
+                $query->whereHas('product', function (Builder $builder) use ($search): void {
+                    $builder
+                        ->where('name', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('sku', 'like', sprintf('%%%s%%', $search));
+                });
+            })
             ->latest('effective_from')
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         $products = Product::query()
             ->orderBy('name')

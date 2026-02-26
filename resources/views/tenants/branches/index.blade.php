@@ -3,7 +3,6 @@
 @section('content')
     @php
         $breadcrumbs = [['label' => __('Operations')], ['label' => __('Branches')]];
-        $canDeleteBranch = $items->total() > 1;
     @endphp
 
     <x-breadcrumb title="{{ __('Branches') }}" :items="$breadcrumbs">
@@ -12,10 +11,32 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100">
+    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
+        data-form-selector="#branches-search-form" data-input-selector="#branches-search"
+        data-table-body-selector="#branches-table tbody" data-pagination-selector="[data-branches-pagination]"
+        data-loading-selector="#branches-search-loading" data-search-param="search" data-debounce="350"
+        data-min-loading-visible="220">
+        <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="card-title mb-0">
+                {{ __('Branches') }}
+            </div>
+            <form method="GET" action="{{ route('tenant.branches.index') }}" class="d-flex align-items-end gap-2 flex-wrap"
+                id="branches-search-form">
+                <div class="position-relative">
+                    <input type="text" name="search" id="branches-search" class="form-control pe-5"
+                        value="{{ request('search') }}" placeholder="{{ __('Search by code, name') }}">
+                    <span id="branches-search-loading"
+                        class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                        style="transition: opacity 0.2s ease;" aria-hidden="true">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
+                </div>
+            </form>
+        </div>
         <div class="card-body">
+
             <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0" id="branches-table">
                     <thead>
                         <tr>
                             <th>{{ __('Code') }}</th>
@@ -86,7 +107,7 @@
                 </table>
             </div>
 
-            <div class="mt-3">
+            <div class="mt-3" data-branches-pagination>
                 {{ $items->links() }}
             </div>
         </div>

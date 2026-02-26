@@ -178,6 +178,8 @@ it('shows purchase items index for current branch only', function (): void {
     $response = $this->get(purchaseItemsTenantRoute('purchase-items.index'));
 
     $response->assertSuccessful();
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('id="purchase-items-search-form"', false);
 
     expect($response->viewData('items')->total())->toBe(1);
 });
@@ -190,6 +192,51 @@ it('clamps purchase items pagination limits', function (): void {
 
     expect($minResponse->viewData('items')->perPage())->toBe(5);
     expect($maxResponse->viewData('items')->perPage())->toBe(100);
+});
+
+it('searches purchase items by purchase number and product', function (): void {
+    $fixture = authenticatePurchaseItemsUser();
+
+    PurchaseItem::query()->withoutGlobalScopes()->create([
+        'purchase_id' => $fixture['purchase']->id,
+        'branch_id' => $fixture['current']->id,
+        'product_id' => $fixture['product']->id,
+        'tax_id' => $fixture['tax']->id,
+        'qty' => 1,
+        'received_qty' => 1,
+        'unit_cost' => 90,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'line_total' => 90,
+    ]);
+
+    $purchaseTwo = Purchase::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['purchase']->vendor_id,
+        'created_by' => $fixture['user']->id,
+        'purchase_no' => 'PI-PUR-SEARCH-2',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+    ]);
+
+    PurchaseItem::query()->withoutGlobalScopes()->create([
+        'purchase_id' => $purchaseTwo->id,
+        'branch_id' => $fixture['current']->id,
+        'product_id' => $fixture['product']->id,
+        'tax_id' => $fixture['tax']->id,
+        'qty' => 1,
+        'received_qty' => 1,
+        'unit_cost' => 120,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'line_total' => 120,
+    ]);
+
+    $byPurchase = $this->get(purchaseItemsTenantRoute('purchase-items.index', ['search' => 'SEARCH-2']));
+    $byProduct = $this->get(purchaseItemsTenantRoute('purchase-items.index', ['search' => 'Engine Oil']));
+
+    expect($byPurchase->viewData('items')->total())->toBe(1);
+    expect($byProduct->viewData('items')->total())->toBe(2);
 });
 
 it('stores purchase item and recalculates parent purchase totals', function (): void {

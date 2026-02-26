@@ -97,6 +97,36 @@ it('shows customers index', function (): void {
     $response->assertSuccessful();
     $response->assertSee('Customers');
     $response->assertSee('Ali Motors');
+    $response->assertSee('data-ajax-table-search', false);
+    $response->assertSee('customers-search-form');
+    $response->assertSee('customers-search-loading');
+});
+
+it('filters customers by search keyword', function (): void {
+    $branches = authenticateCustomerUser();
+
+    Customer::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branches['current']->id,
+        'code' => 'CUST-AXL',
+        'name' => 'Axle Customer',
+        'phone' => '03001111111',
+        'status' => CustomerStatus::ACTIVE->value,
+    ]);
+
+    Customer::query()->withoutGlobalScopes()->create([
+        'branch_id' => $branches['current']->id,
+        'code' => 'CUST-BRK',
+        'name' => 'Brake Customer',
+        'phone' => '03002222222',
+        'status' => CustomerStatus::ACTIVE->value,
+    ]);
+
+    $response = $this->get(customersTenantRoute('customers.index', ['search' => 'AXL']));
+
+    $response->assertSuccessful();
+    $customerNames = $response->viewData('items')->getCollection()->pluck('name')->all();
+    expect($customerNames)->toContain('Axle Customer');
+    expect($customerNames)->not->toContain('Brake Customer');
 });
 
 it('shows create customer page', function (): void {

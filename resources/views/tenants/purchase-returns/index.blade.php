@@ -11,23 +11,32 @@
         </x-slot:actions>
     </x-breadcrumb>
 
-    <div class="card custom-card border-0 shadow-sm h-100">
-        <div class="card-body">
-            <form method="GET" action="{{ route('tenant.purchase-returns.index') }}" class="row g-2 mb-3">
-                <div class="col-md-10">
-                    <label class="form-label" for="search">{{ __('Search') }}</label>
-                    <input type="text" class="form-control" id="search" name="search" value="{{ request('search') }}"
-                        placeholder="{{ __('Return no or vendor') }}">
-                </div>
-                <div class="col-md-2 d-flex align-items-end gap-2">
-                    <button class="btn btn-primary w-100" type="submit">{{ __('Filter') }}</button>
-                    <a href="{{ route('tenant.purchase-returns.index') }}"
-                        class="btn btn-outline-secondary">{{ __('Reset') }}</a>
+    <div class="card custom-card border-0 shadow-sm h-100" data-ajax-table-search
+        data-form-selector="#purchase-returns-search-form" data-input-selector="#purchase-returns-search"
+        data-table-body-selector="#purchase-returns-table tbody"
+        data-pagination-selector="[data-purchase-returns-pagination]"
+        data-loading-selector="#purchase-returns-search-loading" data-search-param="search" data-debounce="350"
+        data-min-loading-visible="220">
+        <div class="card-header d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="card-title mb-0">
+                {{ __('Purchase Returns') }}
+            </div>
+            <form method="GET" action="{{ route('tenant.purchase-returns.index') }}"
+                class="d-flex align-items-end gap-2 flex-wrap" id="purchase-returns-search-form">
+                <div class="position-relative">
+                    <input type="text" class="form-control pe-5" id="purchase-returns-search" name="search"
+                        value="{{ request('search') }}" placeholder="{{ __('Search by return no or vendor') }}">
+                    <span id="purchase-returns-search-loading"
+                        class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
+                        style="transition: opacity 0.2s ease;" aria-hidden="true">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </span>
                 </div>
             </form>
-
+        </div>
+        <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0" id="purchase-returns-table">
                     <thead>
                         <tr>
                             <th>{{ __('Return No') }}</th>
@@ -80,7 +89,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="mt-3">{{ $items->links() }}</div>
+            <div class="mt-3" data-purchase-returns-pagination>{{ $items->links() }}</div>
         </div>
     </div>
 

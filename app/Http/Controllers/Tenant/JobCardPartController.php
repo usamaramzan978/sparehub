@@ -14,6 +14,7 @@ use App\Models\JobCard;
 use App\Models\JobCardPart;
 use App\Models\Product;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -23,12 +24,21 @@ final class JobCardPartController extends Controller
     {
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
+        $search = mb_trim($request->string('search')->toString());
 
         $parts = JobCardPart::query()
             ->with(['jobCard.customer', 'product'])
             ->whereHas('jobCard', fn ($query) => $query->where('branch_id', $branchId))
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->whereHas('jobCard', fn (Builder $q) => $q->where('job_no', 'like', sprintf('%%%s%%', $search)))
+                        ->orWhereHas('product', fn (Builder $q) => $q->where('name', 'like', sprintf('%%%s%%', $search)));
+                });
+            })
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('tenants.job-card-parts.index', [
             'items' => $parts,
