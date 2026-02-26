@@ -22,11 +22,8 @@ final class EmployeeSalaryController extends Controller
         $branchId = $this->currentBranchId();
         $salaryMonth = $request->string('salary_month')->toString();
         $search = mb_trim($request->string('search')->toString());
-        $sortBy = $request->string('sort_by')->toString();
-        $sortDirection = $request->string('sort_direction')->toString();
         $allowedSortColumns = ['name', 'email', 'created_at'];
-        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
-        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
+        [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
         $selectedMonth = $salaryMonth !== ''
             ? Date::createFromFormat('Y-m', $salaryMonth)->startOfMonth()
             : now()->startOfMonth();

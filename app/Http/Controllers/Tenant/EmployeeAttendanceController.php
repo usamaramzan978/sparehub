@@ -22,11 +22,8 @@ final class EmployeeAttendanceController extends Controller
         $branchId = $this->currentBranchId();
         $attendanceDateInput = mb_trim($request->string('attendance_date')->toString());
         $search = mb_trim($request->string('search')->toString());
-        $sortBy = $request->string('sort_by')->toString();
-        $sortDirection = $request->string('sort_direction')->toString();
         $allowedSortColumns = ['name', 'email', 'created_at'];
-        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
-        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
+        [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
         $attendanceDate = $attendanceDateInput !== ''
             ? Date::parse($attendanceDateInput)->toDateString()
             : now()->toDateString();

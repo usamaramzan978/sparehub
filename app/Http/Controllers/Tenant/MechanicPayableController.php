@@ -21,11 +21,8 @@ final class MechanicPayableController extends Controller
         $dateFrom = mb_trim($request->string('date_from')->toString());
         $dateTo = mb_trim($request->string('date_to')->toString());
         $perPage = min(max($request->integer('per_page', 20), 5), 100);
-        $sortBy = $request->string('sort_by')->toString();
-        $sortDirection = $request->string('sort_direction')->toString();
         $allowedSortColumns = ['line_total', 'mechanic_charge', 'created_at'];
-        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
-        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
+        [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
 
         $baseQuery = SaleItem::query()
             ->with(['sale', 'mechanic', 'serviceCatalog'])

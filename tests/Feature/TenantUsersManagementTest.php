@@ -147,6 +147,39 @@ it('sorts users by name ascending and descending', function (): void {
     expect(array_search('User Sort A', $descendingNames, true))->toBeGreaterThan(array_search('User Sort Z', $descendingNames, true));
 });
 
+it('clears active sort query on third click from descending state', function (): void {
+    $fixture = authenticateUsersModuleUser();
+
+    User::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'name' => 'User Reset',
+        'email' => 'user.reset+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+
+    $response = $this->get(usersTenantRoute('users.index', [
+        'search' => 'User Reset',
+        'sort_by' => 'name',
+        'sort_direction' => 'desc',
+    ]));
+
+    $document = new DOMDocument();
+    @$document->loadHTML((string) $response->getContent());
+    $xpath = new DOMXPath($document);
+
+    $nodes = $xpath->query('//a[@data-sort-column="name"]');
+    $nameSortLinkHref = $nodes !== false && $nodes->length > 0 ? $nodes->item(0)?->getAttribute('href') : null;
+
+    expect($nameSortLinkHref)->not->toBeNull();
+
+    parse_str((string) parse_url((string) $nameSortLinkHref, PHP_URL_QUERY), $queryParams);
+
+    expect($queryParams)->toHaveKey('search', 'User Reset');
+    expect($queryParams)->not->toHaveKey('sort_by');
+    expect($queryParams)->not->toHaveKey('sort_direction');
+});
+
 it('filters users by search and status', function (): void {
     $fixture = authenticateUsersModuleUser();
 

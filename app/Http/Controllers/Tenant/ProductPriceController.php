@@ -24,8 +24,6 @@ final class ProductPriceController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
-        $sortBy = $request->string('sort_by')->toString();
-        $sortDirection = $request->string('sort_direction')->toString();
         $allowedSortColumns = [
             'product_id',
             'cost',
@@ -35,8 +33,7 @@ final class ProductPriceController extends Controller
             'effective_from',
             'created_at',
         ];
-        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
-        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
+        [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
 
         $pricesQuery = ProductPrice::query()
             ->with('product')

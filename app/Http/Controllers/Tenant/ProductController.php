@@ -22,11 +22,8 @@ final class ProductController extends Controller
 {
     public function index(Request $request, BuildProductsIndexDataAction $buildProductsIndexDataAction): View
     {
-        $sortBy = $request->string('sort_by')->toString();
-        $sortDirection = $request->string('sort_direction')->toString();
         $allowedSortColumns = ['name', 'sku', 'status', 'created_at'];
-        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
-        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
+        [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
 
         $products = $buildProductsIndexDataAction->handle(
             $request,

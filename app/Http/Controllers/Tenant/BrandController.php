@@ -21,16 +21,13 @@ final class BrandController extends Controller
     public function index(Request $request): View
     {
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
-        $sortBy = $request->string('sort_by')->toString();
-        $sortDirection = $request->string('sort_direction')->toString();
         $allowedSortColumns = [
             'created_at',
             'name',
             'products_count',
             'status',
         ];
-        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
-        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
+        [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
 
         $brandsQuery = Brand::query()
             ->withCount('products')

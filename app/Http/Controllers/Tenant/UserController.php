@@ -27,12 +27,9 @@ final class UserController extends Controller
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
         $status = $request->string('status')->toString();
-        $sortBy = $request->string('sort_by')->toString();
-        $sortDirection = $request->string('sort_direction')->toString();
         $allowedStatuses = Arr::map(UserStatus::cases(), fn (UserStatus $item): string => $item->value);
         $allowedSortColumns = ['name', 'email', 'phone', 'status', 'created_at'];
-        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
-        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
+        [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
 
         $usersQuery = User::query()
             ->with('branch')

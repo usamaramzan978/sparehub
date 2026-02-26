@@ -29,11 +29,8 @@ final class SaleItemController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
-        $sortBy = $request->string('sort_by')->toString();
-        $sortDirection = $request->string('sort_direction')->toString();
         $allowedSortColumns = ['line_type', 'qty', 'unit_price', 'mechanic_charge', 'line_total', 'created_at'];
-        $activeSortBy = in_array($sortBy, $allowedSortColumns, true) ? $sortBy : null;
-        $activeSortDirection = in_array($sortDirection, ['asc', 'desc'], true) ? $sortDirection : 'asc';
+        [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
 
         $itemsQuery = SaleItem::query()
             ->with(['sale', 'product', 'serviceCatalog', 'jobCardService', 'mechanic'])
