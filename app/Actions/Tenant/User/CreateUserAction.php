@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Support\AuditTimelineLogger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class CreateUserAction
@@ -20,6 +21,14 @@ final class CreateUserAction
      */
     public function handle(array $data, string $branchId): User
     {
+        $maxUsers = (int) config('tenancy.limits.max_users', 10);
+
+        if ($maxUsers > 0 && User::query()->count() >= $maxUsers) {
+            throw ValidationException::withMessages([
+                'email' => [sprintf('Maximum %d users are allowed for this tenant.', $maxUsers)],
+            ]);
+        }
+
         $data['branch_id'] = $branchId;
         $data['email'] = mb_strtolower((string) $data['email']);
         $data['password'] = Hash::make((string) $data['password']);

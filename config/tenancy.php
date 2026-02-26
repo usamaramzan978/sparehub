@@ -210,4 +210,9 @@ return [
         '--class' => 'DatabaseSeeder', // root seeder class
         '--force' => true, // This needs to be true to seed tenant databases in production
     ],
+
+    'limits' => [
+        'max_users' => (int) env('TENANT_MAX_USERS', 10),
+        'max_branches' => (int) env('TENANT_MAX_BRANCHES', 3),
+    ],
 ];

@@ -232,6 +232,33 @@ it('validates user create request payload', function (): void {
     $response->assertSessionHasErrors(['name', 'email', 'password', 'status']);
 });
 
+it('prevents creating more users than tenant max limit', function (): void {
+    $fixture = authenticateUsersModuleUser();
+
+    Config::set('tenancy.limits.max_users', 2);
+
+    User::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'name' => 'Second User',
+        'email' => 'second.user+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+
+    $response = $this->from(usersTenantRoute('users.create'))
+        ->post(usersTenantRoute('users.store'), [
+            'name' => 'Blocked User',
+            'email' => 'blocked.user+'.uniqid('', true).'@example.test',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'status' => UserStatus::ACTIVE->value,
+        ]);
+
+    $response->assertRedirect(usersTenantRoute('users.create'));
+    $response->assertSessionHasErrors(['email']);
+    expect(User::query()->count())->toBe(2);
+});
+
 it('throws not found when showing user outside current branch', function (): void {
     $fixture = authenticateUsersModuleUser();
 

@@ -205,6 +205,35 @@ it('stores a branch', function (): void {
     expect($event)->not->toBeNull();
 });
 
+it('prevents creating more branches than tenant max limit', function (): void {
+    createAuthenticatedTenantUser();
+
+    Config::set('tenancy.limits.max_branches', 3);
+
+    Branch::query()->create([
+        'code' => 'BR-002',
+        'name' => 'Second Branch',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    Branch::query()->create([
+        'code' => 'BR-003',
+        'name' => 'Third Branch',
+        'status' => BranchStatus::ACTIVE->value,
+    ]);
+
+    $response = $this->from(tenantRoute('branches.create'))
+        ->post(tenantRoute('branches.store'), [
+            'code' => 'BR-004',
+            'name' => 'Fourth Branch',
+            'status' => BranchStatus::ACTIVE->value,
+        ]);
+
+    $response->assertRedirect(tenantRoute('branches.create'));
+    $response->assertSessionHasErrors(['code']);
+    expect(Branch::query()->count())->toBe(3);
+});
+
 it('validates required fields when storing branch', function (string $field): void {
     createAuthenticatedTenantUser();
 

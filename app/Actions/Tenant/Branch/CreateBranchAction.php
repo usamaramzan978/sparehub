@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Support\AuditTimelineLogger;
 use App\Support\HeaderContextCache;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 final class CreateBranchAction
 {
@@ -16,6 +17,14 @@ final class CreateBranchAction
      */
     public function handle(array $data): Branch
     {
+        $maxBranches = (int) config('tenancy.limits.max_branches', 3);
+
+        if ($maxBranches > 0 && Branch::query()->count() >= $maxBranches) {
+            throw ValidationException::withMessages([
+                'code' => [sprintf('Maximum %d branches are allowed for this tenant.', $maxBranches)],
+            ]);
+        }
+
         $branch = Branch::query()->create($data);
         HeaderContextCache::bumpForCurrentTenant();
 
