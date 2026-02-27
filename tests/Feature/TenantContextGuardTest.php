@@ -14,7 +14,6 @@ use App\Models\Sale;
 use App\Models\TenantSetting;
 use App\Models\User;
 use App\Models\Vendor;
-use App\Models\Warehouse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
@@ -104,14 +103,6 @@ it('applies fallback branch and tenant timezone on first authenticated request',
 
 it('stores pos sale strictly in current session branch context', function (): void {
     $fixture = createContextFixture();
-
-    $warehouse = Warehouse::query()->create([
-        'branch_id' => $fixture['primary']->id,
-        'code' => 'WH-01',
-        'name' => 'Primary Warehouse',
-        'status' => RecordStatus::ACTIVE->value,
-    ]);
-    $fixture['primary']->update(['warehouse_id' => $warehouse->id]);
 
     $category = Category::query()->create([
         'name' => 'Engine',

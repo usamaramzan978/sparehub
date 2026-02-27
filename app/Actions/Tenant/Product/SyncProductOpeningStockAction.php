@@ -57,7 +57,6 @@ final class SyncProductOpeningStockAction
         StockMove::query()->create([
             'product_id' => $product->id,
             'branch_id' => $branchId,
-            'warehouse_id' => null,
             'created_by' => auth('user')->id(),
             'move_type' => $moveType->value,
             'qty' => abs($delta),

@@ -13,7 +13,6 @@ return new class extends Migration
         Schema::create('purchases', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('branch_id')->constrained('branches')->cascadeOnDelete();
-            $table->foreignUuid('warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->foreignUuid('vendor_id')->constrained('vendors')->restrictOnDelete();
             $table->foreignUuid('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('purchase_no', 40);

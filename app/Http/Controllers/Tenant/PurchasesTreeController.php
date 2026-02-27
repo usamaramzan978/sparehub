@@ -27,7 +27,6 @@ final class PurchasesTreeController extends Controller
         $purchases = Purchase::query()
             ->with([
                 'vendor:id,name',
-                'warehouse:id,name,code',
                 'items.product:id,name,sku',
             ])
             ->where('branch_id', $branchId)

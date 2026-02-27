@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 use App\Actions\Tenant\Branch\UpdateBranchAction;
 use App\Enums\BranchStatus;
-use App\Enums\RecordStatus;
 use App\Models\Branch;
 use App\Models\User;
-use App\Models\Warehouse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -152,37 +150,21 @@ it('sorts branches by name ascending and descending', function (): void {
     expect(array_search('AAA Branch', $descendingNames, true))->toBeGreaterThan(array_search('ZZZ Branch', $descendingNames, true));
 });
 
-it('shows branch create page with warehouse options', function (): void {
+it('shows branch create page', function (): void {
     createAuthenticatedTenantUser();
-
-    $warehouse = Warehouse::query()->create([
-        'code' => 'WH-001',
-        'name' => 'Main Warehouse',
-        'status' => RecordStatus::ACTIVE->value,
-        'branch_id' => Branch::query()->value('id'),
-    ]);
 
     $response = $this->get(tenantRoute('branches.create'));
 
     $response->assertSuccessful();
     $response->assertSee('Create Branch');
-    $response->assertSee($warehouse->name);
 });
 
 it('stores a branch', function (): void {
     createAuthenticatedTenantUser();
 
-    $warehouse = Warehouse::query()->create([
-        'code' => 'WH-001',
-        'name' => 'Main Warehouse',
-        'status' => RecordStatus::ACTIVE->value,
-        'branch_id' => Branch::query()->value('id'),
-    ]);
-
     $response = $this->post(tenantRoute('branches.store'), [
         'code' => 'BR-NEW',
         'name' => 'New Branch',
-        'warehouse_id' => $warehouse->id,
         'status' => BranchStatus::ACTIVE->value,
     ]);
 
@@ -192,7 +174,6 @@ it('stores a branch', function (): void {
     $this->assertDatabaseHas('branches', [
         'code' => 'BR-NEW',
         'name' => 'New Branch',
-        'warehouse_id' => $warehouse->id,
         'status' => BranchStatus::ACTIVE->value,
     ], 'tenant');
 
@@ -346,17 +327,9 @@ it('updates a branch via action', function (): void {
         'status' => BranchStatus::ACTIVE->value,
     ]);
 
-    $warehouse = Warehouse::query()->create([
-        'code' => 'WH-UPD',
-        'name' => 'Update Warehouse',
-        'status' => RecordStatus::ACTIVE->value,
-        'branch_id' => $fixture['branch']->id,
-    ]);
-
     $updated = (new UpdateBranchAction())->handle($branch, [
         'code' => 'BR-UPD',
         'name' => 'After Update',
-        'warehouse_id' => $warehouse->id,
         'status' => BranchStatus::INACTIVE->value,
     ]);
 
@@ -365,7 +338,6 @@ it('updates a branch via action', function (): void {
     $this->assertDatabaseHas('branches', [
         'id' => $branch->id,
         'name' => 'After Update',
-        'warehouse_id' => $warehouse->id,
         'status' => BranchStatus::INACTIVE->value,
     ], 'tenant');
 

@@ -6,6 +6,7 @@ namespace App\Actions\Tenant\Product;
 
 use App\Models\InventoryStock;
 use App\Models\Product;
+use App\Models\ProductPrice;
 
 final readonly class GetProductEditDataAction
 {
@@ -23,6 +24,12 @@ final readonly class GetProductEditDataAction
             ->where('branch_id', $branchId)
             ->where('product_id', $product->id)
             ->sum('qty_on_hand');
+        $data['latestPrice'] = ProductPrice::query()
+            ->where('branch_id', $branchId)
+            ->where('product_id', $product->id)
+            ->latest('effective_from')
+            ->latest('created_at')
+            ->first();
 
         return $data;
     }

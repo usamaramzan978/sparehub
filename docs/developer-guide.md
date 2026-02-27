@@ -257,11 +257,10 @@ Below is dependency-oriented mapping (parent -> child).
 
 ### 6.1 Tenant core
 
-- `branches` -> `users`, `customers`, `vendors`, `warehouses`, `tenant_settings`, transactional tables
-- `branches.warehouse_id` references a default warehouse
+- `branches` -> `users`, `customers`, `vendors`, `tenant_settings`, transactional tables
 - `users.branch_id` nullable FK to `branches`
 
-Seeders ensure a default branch + warehouse exists and linked.
+Seeders ensure a default branch exists with baseline master data.
 
 ### 6.2 Master data
 
@@ -273,7 +272,6 @@ Seeders ensure a default branch + warehouse exists and linked.
   - `units` (default unit)
 - `product_prices` references `products` and optional `branches`
 - `service_catalog` references `branches` and optional default `taxes`
-- `warehouses` belongs to `branches`
 
 Practical example:
 - Product `Engine Oil 1L`:
@@ -299,6 +297,10 @@ Practical example:
 - `job_card_services` belongs to `job_cards`, optional `service_catalog`, optional technician `users`
 - `job_card_parts` belongs to `job_cards` and `products`
 
+Sidebar purpose:
+- `Job Cards`: parent workshop ticket and lifecycle state.
+- Service and part lines are managed inline in Job Card create/edit.
+
 ### 6.5 Sales
 
 - `sales` belongs to `branches`, optional `customers`, optional `job_cards`, optional creator `users`
@@ -308,7 +310,7 @@ Practical example:
 
 ### 6.6 Purchases
 
-- `purchases` belongs to `branches`, optional `warehouses`, required `vendors`, optional creator `users`
+- `purchases` belongs to `branches`, required `vendors`, optional creator `users`
 - `purchase_items` belongs to `purchases`, `branches`, `products`, optional `taxes`
 - `purchase_returns` belongs to `branches`, `vendors`, optional `purchases`, optional creator `users`
 - `purchase_return_items` belongs to `purchase_returns`, optional `purchase_items`, required `products`, optional `taxes`
@@ -325,7 +327,7 @@ Practical flow example:
 
 - `inventory_stocks` belongs to `products`, `branches`
 - Unique key per (`product_id`, `branch_id`)
-- `stock_moves` belongs to `products`, `branches`, optional `warehouses`, optional creator `users`
+- `stock_moves` belongs to `products`, `branches`, optional creator `users`
 
 #### Stock Movement Flow (`track_stock = true`)
 
@@ -338,12 +340,8 @@ This flow is complete for tracked products:
 Notes:
 - Stock is adjusted only when `products.track_stock = true`.
 - Product listing shows current stock against opening stock (for example `17/20`).
-- Opening stock + adjustments are managed from `Products > Stock` and `Products > Stock Adjustment`.
-
-Important current implementation detail:
-- `inventory_stocks` is branch-level only (no `warehouse_id` column).
-- `stock_moves` supports `warehouse_id`, but most current stock writes set it to `null`.
-- Result: warehouse is present in domain model and UI, but quantitative stock control is still branch-centric.
+- Opening stock is managed from product create/edit.
+- Stock movement trail is reviewed from `Products > History`.
 
 ### 6.11 Units and Fractional Quantities
 
@@ -415,19 +413,11 @@ Seeder `TenantRolePermissionSeeder` creates baseline permissions and roles:
 
 `TenantBootstrapSeeder` creates mandatory baseline for a new tenant DB:
 - default branch
-- default warehouse and branch linkage
 - base taxes/units/categories/brands
 - starter products/prices
 - service catalog
 - sample customer
 - tenant settings
-
-Critical ordering in bootstrap:
-1. Branch
-2. Warehouse using branch FK
-3. Write `branches.warehouse_id`
-
-This order prevents warehouse FK failures.
 
 ## 8. End Of Day Logic
 
@@ -481,11 +471,11 @@ Practical scenario:
 - Sales:
   Create sale with 2 lines (product + service), post payment, assert stock decrement for tracked product.
 - Purchases:
-  Create purchase with warehouse/vendor and assert stock increment + payable creation.
+  Create purchase with vendor and assert stock increment + payable creation.
 - Workshop:
   Create job card, attach service and part lines, then verify billing linkage to sale.
 - Inventory:
-  Perform stock adjustment and verify `stock_moves` entry + updated `inventory_stocks`.
+  Update opening stock from product edit and verify `stock_moves` entry + updated `inventory_stocks`.
 - Employees:
   Mark attendance and create salary record for same user/month branch context.
 - Reports:

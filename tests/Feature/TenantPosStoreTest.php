@@ -12,7 +12,6 @@ use App\Models\ProductPrice;
 use App\Models\Sale;
 use App\Models\ServiceCatalog;
 use App\Models\User;
-use App\Models\Warehouse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
@@ -45,7 +44,7 @@ beforeEach(function (): void {
 });
 
 /**
- * @return array{branch:Branch,user:User,warehouse:Warehouse,product:Product,service:ServiceCatalog}
+ * @return array{branch:Branch,user:User,product:Product,service:ServiceCatalog}
  */
 function createPosFixture(): array
 {
@@ -54,15 +53,6 @@ function createPosFixture(): array
         'name' => 'Main Branch',
         'status' => BranchStatus::ACTIVE->value,
     ]);
-
-    $warehouse = Warehouse::query()->create([
-        'branch_id' => $branch->id,
-        'code' => 'MAIN-WH',
-        'name' => 'Main Warehouse',
-        'status' => RecordStatus::ACTIVE->value,
-    ]);
-
-    $branch->update(['warehouse_id' => $warehouse->id]);
 
     $user = User::query()->create([
         'branch_id' => $branch->id,
@@ -108,7 +98,6 @@ function createPosFixture(): array
     return [
         'branch' => $branch,
         'user' => $user,
-        'warehouse' => $warehouse,
         'product' => $product,
         'service' => $service,
     ];

@@ -41,7 +41,6 @@
                             <x-sortable-column :label="__('Date')" column="purchase_date" :current-sort-by="$sortBy"
                                 :current-sort-direction="$sortDirection" />
                             <th>{{ __('Vendor') }}</th>
-                            <th>{{ __('Warehouse') }}</th>
                             <x-sortable-column :label="__('Status')" column="status" :current-sort-by="$sortBy"
                                 :current-sort-direction="$sortDirection" />
                             <x-sortable-column :label="__('Grand Total')" column="grand_total" :current-sort-by="$sortBy"
@@ -57,7 +56,6 @@
                                 <td>{{ $purchase->purchase_no }}</td>
                                 <td>@tenantDate($purchase->purchase_date, 'Y-m-d', '')</td>
                                 <td>{{ $purchase->vendor?->name ?? '-' }}</td>
-                                <td>{{ $purchase->warehouse?->name ?? '-' }}</td>
                                 <td>{{ ucfirst(str_replace('_', ' ', $purchase->status->value)) }}</td>
                                 <td>{{ number_format((float) $purchase->grand_total, 2) }}</td>
                                 <td>{{ number_format((float) $purchase->balance_due, 2) }}</td>
@@ -86,7 +84,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted">{{ __('No purchases found.') }}</td>
+                                <td colspan="7" class="text-center text-muted">{{ __('No purchases found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

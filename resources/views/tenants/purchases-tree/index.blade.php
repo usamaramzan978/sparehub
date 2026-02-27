@@ -135,7 +135,6 @@
                                                 <th>{{ __('Purchase') }}</th>
                                                 <th>{{ __('Date') }}</th>
                                                 <th>{{ __('Status') }}</th>
-                                                <th>{{ __('Warehouse') }}</th>
                                                 <th class="text-end">{{ __('Items') }}</th>
                                                 <th class="text-end">{{ __('Qty') }}</th>
                                                 <th class="text-end">{{ __('Grand Total') }}</th>
@@ -157,7 +156,6 @@
                                                     </td>
                                                     <td>@tenantDate($purchase->purchase_date, 'Y-m-d')</td>
                                                     <td>{{ ucfirst(str_replace('_', ' ', $purchase->status->value)) }}</td>
-                                                    <td>{{ $purchase->warehouse?->name ?: '-' }}</td>
                                                     <td class="text-end">{{ $row['items_count'] }}</td>
                                                     <td class="text-end">{{ $qty($row['qty_total']) }}</td>
                                                     <td class="text-end">{{ $money((float) $purchase->grand_total) }}</td>

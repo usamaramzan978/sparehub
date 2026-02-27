@@ -26,7 +26,6 @@
         $statusClass = $statusClasses[$status] ?? 'bg-secondary-transparent';
         $tax = $product->defaultTax;
         $taxSource = $tax ? __('Product Default Tax') : null;
-        $warehouseLabel = $branch?->warehouse?->name ?? __('Current Warehouse');
         $rowCount = max($priceRows->count(), 1);
         $activeCount = $status === 'active' ? $rowCount : 0;
         $inactiveCount = $rowCount - $activeCount;
@@ -136,8 +135,6 @@
                         <span class="text-muted">{{ __('Reserved') }}</span>
                         <span class="fw-semibold">{{ number_format($stockReserved, 0) }}</span>
                     </div>
-                    <div class="text-muted small">{{ __('Stock Source') }}</div>
-                    <div class="fw-semibold">{{ $warehouseLabel }}</div>
                 </div>
             </div>
         </div>

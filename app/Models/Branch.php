@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class Branch extends Model
@@ -23,7 +22,6 @@ final class Branch extends Model
     protected $fillable = [
         'code',
         'name',
-        'warehouse_id',
         'status',
     ];
 
@@ -46,16 +44,6 @@ final class Branch extends Model
     public function vendors(): HasMany
     {
         return $this->hasMany(Vendor::class);
-    }
-
-    public function warehouses(): HasMany
-    {
-        return $this->hasMany(Warehouse::class);
-    }
-
-    public function warehouse(): BelongsTo
-    {
-        return $this->belongsTo(Warehouse::class);
     }
 
     public function inventoryStocks(): HasMany

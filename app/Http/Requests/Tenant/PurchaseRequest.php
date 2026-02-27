@@ -25,19 +25,16 @@ final class PurchaseRequest extends FormRequest
         $branchId = session('tenant.current_branch_id');
 
         $vendorExists = Rule::exists('vendors', 'id');
-        $warehouseExists = Rule::exists('warehouses', 'id');
         $purchaseUnique = Rule::unique('purchases', 'purchase_no')->ignore($purchaseId);
         $productExists = Rule::exists('products', 'id');
 
         if (is_string($branchId) && $branchId !== '') {
             $vendorExists = $vendorExists->where(fn ($query) => $query->where('branch_id', $branchId));
-            $warehouseExists = $warehouseExists->where(fn ($query) => $query->where('branch_id', $branchId));
             $purchaseUnique = $purchaseUnique->where(fn ($query) => $query->where('branch_id', $branchId));
             $productExists = $productExists->where(fn ($query) => $query->whereNull('deleted_at'));
         }
 
         return [
-            'warehouse_id' => ['nullable', 'uuid', $warehouseExists],
             'vendor_id' => ['required', 'uuid', $vendorExists],
             'purchase_no' => ['required', 'string', 'max:40', $purchaseUnique],
             'vendor_invoice_no' => ['nullable', 'string', 'max:60'],

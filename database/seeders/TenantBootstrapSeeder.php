@@ -16,7 +16,6 @@ use App\Models\ServiceCatalog;
 use App\Models\Tax;
 use App\Models\TenantSetting;
 use App\Models\Unit;
-use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
 use RuntimeException;
 
@@ -32,7 +31,7 @@ final class TenantBootstrapSeeder extends Seeder
 
             /**
              * ---------------------------------------------------------
-             * Branch + Warehouse
+             * Branch
              * ---------------------------------------------------------
              */
             $branch = Branch::query()->firstOrCreate(
@@ -45,21 +44,6 @@ final class TenantBootstrapSeeder extends Seeder
             );
 
             $branch = Branch::query()->whereKey($branch->id)->firstOrFail();
-
-            $warehouse = Warehouse::query()->firstOrCreate(
-                [
-                    'branch_id' => $branch->id,
-                    'code' => 'WH-01',
-                ],
-                [
-                    'name' => 'Main Warehouse',
-                    'status' => RecordStatus::ACTIVE->value,
-                ]
-            );
-
-            if ($branch->warehouse_id !== $warehouse->id) {
-                $branch->update(['warehouse_id' => $warehouse->id]);
-            }
 
             /**
              * ---------------------------------------------------------

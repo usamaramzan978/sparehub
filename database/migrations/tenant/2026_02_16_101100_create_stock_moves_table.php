@@ -14,7 +14,6 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('product_id')->constrained('products')->cascadeOnDelete();
             $table->foreignUuid('branch_id')->constrained('branches')->cascadeOnDelete();
-            $table->foreignUuid('warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->foreignUuid('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('move_type', 40);
             $table->decimal('qty', 18, 3);

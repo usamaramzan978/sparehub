@@ -73,7 +73,6 @@ final class SyncPurchaseItemStocksAction
             StockMove::query()->create([
                 'product_id' => $productId,
                 'branch_id' => $branchId,
-                'warehouse_id' => null,
                 'created_by' => auth('user')->id(),
                 'move_type' => $reverse ? StockMoveType::PURCHASE_RETURN->value : StockMoveType::PURCHASE->value,
                 'qty' => $qty,

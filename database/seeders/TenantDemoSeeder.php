@@ -22,7 +22,6 @@ use App\Models\TenantSetting;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Vendor;
-use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -41,21 +40,6 @@ final class TenantDemoSeeder extends Seeder
                 'city' => 'Lahore',
             ]
         );
-
-        $warehouse = Warehouse::query()->firstOrCreate(
-            [
-                'branch_id' => $branch->id,
-                'code' => 'MAIN-WH',
-            ],
-            [
-                'name' => 'Main Warehouse',
-                'status' => RecordStatus::ACTIVE->value,
-            ]
-        );
-
-        if ($branch->warehouse_id !== $warehouse->id) {
-            $branch->update(['warehouse_id' => $warehouse->id]);
-        }
 
         TenantSetting::query()->firstOrCreate(
             ['branch_id' => $branch->id],

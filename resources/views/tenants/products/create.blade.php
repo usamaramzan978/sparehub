@@ -144,17 +144,7 @@
                         @enderror
                     </div>
 
-                    <div class="col-md-6 mb-3 form-check">
-                        <input type="hidden" name="track_stock" value="0">
-                        <input type="checkbox" name="track_stock" id="track_stock"
-                            class="form-check-input @error('track_stock') is-invalid @enderror" value="1"
-                            @checked(old('track_stock', true))>
-                        <label class="form-check-label" for="track_stock">{{ __('Track Stock') }}</label>
-                        @error('track_stock')
-                            <span class="invalid-feedback d-block">{{ $message }}</span>
-                        @enderror
-                    </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label class="form-label" for="opening_stock">{{ __('Opening Stock') }}</label>
                         <input type="number" name="opening_stock" id="opening_stock"
                             class="form-control @error('opening_stock') is-invalid @enderror" min="0"
@@ -164,7 +154,60 @@
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="cost">{{ __('Cost') }}</label>
+                        <input type="number" step="0.01" min="0" name="cost" id="cost"
+                            class="form-control @error('cost') is-invalid @enderror" value="{{ old('cost', '0') }}">
+                        @error('cost')
+                            <span class="invalid-feedback d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="mrp">{{ __('MRP') }}</label>
+                        <input type="number" step="0.01" min="0" name="mrp" id="mrp"
+                            class="form-control @error('mrp') is-invalid @enderror" value="{{ old('mrp', '0') }}">
+                        @error('mrp')
+                            <span class="invalid-feedback d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label" for="retail_price">{{ __('Retail Price') }}</label>
+                        <input type="number" step="0.01" min="0" name="retail_price" id="retail_price"
+                            class="form-control @error('retail_price') is-invalid @enderror"
+                            value="{{ old('retail_price', '0') }}">
+                        @error('retail_price')
+                            <span class="invalid-feedback d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label" for="wholesale_price">{{ __('Wholesale Price') }}</label>
+                        <input type="number" step="0.01" min="0" name="wholesale_price" id="wholesale_price"
+                            class="form-control @error('wholesale_price') is-invalid @enderror"
+                            value="{{ old('wholesale_price', '0') }}">
+                        @error('wholesale_price')
+                            <span class="invalid-feedback d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label" for="effective_from">{{ __('Price Effective From') }}</label>
+                        <input type="datetime-local" name="effective_from" id="effective_from"
+                            class="form-control @error('effective_from') is-invalid @enderror"
+                            value="{{ old('effective_from', \App\Support\TenantDateTime::format(now(), 'Y-m-d\\TH:i', '')) }}">
+                        @error('effective_from')
+                            <span class="invalid-feedback d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
 
+                    <div class="col-md-12 mb-3 form-check">
+                        <input type="hidden" name="track_stock" value="0">
+                        <input type="checkbox" name="track_stock" id="track_stock"
+                            class="form-check-input @error('track_stock') is-invalid @enderror" value="1"
+                            @checked(old('track_stock', true))>
+                        <label class="form-check-label" for="track_stock">{{ __('Track Stock') }}</label>
+                        @error('track_stock')
+                            <span class="invalid-feedback d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
                     <div class="col-md-12 mb-3">
                         <label class="form-label" for="description">{{ __('Description') }}</label>
                         <textarea name="description" id="description" class="form-control @error('description') is-invalid @enderror"

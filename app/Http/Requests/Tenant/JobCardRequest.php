@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tenant;
 
+use App\Enums\JobCardServiceStatus;
 use App\Enums\JobCardStatus;
 use App\Models\Customer;
+use App\Models\JobCard;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,20 +23,36 @@ final class JobCardRequest extends FormRequest
      */
     public function rules(): array
     {
-        $jobCardId = $this->route('job_card')?->id;
+        $jobCardRouteParam = $this->route('jobCard') ?? $this->route('job_card');
+        $jobCardId = $jobCardRouteParam instanceof JobCard
+            ? $jobCardRouteParam->id
+            : (is_string($jobCardRouteParam) ? $jobCardRouteParam : null);
         $branchId = session('tenant.current_branch_id');
         $jobNoUnique = Rule::unique('job_cards', 'job_no')->ignore($jobCardId);
         $customerExists = Rule::exists('customers', 'id');
         $vehicleExists = Rule::exists('customer_vehicles', 'id');
         $employeeExists = Rule::exists('users', 'id');
+        $serviceCatalogExists = Rule::exists('service_catalog', 'id');
+        $productExists = Rule::exists('products', 'id');
+        $serviceExistsInJobCard = Rule::exists('job_card_services', 'id');
+        $partExistsInJobCard = Rule::exists('job_card_parts', 'id');
 
         if (is_string($branchId) && $branchId !== '') {
             $jobNoUnique = $jobNoUnique->where(fn ($query) => $query->where('branch_id', $branchId));
             $customerExists = $customerExists->where(fn ($query) => $query->where('branch_id', $branchId));
             $employeeExists = $employeeExists->where(fn ($query) => $query->where('branch_id', $branchId));
+            $serviceCatalogExists = $serviceCatalogExists->where(fn ($query) => $query->where('branch_id', $branchId));
             $vehicleExists = $vehicleExists->where(fn ($query) => $query->whereIn(
                 'customer_id',
                 Customer::query()->where('branch_id', $branchId)->select('id')
+            ));
+            $serviceExistsInJobCard = $serviceExistsInJobCard->where(fn ($query) => $query->whereIn(
+                'job_card_id',
+                JobCard::query()->where('branch_id', $branchId)->select('id')
+            ));
+            $partExistsInJobCard = $partExistsInJobCard->where(fn ($query) => $query->whereIn(
+                'job_card_id',
+                JobCard::query()->where('branch_id', $branchId)->select('id')
             ));
         }
 
@@ -51,6 +69,20 @@ final class JobCardRequest extends FormRequest
             'remarks' => ['nullable', 'string'],
             'in_time' => ['nullable', 'date'],
             'out_time' => ['nullable', 'date', 'after_or_equal:in_time'],
+            'services' => ['nullable', 'array'],
+            'services.*.id' => ['nullable', 'uuid', $serviceExistsInJobCard],
+            'services.*.service_catalog_id' => ['nullable', 'uuid', $serviceCatalogExists],
+            'services.*.technician_id' => ['nullable', 'uuid', $employeeExists],
+            'services.*.service_name' => ['required', 'string', 'max:160'],
+            'services.*.qty' => ['required', 'numeric', 'gt:0'],
+            'services.*.rate' => ['required', 'numeric', 'min:0'],
+            'services.*.status' => ['required', Rule::enum(JobCardServiceStatus::class)],
+            'services.*.remarks' => ['nullable', 'string'],
+            'parts' => ['nullable', 'array'],
+            'parts.*.id' => ['nullable', 'uuid', $partExistsInJobCard],
+            'parts.*.product_id' => ['required', 'uuid', $productExists],
+            'parts.*.qty' => ['required', 'numeric', 'gt:0'],
+            'parts.*.unit_price' => ['required', 'numeric', 'min:0'],
         ];
     }
 

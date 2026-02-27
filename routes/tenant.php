@@ -17,14 +17,11 @@ use App\Http\Controllers\Tenant\EmployeeSalaryController;
 use App\Http\Controllers\Tenant\EndOfDayController;
 use App\Http\Controllers\Tenant\ExpenseController;
 use App\Http\Controllers\Tenant\JobCardController;
-use App\Http\Controllers\Tenant\JobCardPartController;
-use App\Http\Controllers\Tenant\JobCardServiceController;
 use App\Http\Controllers\Tenant\MechanicPayableController;
 use App\Http\Controllers\Tenant\PermissionController;
 use App\Http\Controllers\Tenant\PosController;
 use App\Http\Controllers\Tenant\ProductController;
-use App\Http\Controllers\Tenant\ProductPriceController;
-use App\Http\Controllers\Tenant\ProductStockController;
+use App\Http\Controllers\Tenant\ProductHistoryController;
 use App\Http\Controllers\Tenant\ProfileController;
 use App\Http\Controllers\Tenant\PurchaseController;
 use App\Http\Controllers\Tenant\PurchaseItemController;
@@ -46,7 +43,6 @@ use App\Http\Controllers\Tenant\UnitController;
 use App\Http\Controllers\Tenant\UserController;
 use App\Http\Controllers\Tenant\VendorController;
 use App\Http\Controllers\Tenant\VendorPaymentController;
-use App\Http\Controllers\Tenant\WarehouseController;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -75,9 +71,7 @@ Route::middleware([
     Route::middleware(['auth:user', 'tenant.branch', 'tenant.two-step'])->group(function (): void {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
         Route::get('end-of-day', EndOfDayController::class)->name('end-of-day');
-        Route::get('products/stock', [ProductStockController::class, 'index'])->name('products.stock.index');
-        Route::get('products/stock/adjustments', [ProductStockController::class, 'adjustments'])->name('products.stock.adjustments');
-        Route::post('products/stock/adjustments', [ProductStockController::class, 'storeAdjustment'])->name('products.stock.adjustments.store');
+        Route::get('products/history', ProductHistoryController::class)->name('products.history');
         Route::get('sales-tree', SalesTreeController::class)->name('sales-tree.index');
         Route::get('purchases-tree', PurchasesTreeController::class)->name('purchases-tree.index');
 
@@ -154,11 +148,7 @@ Route::middleware([
         Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
 
         Route::resources([
-            'product-prices' => ProductPriceController::class,
             'service-catalog' => ServiceCatalogController::class,
-            'job-cards' => JobCardController::class,
-            'job-card-services' => JobCardServiceController::class,
-            'job-card-parts' => JobCardPartController::class,
             'customer-vehicles' => CustomerVehicleController::class,
             'vendors' => VendorController::class,
             'sales' => SaleController::class,
@@ -171,6 +161,7 @@ Route::middleware([
             'purchase-return-items' => PurchaseReturnItemController::class,
             'vendor-payments' => VendorPaymentController::class,
         ]);
+        Route::resource('job-cards', JobCardController::class)->parameters(['job-cards' => 'jobCard']);
 
         Route::resource('support-tickets', SupportTicketController::class)
             ->only(['index', 'create', 'store', 'show'])
@@ -181,7 +172,6 @@ Route::middleware([
         Route::resource('brands', BrandController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
 
-        Route::resource('warehouses', WarehouseController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('taxes', TaxController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('units', UnitController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('expenses', ExpenseController::class)->only(['index', 'store', 'update', 'destroy']);

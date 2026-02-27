@@ -27,26 +27,22 @@
 
                                     $isMasterData = request()->routeIs(
                                         'tenant.branches.*',
-                                        'tenant.warehouses.*',
                                         'tenant.units.*',
                                         'tenant.taxes.*',
                                         'tenant.categories.*',
                                         'tenant.brands.*',
                                         'tenant.products.*',
-                                        'tenant.product-prices.*',
                                         'tenant.service-catalog.*',
                                         'tenant.customers.*',
                                         'tenant.customer-vehicles.*',
                                         'tenant.vendors.*',
                                     );
                                     $isBranches = request()->routeIs('tenant.branches.*');
-                                    $isWarehouses = request()->routeIs('tenant.warehouses.*');
                                     $isUnits = request()->routeIs('tenant.units.*');
                                     $isTaxes = request()->routeIs('tenant.taxes.*');
                                     $isCategories = request()->routeIs('tenant.categories.*');
                                     $isBrands = request()->routeIs('tenant.brands.*');
                                     $isProducts = request()->routeIs('tenant.products.*');
-                                    $isProductPrices = request()->routeIs('tenant.product-prices.*');
                                     $isServiceCatalog = request()->routeIs('tenant.service-catalog.*');
                                     $isCustomers = request()->routeIs('tenant.customers.*');
                                     $isCustomerVehicles = request()->routeIs('tenant.customer-vehicles.*');
@@ -54,12 +50,8 @@
 
                                     $isWorkshop = request()->routeIs(
                                         'tenant.job-cards.*',
-                                        'tenant.job-card-services.*',
-                                        'tenant.job-card-parts.*',
                                     );
                                     $isJobCards = request()->routeIs('tenant.job-cards.*');
-                                    $isJobCardServices = request()->routeIs('tenant.job-card-services.*');
-                                    $isJobCardParts = request()->routeIs('tenant.job-card-parts.*');
 
                                     $isSales = request()->routeIs(
                                         'tenant.pos.*',
@@ -178,11 +170,6 @@
                                                 </ul>
                                             </li>
 
-                                            <li class="slide {{ $isWarehouses ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.warehouses.index') }}"
-                                                    class="side-menu__item {{ $isWarehouses ? 'active' : '' }}">{{ __('Warehouses') }}</a>
-                                            </li>
-
                                             <li class="slide {{ $isUnits ? 'active' : '' }}">
                                                 <a href="{{ route('tenant.units.index') }}"
                                                     class="side-menu__item {{ $isUnits ? 'active' : '' }}">{{ __('Units') }}</a>
@@ -218,22 +205,13 @@
                                                             class="side-menu__item {{ request()->routeIs('tenant.products.create') ? 'active' : '' }}">{{ __('Create') }}</a>
                                                     </li>
                                                     <li
-                                                        class="slide {{ request()->routeIs('tenant.products.stock.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.products.stock.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.products.stock.index') ? 'active' : '' }}">{{ __('Stock') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.products.stock.adjustments') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.products.stock.adjustments') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.products.stock.adjustments') ? 'active' : '' }}">{{ __('Stock Adjustment') }}</a>
+                                                        class="slide {{ request()->routeIs('tenant.products.history') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.products.history') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.products.history') ? 'active' : '' }}">{{ __('History') }}</a>
                                                     </li>
                                                 </ul>
                                             </li>
 
-                                            <li class="slide {{ $isProductPrices ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.product-prices.index') }}"
-                                                    class="side-menu__item {{ $isProductPrices ? 'active' : '' }}">{{ __('Product Prices') }}</a>
-                                            </li>
                                             <li class="slide {{ $isServiceCatalog ? 'active' : '' }}">
                                                 <a href="{{ route('tenant.service-catalog.index') }}"
                                                     class="side-menu__item {{ $isServiceCatalog ? 'active' : '' }}">{{ __('Service Catalog') }}</a>
@@ -294,44 +272,6 @@
                                                         class="slide {{ request()->routeIs('tenant.job-cards.create') ? 'active' : '' }}">
                                                         <a href="{{ route('tenant.job-cards.create') }}"
                                                             class="side-menu__item {{ request()->routeIs('tenant.job-cards.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                            <li class="slide has-sub {{ $isJobCardServices ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
-                                                    class="side-menu__item {{ $isJobCardServices ? 'active' : '' }}">
-                                                    {{ __('Job Card Services') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                                </a>
-                                                <ul class="slide-menu child2 {{ $isJobCardServices ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.job-card-services.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.job-card-services.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.job-card-services.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.job-card-services.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.job-card-services.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.job-card-services.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                            <li class="slide has-sub {{ $isJobCardParts ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
-                                                    class="side-menu__item {{ $isJobCardParts ? 'active' : '' }}">
-                                                    {{ __('Job Card Parts') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                                </a>
-                                                <ul class="slide-menu child2 {{ $isJobCardParts ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.job-card-parts.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.job-card-parts.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.job-card-parts.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.job-card-parts.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.job-card-parts.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.job-card-parts.create') ? 'active' : '' }}">{{ __('Create') }}</a>
                                                     </li>
                                                 </ul>
                                             </li>

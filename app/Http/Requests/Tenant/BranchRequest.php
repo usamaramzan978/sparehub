@@ -25,11 +25,6 @@ final class BranchRequest extends FormRequest
         return [
             'code' => ['required', 'string', 'max:50', Rule::unique('branches', 'code')->ignore($branchId)],
             'name' => ['required', 'string', 'max:255'],
-            'warehouse_id' => [
-                'nullable',
-                'uuid',
-                Rule::exists('warehouses', 'id'),
-            ],
             'status' => ['required', Rule::enum(BranchStatus::class)],
         ];
     }

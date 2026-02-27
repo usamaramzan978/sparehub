@@ -105,7 +105,6 @@
                             <th class="text-end">{{ __('Qty') }}</th>
                             <th class="text-end">{{ __('Rate') }}</th>
                             <th class="text-end">{{ __('Line Total') }}</th>
-                            <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,16 +115,10 @@
                                 <td class="text-end">{{ number_format((float) $serviceLine->qty, 3) }}</td>
                                 <td class="text-end">{{ number_format((float) $serviceLine->rate, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) $serviceLine->line_total, 2) }}</td>
-                                <td class="text-end">
-                                    <a href="{{ route('tenant.job-card-services.show', $serviceLine) }}"
-                                        class="btn btn-sm btn-icon btn-primary-light btn-wave waves-effect waves-light">
-                                        <i class="ri-eye-line"></i>
-                                    </a>
-                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted">{{ __('No service lines found.') }}</td>
+                                <td colspan="5" class="text-center text-muted">{{ __('No service lines found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -147,7 +140,6 @@
                             <th class="text-end">{{ __('Qty') }}</th>
                             <th class="text-end">{{ __('Unit Price') }}</th>
                             <th class="text-end">{{ __('Line Total') }}</th>
-                            <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -157,16 +149,10 @@
                                 <td class="text-end">{{ number_format((float) $partLine->qty, 3) }}</td>
                                 <td class="text-end">{{ number_format((float) $partLine->unit_price, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) $partLine->line_total, 2) }}</td>
-                                <td class="text-end">
-                                    <a href="{{ route('tenant.job-card-parts.show', $partLine) }}"
-                                        class="btn btn-sm btn-icon btn-primary-light btn-wave waves-effect waves-light">
-                                        <i class="ri-eye-line"></i>
-                                    </a>
-                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted">{{ __('No part lines found.') }}</td>
+                                <td colspan="4" class="text-center text-muted">{{ __('No part lines found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -46,21 +46,6 @@
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label" for="warehouse_id">{{ __('Warehouse') }}</label>
-                        <select name="warehouse_id" id="warehouse_id"
-                            class="form-select singl-select-2 @error('warehouse_id') is-invalid @enderror">
-                            <option value="">{{ __('Select') }}</option>
-                            @foreach ($warehouses as $warehouse)
-                                <option value="{{ $warehouse->id }}" @selected(old('warehouse_id') === $warehouse->id)>
-                                    {{ $warehouse->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('warehouse_id')
-                            <span class="invalid-feedback d-block">{{ $message }}</span>
-                        @enderror
-                    </div>
                     <div class="col-md-2 mb-3">
                         <label class="form-label" for="status">{{ __('Status') }} <span class="text-danger">*</span></label>
                         <select name="status" id="status"

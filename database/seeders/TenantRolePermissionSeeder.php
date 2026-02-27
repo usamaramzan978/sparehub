@@ -93,8 +93,6 @@ final class TenantRolePermissionSeeder extends Seeder
             'product-prices',
             'service-catalog',
             'job-cards',
-            'job-card-services',
-            'job-card-parts',
             'pos',
             'sales',
             'sale-items',

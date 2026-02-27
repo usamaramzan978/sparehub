@@ -12,7 +12,6 @@ use App\Enums\BranchStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\BranchRequest;
 use App\Models\Branch;
-use App\Models\Warehouse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -29,7 +28,6 @@ final class BranchController extends Controller
         [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
 
         $branchesQuery = Branch::query()
-            ->with('warehouse')
             ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
@@ -69,11 +67,9 @@ final class BranchController extends Controller
     public function create(): View
     {
         $statuses = BranchStatus::cases();
-        $warehouses = Warehouse::query()->orderBy('name')->get();
 
         return view('tenants.branches.create', [
             'statuses' => $statuses,
-            'warehouses' => $warehouses,
         ]);
     }
 
@@ -82,8 +78,6 @@ final class BranchController extends Controller
         unset($tenant);
 
         $branch = $this->resolveBranchFromRoute();
-
-        $branch->load(['warehouse']);
 
         return view('tenants.branches.show', ['branch' => $branch]);
     }
@@ -107,12 +101,10 @@ final class BranchController extends Controller
         $branch = $this->resolveBranchFromRoute();
 
         $statuses = BranchStatus::cases();
-        $warehouses = Warehouse::query()->orderBy('name')->get();
 
         return view('tenants.branches.edit', [
             'branch' => $branch,
             'statuses' => $statuses,
-            'warehouses' => $warehouses,
         ]);
     }
 

@@ -41,10 +41,6 @@
 
                     <div class="row g-3">
                         <div class="col-sm-6">
-                            <div class="text-muted small">{{ __('Warehouse') }}</div>
-                            <div class="fw-semibold">{{ $branch->warehouse?->name ?? '-' }}</div>
-                        </div>
-                        <div class="col-sm-6">
                             <div class="text-muted small">{{ __('Created At') }}</div>
                             <div class="fw-semibold">@tenantDate($branch->created_at, 'Y-m-d H:i', '')</div>
                         </div>
@@ -66,10 +62,6 @@
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">{{ __('Status') }}</span>
                         <span class="fw-semibold">{{ ucfirst($status) }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted">{{ __('Warehouse') }}</span>
-                        <span class="fw-semibold">{{ $branch->warehouse?->name ?? '-' }}</span>
                     </div>
                 </div>
             </div>

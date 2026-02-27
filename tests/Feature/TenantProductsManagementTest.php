@@ -14,11 +14,11 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\InventoryStock;
 use App\Models\Product;
+use App\Models\ProductPrice;
 use App\Models\StockMove;
 use App\Models\Tax;
 use App\Models\Unit;
 use App\Models\User;
-use App\Models\Warehouse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
@@ -83,13 +83,6 @@ it('shows products index', function (): void {
     $product = Product::query()->create([
         'sku' => 'PROD-001',
         'name' => 'Engine Oil',
-        'status' => RecordStatus::ACTIVE->value,
-    ]);
-
-    $warehouse = Warehouse::query()->create([
-        'branch_id' => $branch->id,
-        'code' => 'WH-1',
-        'name' => 'Main Warehouse',
         'status' => RecordStatus::ACTIVE->value,
     ]);
 
@@ -208,6 +201,10 @@ it('shows create product page with active taxes and units', function (): void {
     $response->assertDontSee('Old GST');
     $response->assertSee('Pieces');
     $response->assertDontSee('Old Unit');
+    $response->assertSee('Cost');
+    $response->assertSee('MRP');
+    $response->assertSee('Retail Price');
+    $response->assertSee('Wholesale Price');
 });
 
 it('stores product with relations and flags', function (): void {
@@ -249,6 +246,11 @@ it('stores product with relations and flags', function (): void {
         'barcode' => 'BC-AIR-1',
         'track_stock' => '1',
         'opening_stock' => '20',
+        'cost' => '12.5',
+        'mrp' => '18',
+        'retail_price' => '16',
+        'wholesale_price' => '14',
+        'effective_from' => now()->subDay()->format('Y-m-d H:i:s'),
         'status' => RecordStatus::ACTIVE->value,
         'description' => 'Air filter description',
     ]);
@@ -284,6 +286,15 @@ it('stores product with relations and flags', function (): void {
 
     expect($move->move_type)->toBe(StockMoveType::OPENING);
     expect((float) $move->qty)->toBe(20.0);
+
+    $this->assertDatabaseHas('product_prices', [
+        'product_id' => $product->id,
+        'branch_id' => $branch->id,
+        'cost' => 12.5,
+        'mrp' => 18,
+        'retail_price' => 16,
+        'wholesale_price' => 14,
+    ], 'tenant');
 });
 
 it('validates required product fields', function (string $field): void {
@@ -365,7 +376,7 @@ it('allows multiple products when nullable unique fields are omitted', function 
 });
 
 it('applies default stock flag when omitted', function (): void {
-    authenticateProductUser();
+    $branch = authenticateProductUser();
 
     $response = $this->post(productsTenantRoute('products.store'), [
         'name' => 'Default Flags Product',
@@ -377,6 +388,15 @@ it('applies default stock flag when omitted', function (): void {
 
     $product = Product::query()->where('sku', 'SKU-DFLT-1')->firstOrFail();
     expect($product->track_stock)->toBeTrue();
+
+    $this->assertDatabaseHas('product_prices', [
+        'product_id' => $product->id,
+        'branch_id' => $branch->id,
+        'cost' => 0,
+        'mrp' => 0,
+        'retail_price' => 0,
+        'wholesale_price' => 0,
+    ], 'tenant');
 });
 
 it('validates product status and relation id formats', function (): void {
@@ -414,7 +434,7 @@ it('shows product details', function (): void {
 });
 
 it('shows edit product page', function (): void {
-    authenticateProductUser();
+    $branch = authenticateProductUser();
 
     $product = Product::query()->create([
         'name' => 'Edit Product',
@@ -422,10 +442,21 @@ it('shows edit product page', function (): void {
         'status' => RecordStatus::ACTIVE->value,
     ]);
 
+    $price = ProductPrice::query()->withoutGlobalScopes()->create([
+        'product_id' => $product->id,
+        'branch_id' => $branch->id,
+        'cost' => 10,
+        'mrp' => 12,
+        'retail_price' => 11,
+        'wholesale_price' => 9,
+        'effective_from' => now(),
+    ]);
+
     $response = (new ProductController())->edit($product, app(GetProductEditDataAction::class));
 
     expect($response->name())->toBe('tenants.products.edit');
     expect($response->getData()['product']->id)->toBe($product->id);
+    expect($response->getData()['latestPrice']?->id)->toBe($price->id);
 });
 
 it('deletes product', function (): void {

@@ -46,7 +46,6 @@
                         <tr>
                             <x-sortable-column :label="__('Code')" column="code" :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
                             <x-sortable-column :label="__('Name')" column="name" :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
-                            <th>{{ __('Warehouse') }}</th>
                             <x-sortable-column :label="__('Status')" column="status" :current-sort-by="$sortBy" :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
@@ -56,7 +55,6 @@
                             <tr>
                                 <td>{{ $branch->code }}</td>
                                 <td>{{ $branch->name }}</td>
-                                <td>{{ $branch->warehouse?->name ?? '-' }}</td>
                                 <td>
                                     @if ($branch->status->value === 'active')
                                         <span class="badge bg-success-transparent">{{ __('Active') }}</span>
@@ -105,7 +103,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted">{{ __('No branches found.') }}</td>
+                                <td colspan="4" class="text-center text-muted">{{ __('No branches found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

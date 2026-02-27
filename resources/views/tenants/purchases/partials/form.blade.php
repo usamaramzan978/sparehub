@@ -102,21 +102,6 @@
         </div>
 
         <div class="col-md-4 mb-3">
-            <label class="form-label" for="warehouse_id">{{ __('Warehouse') }}</label>
-            <select name="warehouse_id" id="warehouse_id" class="form-select singl-select-2 @error('warehouse_id') is-invalid @enderror">
-                <option value="">{{ __('None') }}</option>
-                @foreach ($warehouses as $warehouse)
-                    <option value="{{ $warehouse->id }}" @selected(old('warehouse_id', $currentPurchase?->warehouse_id) === $warehouse->id)>
-                        {{ $warehouse->name }}
-                    </option>
-                @endforeach
-            </select>
-            @error('warehouse_id')
-                <span class="invalid-feedback d-block">{{ $message }}</span>
-            @enderror
-        </div>
-
-        <div class="col-md-4 mb-3">
             <label class="form-label" for="status">{{ __('Status') }}</label>
             <select name="status" id="status" class="form-select singl-select-2 @error('status') is-invalid @enderror" required>
                 @foreach ($statuses as $status)

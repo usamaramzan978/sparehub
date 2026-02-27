@@ -40,12 +40,6 @@
                 </div>
                 <div class="col-12 col-md-6 col-xl-3">
                     <div class="border rounded p-3 h-100">
-                        <div class="text-muted small">{{ __('Warehouse') }}</div>
-                        <div class="fw-semibold">{{ $purchase->warehouse?->name ?? '-' }}</div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                    <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Vendor Invoice No') }}</div>
                         <div class="fw-semibold">{{ $purchase->vendor_invoice_no ?: '-' }}</div>
                     </div>

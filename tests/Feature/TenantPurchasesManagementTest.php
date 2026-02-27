@@ -16,7 +16,6 @@ use App\Models\Purchase;
 use App\Models\Tax;
 use App\Models\User;
 use App\Models\Vendor;
-use App\Models\Warehouse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
@@ -55,7 +54,7 @@ function purchasesTenantRoute(string $name, array $parameters = []): string
 }
 
 /**
- * @return array{current: Branch, secondary: Branch, user: User, vendor: Vendor, warehouse: Warehouse, product: Product, tax: Tax}
+ * @return array{current: Branch, secondary: Branch, user: User, vendor: Vendor, product: Product, tax: Tax}
  */
 function authenticatePurchasesUser(): array
 {
@@ -83,13 +82,6 @@ function authenticatePurchasesUser(): array
         'branch_id' => $currentBranch->id,
         'code' => 'VEN-P-1',
         'name' => 'Purchase Vendor',
-        'status' => RecordStatus::ACTIVE->value,
-    ]);
-
-    $warehouse = Warehouse::query()->withoutGlobalScopes()->create([
-        'branch_id' => $currentBranch->id,
-        'code' => 'WH-P-1',
-        'name' => 'Purchase Warehouse',
         'status' => RecordStatus::ACTIVE->value,
     ]);
 
@@ -124,7 +116,6 @@ function authenticatePurchasesUser(): array
         'secondary' => $secondaryBranch,
         'user' => $user,
         'vendor' => $vendor,
-        'warehouse' => $warehouse,
         'product' => $product,
         'tax' => $tax,
     ];
@@ -213,7 +204,6 @@ it('stores purchase and syncs totals from items', function (): void {
     $fixture = authenticatePurchasesUser();
 
     $response = $this->post(purchasesTenantRoute('purchases.store'), [
-        'warehouse_id' => $fixture['warehouse']->id,
         'vendor_id' => $fixture['vendor']->id,
         'purchase_no' => 'PUR-STORE-1',
         'vendor_invoice_no' => 'V-1',

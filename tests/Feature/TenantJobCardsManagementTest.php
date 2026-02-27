@@ -4,14 +4,20 @@ declare(strict_types=1);
 
 use App\Actions\Tenant\JobCard\DeleteJobCardAction;
 use App\Actions\Tenant\JobCard\EnsureJobCardInBranchAction;
+use App\Actions\Tenant\JobCard\SyncJobCardLinesAction;
+use App\Actions\Tenant\JobCard\UpdateJobCardAction;
 use App\Enums\BranchStatus;
 use App\Enums\CustomerStatus;
+use App\Enums\JobCardServiceStatus;
 use App\Enums\JobCardStatus;
+use App\Enums\RecordStatus;
 use App\Http\Controllers\Tenant\JobCardController;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\CustomerVehicle;
 use App\Models\JobCard;
+use App\Models\Product;
+use App\Models\ServiceCatalog;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
@@ -52,7 +58,7 @@ function jobCardsTenantRoute(string $name, array $parameters = []): string
 }
 
 /**
- * @return array{current: Branch, secondary: Branch, currentCustomer: Customer, currentVehicle: CustomerVehicle, currentEmployee: User, secondaryCustomer: Customer, secondaryVehicle: CustomerVehicle, secondaryEmployee: User}
+ * @return array{current: Branch, secondary: Branch, currentCustomer: Customer, currentVehicle: CustomerVehicle, currentEmployee: User, secondaryCustomer: Customer, secondaryVehicle: CustomerVehicle, secondaryEmployee: User, serviceCatalog: ServiceCatalog, product: Product}
  */
 function authenticateJobCardUser(): array
 {
@@ -110,6 +116,22 @@ function authenticateJobCardUser(): array
         'model' => 'Civic',
     ]);
 
+    $serviceCatalog = ServiceCatalog::query()->withoutGlobalScopes()->create([
+        'branch_id' => $currentBranch->id,
+        'code' => 'SVC-MAIN-1',
+        'name' => 'Inspection',
+        'category' => 'Workshop',
+        'base_price' => 150,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $product = Product::query()->create([
+        'sku' => 'PART-MAIN-1',
+        'name' => 'Oil Filter',
+        'track_stock' => true,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
     test()->actingAs($currentEmployee, 'user');
     test()->withSession(['tenant.current_branch_id' => $currentBranch->id]);
 
@@ -122,6 +144,8 @@ function authenticateJobCardUser(): array
         'secondaryCustomer' => $secondaryCustomer,
         'secondaryVehicle' => $secondaryVehicle,
         'secondaryEmployee' => $secondaryEmployee,
+        'serviceCatalog' => $serviceCatalog,
+        'product' => $product,
     ];
 }
 
@@ -266,6 +290,129 @@ it('stores job card with current branch and created by user', function (): void 
         'created_by' => $fixture['currentEmployee']->id,
         'job_no' => 'JC-NEW',
         'status' => JobCardStatus::IN_PROGRESS->value,
+    ], 'tenant');
+});
+
+it('stores inline service and part lines from job card form', function (): void {
+    $fixture = authenticateJobCardUser();
+
+    $response = $this->post(jobCardsTenantRoute('job-cards.store'), [
+        'customer_id' => $fixture['currentCustomer']->id,
+        'vehicle_id' => $fixture['currentVehicle']->id,
+        'assigned_employee_id' => $fixture['currentEmployee']->id,
+        'job_no' => 'JC-LINES-NEW',
+        'job_date' => now()->toDateString(),
+        'status' => JobCardStatus::IN_PROGRESS->value,
+        'services' => [
+            [
+                'service_catalog_id' => $fixture['serviceCatalog']->id,
+                'technician_id' => $fixture['currentEmployee']->id,
+                'service_name' => 'Inspection Service',
+                'qty' => 2,
+                'rate' => 125,
+                'status' => JobCardServiceStatus::PENDING->value,
+                'remarks' => 'Initial checks',
+            ],
+        ],
+        'parts' => [
+            [
+                'product_id' => $fixture['product']->id,
+                'qty' => 3,
+                'unit_price' => 40,
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect(jobCardsTenantRoute('job-cards.index'));
+
+    $jobCard = JobCard::query()->where('job_no', 'JC-LINES-NEW')->firstOrFail();
+
+    $this->assertDatabaseHas('job_card_services', [
+        'job_card_id' => $jobCard->id,
+        'service_name' => 'Inspection Service',
+        'line_total' => 250,
+    ], 'tenant');
+
+    $this->assertDatabaseHas('job_card_parts', [
+        'job_card_id' => $jobCard->id,
+        'product_id' => $fixture['product']->id,
+        'line_total' => 120,
+    ], 'tenant');
+});
+
+it('syncs inline service and part lines when updating a job card', function (): void {
+    $fixture = authenticateJobCardUser();
+
+    $jobCard = JobCard::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['currentCustomer']->id,
+        'vehicle_id' => $fixture['currentVehicle']->id,
+        'assigned_employee_id' => $fixture['currentEmployee']->id,
+        'job_no' => 'JC-LINES-UPD',
+        'job_date' => now()->toDateString(),
+        'status' => JobCardStatus::NEW->value,
+    ]);
+
+    $existingService = $jobCard->services()->create([
+        'service_catalog_id' => $fixture['serviceCatalog']->id,
+        'technician_id' => $fixture['currentEmployee']->id,
+        'service_name' => 'Old Service',
+        'qty' => 1,
+        'rate' => 100,
+        'line_total' => 100,
+        'status' => JobCardServiceStatus::PENDING->value,
+    ]);
+
+    $existingPart = $jobCard->parts()->create([
+        'product_id' => $fixture['product']->id,
+        'qty' => 1,
+        'unit_price' => 50,
+        'line_total' => 50,
+    ]);
+
+    $payload = [
+        'customer_id' => $fixture['currentCustomer']->id,
+        'vehicle_id' => $fixture['currentVehicle']->id,
+        'assigned_employee_id' => $fixture['currentEmployee']->id,
+        'job_no' => 'JC-LINES-UPD',
+        'job_date' => now()->toDateString(),
+        'status' => JobCardStatus::IN_PROGRESS->value,
+        'services' => [
+            [
+                'id' => $existingService->id,
+                'service_catalog_id' => $fixture['serviceCatalog']->id,
+                'technician_id' => $fixture['currentEmployee']->id,
+                'service_name' => 'Updated Service',
+                'qty' => 2,
+                'rate' => 120,
+                'status' => JobCardServiceStatus::DONE->value,
+                'remarks' => 'Completed',
+            ],
+        ],
+        'parts' => [],
+    ];
+
+    (new UpdateJobCardAction())->handle($jobCard, [
+        'customer_id' => $payload['customer_id'],
+        'vehicle_id' => $payload['vehicle_id'],
+        'assigned_employee_id' => $payload['assigned_employee_id'],
+        'job_no' => $payload['job_no'],
+        'job_date' => $payload['job_date'],
+        'status' => $payload['status'],
+    ], $fixture['current']->id);
+
+    (new SyncJobCardLinesAction())->handle($jobCard, $payload);
+
+    $this->assertDatabaseHas('job_card_services', [
+        'id' => $existingService->id,
+        'job_card_id' => $jobCard->id,
+        'service_name' => 'Updated Service',
+        'line_total' => 240,
+        'status' => JobCardServiceStatus::DONE->value,
+    ], 'tenant');
+
+    $this->assertDatabaseMissing('job_card_parts', [
+        'id' => $existingPart->id,
     ], 'tenant');
 });
 

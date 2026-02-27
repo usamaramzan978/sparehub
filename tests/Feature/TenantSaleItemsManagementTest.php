@@ -20,7 +20,6 @@ use App\Models\SaleItem;
 use App\Models\ServiceCatalog;
 use App\Models\Tax;
 use App\Models\User;
-use App\Models\Warehouse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
@@ -59,7 +58,7 @@ function saleItemsTenantRoute(string $name, array $parameters = []): string
 }
 
 /**
- * @return array{current: Branch, secondary: Branch, warehouse: Warehouse, sale: Sale, product: Product, service: ServiceCatalog, user: User}
+ * @return array{current: Branch, secondary: Branch, sale: Sale, product: Product, service: ServiceCatalog, user: User}
  */
 function authenticateSaleItemsUser(): array
 {
@@ -74,15 +73,6 @@ function authenticateSaleItemsUser(): array
         'name' => 'Alt Branch',
         'status' => BranchStatus::ACTIVE->value,
     ]);
-
-    $warehouse = Warehouse::query()->create([
-        'branch_id' => $currentBranch->id,
-        'code' => 'MAIN-WH',
-        'name' => 'Main Warehouse',
-        'status' => RecordStatus::ACTIVE->value,
-    ]);
-
-    $currentBranch->update(['warehouse_id' => $warehouse->id]);
 
     $user = User::query()->create([
         'branch_id' => $currentBranch->id,
@@ -154,7 +144,6 @@ function authenticateSaleItemsUser(): array
     return [
         'current' => $currentBranch,
         'secondary' => $secondaryBranch,
-        'warehouse' => $warehouse,
         'sale' => $sale,
         'product' => $product,
         'service' => $service,

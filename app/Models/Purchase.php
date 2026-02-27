@@ -24,7 +24,6 @@ final class Purchase extends Model
 
     protected $fillable = [
         'branch_id',
-        'warehouse_id',
         'vendor_id',
         'created_by',
         'purchase_no',
@@ -60,11 +59,6 @@ final class Purchase extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
-    }
-
-    public function warehouse(): BelongsTo
-    {
-        return $this->belongsTo(Warehouse::class);
     }
 
     public function vendor(): BelongsTo

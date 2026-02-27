@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Tenant\Product;
 
-use App\Models\Branch;
 use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\ProductPrice;
@@ -17,10 +16,6 @@ final class GetProductDetailsAction
     public function handle(Product $product, string $branchId): array
     {
         $product->load(['category', 'brand', 'defaultTax', 'defaultUnit']);
-
-        $branch = Branch::query()
-            ->with('warehouse')
-            ->find($branchId);
 
         $priceHistory = ProductPrice::query()
             ->where('branch_id', $branchId)
@@ -52,7 +47,6 @@ final class GetProductDetailsAction
 
         return [
             'product' => $product,
-            'branch' => $branch,
             'latestPrice' => $latestPrice,
             'stockOnHand' => $stockOnHand,
             'stockReserved' => $stockReserved,

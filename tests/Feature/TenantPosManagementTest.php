@@ -15,7 +15,6 @@ use App\Models\SaleItem;
 use App\Models\ServiceCatalog;
 use App\Models\Tax;
 use App\Models\User;
-use App\Models\Warehouse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
@@ -123,13 +122,6 @@ function authenticatePosUser(): array
         'retail_price' => 130,
         'wholesale_price' => 120,
         'effective_from' => now(),
-    ]);
-
-    Warehouse::query()->withoutGlobalScopes()->create([
-        'branch_id' => $currentBranch->id,
-        'code' => 'POS-WH-1',
-        'name' => 'POS Warehouse',
-        'status' => RecordStatus::ACTIVE->value,
     ]);
 
     InventoryStock::query()->create([

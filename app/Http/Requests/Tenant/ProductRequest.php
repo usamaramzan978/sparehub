@@ -55,6 +55,11 @@ final class ProductRequest extends FormRequest
             'qrcode' => ['nullable', 'string', 'max:80', Rule::unique('products', 'qrcode')->ignore($productId)],
             'track_stock' => ['sometimes', 'boolean'],
             'opening_stock' => ['nullable', 'numeric', 'min:0'],
+            'cost' => ['nullable', 'numeric', 'min:0'],
+            'mrp' => ['nullable', 'numeric', 'min:0'],
+            'retail_price' => ['nullable', 'numeric', 'min:0'],
+            'wholesale_price' => ['nullable', 'numeric', 'min:0'],
+            'effective_from' => ['nullable', 'date'],
             'status' => ['required', Rule::enum(RecordStatus::class)],
             'description' => ['nullable', 'string'],
         ];
@@ -73,6 +78,10 @@ final class ProductRequest extends FormRequest
             'barcode.unique' => 'This barcode already exists.',
             'qrcode.unique' => 'This QR code already exists.',
             'status.required' => 'Please select a product status.',
+            'cost.min' => 'Cost must be zero or greater.',
+            'mrp.min' => 'MRP must be zero or greater.',
+            'retail_price.min' => 'Retail price must be zero or greater.',
+            'wholesale_price.min' => 'Wholesale price must be zero or greater.',
         ];
     }
 }

@@ -58,7 +58,7 @@ final class BuildReportDataAction
             ->when(is_numeric($maxTotal), fn (Builder $query) => $query->where('grand_total', '<=', (float) $maxTotal));
 
         $purchasesBase = Purchase::query()
-            ->with(['vendor', 'warehouse'])
+            ->with(['vendor'])
             ->where('branch_id', $branchId)
             ->when($dateFrom !== '', fn (Builder $query) => $query->whereDate('purchase_date', '>=', $dateFrom))
             ->when($dateTo !== '', fn (Builder $query) => $query->whereDate('purchase_date', '<=', $dateTo))

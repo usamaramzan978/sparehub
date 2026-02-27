@@ -23,7 +23,6 @@ use App\Models\SalePayment;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\VendorPayment;
-use App\Models\Warehouse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
@@ -149,13 +148,6 @@ function authenticateDashboardUser(): void
         'status' => RecordStatus::ACTIVE->value,
     ]);
 
-    Warehouse::query()->withoutGlobalScopes()->create([
-        'branch_id' => $branch->id,
-        'code' => 'DB-WH-1',
-        'name' => 'Dashboard Warehouse',
-        'status' => RecordStatus::ACTIVE->value,
-    ]);
-
     InventoryStock::query()->create([
         'branch_id' => $branch->id,
         'product_id' => $product->id,
@@ -217,7 +209,6 @@ it('shows dashboard summary and chart data', function (): void {
 
     $response->assertSee('Top Stock');
     $response->assertSee('Tenant Health');
-    $response->assertSee('Staff');
     $response->assertSee('Low Stock Items');
     $response->assertSee('Unpaid Vendors');
     $response->assertSee('Open Job Cards');

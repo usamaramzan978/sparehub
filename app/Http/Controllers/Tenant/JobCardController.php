@@ -7,18 +7,23 @@ namespace App\Http\Controllers\Tenant;
 use App\Actions\Tenant\JobCard\CreateJobCardAction;
 use App\Actions\Tenant\JobCard\DeleteJobCardAction;
 use App\Actions\Tenant\JobCard\EnsureJobCardInBranchAction;
+use App\Actions\Tenant\JobCard\SyncJobCardLinesAction;
 use App\Actions\Tenant\JobCard\UpdateJobCardAction;
+use App\Enums\JobCardServiceStatus;
 use App\Enums\JobCardStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\JobCardRequest;
 use App\Models\Customer;
 use App\Models\CustomerVehicle;
 use App\Models\JobCard;
+use App\Models\Product;
+use App\Models\ServiceCatalog;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 final class JobCardController extends Controller
 {
@@ -69,16 +74,26 @@ final class JobCardController extends Controller
         return view('tenants.job-cards.create', $this->formOptions());
     }
 
-    public function store(JobCardRequest $request, CreateJobCardAction $action): RedirectResponse
-    {
-        $action->handle($request->validated(), $this->currentBranchId(), auth('user')->id());
+    public function store(
+        JobCardRequest $request,
+        CreateJobCardAction $action,
+        SyncJobCardLinesAction $syncJobCardLinesAction
+    ): RedirectResponse {
+        $validated = $request->validated();
+        $jobCard = $action->handle(
+            Arr::except($validated, ['services', 'parts']),
+            $this->currentBranchId(),
+            auth('user')->id()
+        );
+        $syncJobCardLinesAction->handle($jobCard, $validated);
 
         return to_route('tenant.job-cards.index')
             ->with('status', 'Created.');
     }
 
-    public function show(JobCard $jobCard, EnsureJobCardInBranchAction $ensureJobCardInBranchAction): View
+    public function show(JobCard|string $jobCard, EnsureJobCardInBranchAction $ensureJobCardInBranchAction): View
     {
+        $jobCard = $this->resolveJobCard($jobCard);
         $jobCard = $ensureJobCardInBranchAction->handle($jobCard, $this->currentBranchId());
 
         $jobCard->load([
@@ -95,8 +110,9 @@ final class JobCardController extends Controller
         ]);
     }
 
-    public function edit(JobCard $jobCard, EnsureJobCardInBranchAction $ensureJobCardInBranchAction): View
+    public function edit(JobCard|string $jobCard, EnsureJobCardInBranchAction $ensureJobCardInBranchAction): View
     {
+        $jobCard = $this->resolveJobCard($jobCard);
         $jobCard = $ensureJobCardInBranchAction->handle($jobCard, $this->currentBranchId());
 
         return view('tenants.job-cards.edit', array_merge(
@@ -107,22 +123,27 @@ final class JobCardController extends Controller
 
     public function update(
         JobCardRequest $request,
-        JobCard $jobCard,
+        JobCard|string $jobCard,
         UpdateJobCardAction $action,
+        SyncJobCardLinesAction $syncJobCardLinesAction,
         EnsureJobCardInBranchAction $ensureJobCardInBranchAction
     ): RedirectResponse {
+        $jobCard = $this->resolveJobCard($jobCard);
         $jobCard = $ensureJobCardInBranchAction->handle($jobCard, $this->currentBranchId());
-        $action->handle($jobCard, $request->validated(), $this->currentBranchId());
+        $validated = $request->validated();
+        $action->handle($jobCard, Arr::except($validated, ['services', 'parts']), $this->currentBranchId());
+        $syncJobCardLinesAction->handle($jobCard, $validated);
 
         return to_route('tenant.job-cards.index')
             ->with('status', 'Updated.');
     }
 
     public function destroy(
-        JobCard $jobCard,
+        JobCard|string $jobCard,
         DeleteJobCardAction $action,
         EnsureJobCardInBranchAction $ensureJobCardInBranchAction
     ): RedirectResponse {
+        $jobCard = $this->resolveJobCard($jobCard);
         $jobCard = $ensureJobCardInBranchAction->handle($jobCard, $this->currentBranchId());
         $action->handle($jobCard);
 
@@ -152,11 +173,32 @@ final class JobCardController extends Controller
             ->orderBy('name')
             ->get();
 
+        $serviceCatalogs = ServiceCatalog::query()
+            ->where('branch_id', $branchId)
+            ->orderBy('name')
+            ->get();
+
+        $products = Product::query()
+            ->orderBy('name')
+            ->get();
+
         return [
             'customers' => $customers,
             'vehicles' => $vehicles,
             'employees' => $employees,
+            'serviceCatalogs' => $serviceCatalogs,
+            'products' => $products,
             'statuses' => JobCardStatus::cases(),
+            'serviceStatuses' => JobCardServiceStatus::cases(),
         ];
+    }
+
+    private function resolveJobCard(JobCard|string $jobCard): JobCard
+    {
+        if ($jobCard instanceof JobCard) {
+            return $jobCard;
+        }
+
+        return JobCard::query()->findOrFail($jobCard);
     }
 }

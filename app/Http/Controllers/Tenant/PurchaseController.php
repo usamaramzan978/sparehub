@@ -15,7 +15,6 @@ use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Tax;
 use App\Models\Vendor;
-use App\Models\Warehouse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -32,7 +31,7 @@ final class PurchaseController extends Controller
         [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
 
         $purchasesQuery = Purchase::query()
-            ->with(['vendor', 'warehouse'])
+            ->with(['vendor'])
             ->where('branch_id', $branchId)
             ->when(filled($search), function (Builder $query) use ($search): void {
                 $query->where(function (Builder $builder) use ($search): void {
@@ -78,7 +77,6 @@ final class PurchaseController extends Controller
 
         $purchase->load([
             'vendor',
-            'warehouse',
             'creator',
             'items.product',
             'items.tax',
@@ -135,7 +133,6 @@ final class PurchaseController extends Controller
 
         return [
             'vendors' => Vendor::query()->where('branch_id', $branchId)->orderBy('name')->get(),
-            'warehouses' => Warehouse::query()->where('branch_id', $branchId)->orderBy('name')->get(),
             'products' => Product::query()->orderBy('name')->get(),
             'taxes' => Tax::query()->orderBy('name')->get(),
             'statuses' => PurchaseStatus::cases(),

@@ -47,12 +47,11 @@ Inside tenant panel, menu is organized as:
 ## 5. First-Time Setup (Recommended Order)
 
 1. Master Data > Branches (verify main branch)
-2. Master Data > Warehouses
-3. Master Data > Units / Taxes
-4. Master Data > Categories / Brands
-5. Master Data > Products + Product Prices
-6. Master Data > Customers / Vehicles / Vendors
-7. Access Control > Users / Roles (if more staff needed)
+2. Master Data > Units / Taxes
+3. Master Data > Categories / Brands
+4. Master Data > Products (prices are managed in product create/edit)
+5. Master Data > Customers / Vehicles / Vendors
+6. Access Control > Users / Roles (if more staff needed)
 
 ## 6. Daily Operations
 
@@ -65,8 +64,11 @@ Inside tenant panel, menu is organized as:
 ### 6.2 Workshop Jobs
 
 - Create a `Job Card` for customer vehicle/service work.
-- Add `Job Card Services` and `Job Card Parts`.
+- Add service lines and part lines inside the same Job Card form.
 - Convert related work into billing through sales flow.
+
+Workshop menu purpose:
+- `Job Cards`: single workshop screen for job details + labor/services + parts usage.
 
 ### 6.3 Purchases & Stock
 
@@ -89,9 +91,10 @@ Stock behavior for tracked products (`Track Stock` enabled):
 3. Purchases increase stock.
 4. Purchase returns reduce stock.
 
-You can review and adjust stock from:
-- `Master Data > Products > Stock`
-- `Master Data > Products > Stock Adjustment`
+You can review stock movement history from:
+- `Master Data > Products > History`
+
+Opening stock is managed from product create/edit.
 
 ### 6.6 Units and Fractional (Important)
 
@@ -112,16 +115,14 @@ Current behavior note:
 - In current system, unit is mainly product context/label.
 - Fractional flag exists but strict decimal/integer enforcement is not yet applied in all transactions.
 
-### 6.7 Warehouses (When to use)
+### 6.7 Product History
 
-Warehouse is useful when a branch stores stock in multiple physical locations.
+Use `Master Data > Products > History` when you want a product audit trail.
 
-Practical examples:
-- `Main Warehouse`: regular stock receiving from vendors.
-- `Front Counter Store`: fast-moving items for retail.
-- `Service Room`: workshop reserved stock.
-
-If your branch has only one physical store, you can still keep one default warehouse and operate simply.
+It helps answer:
+- which product quantity changed
+- whether movement came from sale, purchase, return, or opening stock sync
+- when the movement happened
 
 ### 6.8 Employees
 
@@ -259,8 +260,8 @@ Example:
 
 Example:
 - Physical count shows system says `40` spark plugs but shelf has `38`.
-- Storekeeper opens `Stock Adjustment` and adjusts `-2`.
-- Stock is corrected and movement is logged.
+- Storekeeper updates opening stock in product edit (if correction is needed).
+- Manager verifies movement trail from `Master Data > Products > History`.
 
 ### 12.7 Expenses
 
