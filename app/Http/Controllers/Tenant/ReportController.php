@@ -55,6 +55,16 @@ final class ReportController extends Controller
         return view('tenants.reports.payables', $buildReportDataAction->handle($request, $this->currentBranchId(), true));
     }
 
+    public function vendorProducts(Request $request, BuildReportDataAction $buildReportDataAction): View
+    {
+        return view('tenants.reports.vendor-products', $buildReportDataAction->handle($request, $this->currentBranchId(), true));
+    }
+
+    public function categorySales(Request $request, BuildReportDataAction $buildReportDataAction): View
+    {
+        return view('tenants.reports.category-sales', $buildReportDataAction->handle($request, $this->currentBranchId(), true));
+    }
+
     public function exportPdf(Request $request, BuildReportDataAction $buildReportDataAction): Response
     {
         $data = $buildReportDataAction->handle($request, $this->currentBranchId(), false);

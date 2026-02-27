@@ -33,16 +33,16 @@ Your visible menu depends on your assigned role permissions.
 
 Inside tenant panel, menu is organized as:
 - Dashboard
-- End Of Day
-- Expenses
-- Master Data
-- Workshop
 - Sales
 - Purchases
-- Access Control
-- Employee
 - Reports
-- Settings / Profile
+- Workshop
+- Master Data
+- Expenses
+- Employees
+- System
+- Support Tickets
+- Account (Profile / Security / Logout)
 
 ## 5. First-Time Setup (Recommended Order)
 
@@ -51,7 +51,7 @@ Inside tenant panel, menu is organized as:
 3. Master Data > Categories / Brands
 4. Master Data > Products (prices are managed in product create/edit)
 5. Master Data > Customers / Vehicles / Vendors
-6. Access Control > Users / Roles (if more staff needed)
+6. Employees > Users (if more staff needed)
 
 ## 6. Daily Operations
 
@@ -59,6 +59,7 @@ Inside tenant panel, menu is organized as:
 
 - Use `Sales > POS` for quick billing.
 - You can also manage full invoices in `Sales > Sales Invoices`.
+- In `Sales Invoices`, if you select a `Job Card`, SpareHub auto-loads that job's service + part lines into invoice items.
 - Record collections in `Sales > Sale Payments`.
 - Handle customer product returns in `Sales > Sales Returns` (returned qty goes back to stock).
 
@@ -78,6 +79,9 @@ Sales Returns purpose:
 - Create a `Job Card` for customer vehicle/service work.
 - Add service lines and part lines inside the same Job Card form.
 - Convert related work into billing through sales flow.
+  - Open `Sales > Sales Invoices`.
+  - Select the related `Job Card`.
+  - System auto-fills customer and invoice lines from that job card.
 
 Workshop menu purpose:
 - `Job Cards`: single workshop screen for job details + labor/services + parts usage.
@@ -146,7 +150,11 @@ It helps answer:
 ### 6.8 Employees
 
 - `Employee Attendances`: mark check-in/check-out/absent.
-- `Employee Salaries`: track month-wise salary and paid status.
+- `Employee Salaries`: track month-wise salary and paid status using:
+  - per day salary
+  - working days
+  - bonus/deduction
+  - net salary formula: `(per day salary × working days) + bonus - deduction`
 - `Users`: maintain employee commission rules directly in user create/edit.
 
 Commission rule fields:
@@ -312,7 +320,9 @@ Example:
 Example:
 - Manager opens:
   - `Reports > Sales` to review invoice performance
+  - `Reports > Category Sales` to check which categories are running most
   - `Reports > Purchases` to review supplier buying
+  - `Reports > Vendor Products` to check vendor-linked product performance
   - `Reports > Receivables` to follow up pending customer dues
 - Exports each page as its own PDF for accountant.
 

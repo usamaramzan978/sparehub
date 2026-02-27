@@ -6,12 +6,17 @@ use App\Enums\BranchStatus;
 use App\Enums\InvoiceType;
 use App\Enums\PaymentMethodType;
 use App\Enums\PurchaseStatus;
+use App\Enums\SaleLineType;
 use App\Enums\SaleStatus;
 use App\Enums\UserStatus;
 use App\Models\Branch;
+use App\Models\Category;
 use App\Models\Customer;
+use App\Models\Product;
 use App\Models\Purchase;
+use App\Models\PurchaseItem;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\SalePayment;
 use App\Models\User;
 use App\Models\Vendor;
@@ -181,11 +186,13 @@ it('shows dedicated report pages', function (string $routeName): void {
 })->with([
     'overview' => 'reports.overview',
     'sales' => 'reports.sales',
+    'category sales' => 'reports.category-sales',
     'purchases' => 'reports.purchases',
     'sale payments' => 'reports.sale-payments',
     'vendor payments' => 'reports.vendor-payments',
     'receivables' => 'reports.receivables',
     'payables' => 'reports.payables',
+    'vendor products' => 'reports.vendor-products',
 ]);
 
 it('exports detailed reports pdf', function (): void {
@@ -299,4 +306,142 @@ it('applies full-day tenant date range boundaries for payment datetime filters',
 
     expect($response->viewData('salePayments')->total())->toBe(2);
     expect($response->viewData('vendorPayments')->total())->toBe(2);
+});
+
+it('shows vendor product sales report ranked by sold quantity', function (): void {
+    $fixture = authenticateReportsModuleUser();
+
+    $otherVendor = Vendor::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['branch']->id,
+        'code' => 'REP-V-2',
+        'name' => 'Second Vendor',
+        'status' => 'active',
+    ]);
+
+    $topProduct = Product::query()->create([
+        'sku' => 'REP-PROD-1',
+        'name' => 'Top Running Product',
+    ]);
+
+    $slowProduct = Product::query()->create([
+        'sku' => 'REP-PROD-2',
+        'name' => 'Slow Product',
+    ]);
+
+    PurchaseItem::query()->withoutGlobalScopes()->create([
+        'purchase_id' => $fixture['purchase']->id,
+        'branch_id' => $fixture['branch']->id,
+        'product_id' => $topProduct->id,
+        'qty' => 20,
+        'received_qty' => 20,
+        'unit_cost' => 10,
+        'line_total' => 200,
+    ]);
+
+    $secondPurchase = Purchase::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['branch']->id,
+        'vendor_id' => $otherVendor->id,
+        'purchase_no' => 'REP-P-2',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+        'grand_total' => 100,
+    ]);
+
+    PurchaseItem::query()->withoutGlobalScopes()->create([
+        'purchase_id' => $secondPurchase->id,
+        'branch_id' => $fixture['branch']->id,
+        'product_id' => $slowProduct->id,
+        'qty' => 5,
+        'received_qty' => 5,
+        'unit_cost' => 10,
+        'line_total' => 50,
+    ]);
+
+    SaleItem::query()->withoutGlobalScopes()->create([
+        'sale_id' => $fixture['sale']->id,
+        'branch_id' => $fixture['branch']->id,
+        'product_id' => $topProduct->id,
+        'line_type' => SaleLineType::PRODUCT->value,
+        'qty' => 6,
+        'unit_price' => 20,
+        'line_total' => 120,
+    ]);
+
+    SaleItem::query()->withoutGlobalScopes()->create([
+        'sale_id' => $fixture['sale']->id,
+        'branch_id' => $fixture['branch']->id,
+        'product_id' => $slowProduct->id,
+        'line_type' => SaleLineType::PRODUCT->value,
+        'qty' => 2,
+        'unit_price' => 30,
+        'line_total' => 60,
+    ]);
+
+    $response = $this->get(reportsTenantRoute('reports.vendor-products'));
+
+    $response->assertSuccessful();
+
+    $vendorProductSales = $response->viewData('vendorProductSales');
+
+    expect($vendorProductSales->total())->toBe(2);
+    expect($vendorProductSales->items()[0]->product_name)->toBe('Top Running Product');
+    expect((float) $vendorProductSales->items()[0]->total_qty_sold)->toBe(6.0);
+    expect($vendorProductSales->items()[0]->vendor_name)->toBe('Report Vendor');
+});
+
+it('shows category sales report ranked by sold quantity', function (): void {
+    $fixture = authenticateReportsModuleUser();
+
+    $fastCategory = Category::query()->create([
+        'name' => 'Fast Moving',
+        'slug' => 'fast-moving',
+    ]);
+
+    $slowCategory = Category::query()->create([
+        'name' => 'Slow Moving',
+        'slug' => 'slow-moving',
+    ]);
+
+    $topProduct = Product::query()->create([
+        'category_id' => $fastCategory->id,
+        'sku' => 'REP-CAT-1',
+        'name' => 'Fast Category Product',
+    ]);
+
+    $slowProduct = Product::query()->create([
+        'category_id' => $slowCategory->id,
+        'sku' => 'REP-CAT-2',
+        'name' => 'Slow Category Product',
+    ]);
+
+    SaleItem::query()->withoutGlobalScopes()->create([
+        'sale_id' => $fixture['sale']->id,
+        'branch_id' => $fixture['branch']->id,
+        'product_id' => $topProduct->id,
+        'line_type' => SaleLineType::PRODUCT->value,
+        'qty' => 8,
+        'unit_price' => 12,
+        'line_total' => 96,
+    ]);
+
+    SaleItem::query()->withoutGlobalScopes()->create([
+        'sale_id' => $fixture['sale']->id,
+        'branch_id' => $fixture['branch']->id,
+        'product_id' => $slowProduct->id,
+        'line_type' => SaleLineType::PRODUCT->value,
+        'qty' => 3,
+        'unit_price' => 15,
+        'line_total' => 45,
+    ]);
+
+    $response = $this->get(reportsTenantRoute('reports.category-sales'));
+
+    $response->assertSuccessful();
+
+    $categorySales = $response->viewData('categorySales');
+
+    expect($categorySales->total())->toBe(2);
+    expect($categorySales->items()[0]->category_name)->toBe('Fast Moving');
+    expect((float) $categorySales->items()[0]->total_qty_sold)->toBe(8.0);
+    expect((float) $categorySales->items()[0]->total_sales_amount)->toBe(96.0);
 });

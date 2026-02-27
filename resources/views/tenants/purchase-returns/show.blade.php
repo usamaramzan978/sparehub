@@ -99,13 +99,7 @@
                                 <td class="text-end">{{ number_format((float) $returnItem->unit_cost, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) $returnItem->tax_amount, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) $returnItem->line_total, 2) }}</td>
-                                <td class="text-end">
-                                    <a href="{{ route('tenant.purchase-return-items.show', $returnItem) }}"
-                                        class="btn btn-sm btn-icon btn-primary-light btn-wave waves-effect waves-light"
-                                        title="{{ __('View') }}">
-                                        <i class="ri-eye-line"></i>
-                                    </a>
-                                </td>
+                                <td class="text-end text-muted">-</td>
                             </tr>
                         @empty
                             <tr>

@@ -26,7 +26,8 @@ final class EmployeeSalaryRequest extends FormRequest
         return [
             'user_id' => ['required', 'uuid', $employeeExists],
             'salary_month' => ['required', 'date'],
-            'basic_salary' => ['required', 'numeric', 'min:0'],
+            'per_day_salary' => ['required', 'numeric', 'min:0'],
+            'working_days' => ['required', 'integer', 'min:0', 'max:31'],
             'bonus' => ['nullable', 'numeric', 'min:0'],
             'deduction' => ['nullable', 'numeric', 'min:0'],
             'action' => ['required', Rule::in(['save', 'mark_paid'])],
@@ -45,6 +46,7 @@ final class EmployeeSalaryRequest extends FormRequest
             'uuid' => 'The :attribute must be a valid UUID.',
             'date' => 'The :attribute must be a valid date.',
             'numeric' => 'The :attribute must be a valid number.',
+            'integer' => 'The :attribute must be a whole number.',
             'min' => 'The :attribute is below the minimum allowed value.',
             'max' => 'The :attribute exceeds the maximum allowed value.',
             'in' => 'The selected :attribute is invalid.',

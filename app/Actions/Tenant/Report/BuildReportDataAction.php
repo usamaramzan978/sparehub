@@ -8,15 +8,19 @@ use App\Enums\InvoiceType;
 use App\Enums\PaymentMethodType;
 use App\Enums\PurchaseStatus;
 use App\Enums\SaleStatus;
+use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Purchase;
+use App\Models\PurchaseItem;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\SalePayment;
 use App\Models\Vendor;
 use App\Models\VendorPayment;
 use App\Support\TenantDateTime;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 final class BuildReportDataAction
 {
@@ -106,6 +110,91 @@ final class BuildReportDataAction
                 });
             });
 
+        $latestProductVendorBase = PurchaseItem::query()
+            ->join('purchases', 'purchases.id', '=', 'purchase_items.purchase_id')
+            ->select([
+                'purchase_items.product_id',
+                'purchases.vendor_id',
+                DB::raw('ROW_NUMBER() OVER (PARTITION BY purchase_items.product_id ORDER BY purchases.purchase_date DESC, purchases.created_at DESC) AS vendor_rank'),
+            ])
+            ->where('purchase_items.branch_id', $branchId)
+            ->where('purchases.branch_id', $branchId);
+
+        $vendorProductSalesBase = SaleItem::query()
+            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->join('products', 'products.id', '=', 'sale_items.product_id')
+            ->leftJoinSub($latestProductVendorBase, 'latest_product_vendors', function ($join): void {
+                $join
+                    ->on('latest_product_vendors.product_id', '=', 'sale_items.product_id')
+                    ->where('latest_product_vendors.vendor_rank', '=', 1);
+            })
+            ->leftJoin('vendors', 'vendors.id', '=', 'latest_product_vendors.vendor_id')
+            ->select([
+                'sale_items.product_id',
+                'products.name as product_name',
+                'products.sku as product_sku',
+                'latest_product_vendors.vendor_id',
+                'vendors.name as vendor_name',
+            ])
+            ->selectRaw('SUM(sale_items.qty) as total_qty_sold')
+            ->selectRaw('SUM(sale_items.line_total) as total_sales_amount')
+            ->selectRaw('COUNT(DISTINCT sale_items.sale_id) as invoices_count')
+            ->where('sale_items.branch_id', $branchId)
+            ->where('sales.branch_id', $branchId)
+            ->where('sale_items.line_type', 'product')
+            ->whereNotNull('sale_items.product_id')
+            ->when($dateFrom !== '', fn (Builder $query) => $query->whereDate('sales.invoice_date', '>=', $dateFrom))
+            ->when($dateTo !== '', fn (Builder $query) => $query->whereDate('sales.invoice_date', '<=', $dateTo))
+            ->when($vendorId !== '', fn (Builder $query) => $query->where('latest_product_vendors.vendor_id', $vendorId))
+            ->when(filled($search), function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->where('products.name', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('products.sku', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('vendors.name', 'like', sprintf('%%%s%%', $search));
+                });
+            })
+            ->groupBy([
+                'sale_items.product_id',
+                'products.name',
+                'products.sku',
+                'latest_product_vendors.vendor_id',
+                'vendors.name',
+            ]);
+
+        $categorySalesBase = SaleItem::query()
+            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->join('products', 'products.id', '=', 'sale_items.product_id')
+            ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
+            ->select([
+                'categories.id as category_id',
+                'categories.name as category_name',
+            ])
+            ->selectRaw('SUM(sale_items.qty) as total_qty_sold')
+            ->selectRaw('SUM(sale_items.line_total) as total_sales_amount')
+            ->selectRaw('COUNT(DISTINCT sale_items.sale_id) as invoices_count')
+            ->selectRaw('COUNT(DISTINCT sale_items.product_id) as products_count')
+            ->where('sale_items.branch_id', $branchId)
+            ->where('sales.branch_id', $branchId)
+            ->where('sale_items.line_type', 'product')
+            ->whereNotNull('sale_items.product_id')
+            ->when($dateFrom !== '', fn (Builder $query) => $query->whereDate('sales.invoice_date', '>=', $dateFrom))
+            ->when($dateTo !== '', fn (Builder $query) => $query->whereDate('sales.invoice_date', '<=', $dateTo))
+            ->when($saleStatus !== '', fn (Builder $query) => $query->where('sales.status', $saleStatus))
+            ->when($invoiceType !== '', fn (Builder $query) => $query->where('sales.invoice_type', $invoiceType))
+            ->when(filled($search), function (Builder $query) use ($search): void {
+                $query->where(function (Builder $builder) use ($search): void {
+                    $builder
+                        ->where('categories.name', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('products.name', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('products.sku', 'like', sprintf('%%%s%%', $search));
+                });
+            })
+            ->groupBy([
+                'categories.id',
+                'categories.name',
+            ]);
+
         if ($paginate) {
             $sales = (clone $salesBase)->latest('invoice_date')->paginate(15, ['*'], 'sales_page')->withQueryString();
             $purchases = (clone $purchasesBase)->latest('purchase_date')->paginate(15, ['*'], 'purchases_page')->withQueryString();
@@ -113,6 +202,16 @@ final class BuildReportDataAction
             $vendorPayments = (clone $vendorPaymentsBase)->latest('paid_at')->paginate(15, ['*'], 'vendor_payments_page')->withQueryString();
             $receivables = (clone $salesBase)->where('balance_due', '>', 0)->latest('invoice_date')->paginate(15, ['*'], 'receivables_page')->withQueryString();
             $payables = (clone $purchasesBase)->where('balance_due', '>', 0)->latest('purchase_date')->paginate(15, ['*'], 'payables_page')->withQueryString();
+            $vendorProductSales = (clone $vendorProductSalesBase)
+                ->orderByDesc('total_qty_sold')
+                ->orderByDesc('total_sales_amount')
+                ->paginate(15, ['*'], 'vendor_product_sales_page')
+                ->withQueryString();
+            $categorySales = (clone $categorySalesBase)
+                ->orderByDesc('total_qty_sold')
+                ->orderByDesc('total_sales_amount')
+                ->paginate(15, ['*'], 'category_sales_page')
+                ->withQueryString();
         } else {
             $sales = (clone $salesBase)->latest('invoice_date')->get();
             $purchases = (clone $purchasesBase)->latest('purchase_date')->get();
@@ -120,6 +219,14 @@ final class BuildReportDataAction
             $vendorPayments = (clone $vendorPaymentsBase)->latest('paid_at')->get();
             $receivables = (clone $salesBase)->where('balance_due', '>', 0)->latest('invoice_date')->get();
             $payables = (clone $purchasesBase)->where('balance_due', '>', 0)->latest('purchase_date')->get();
+            $vendorProductSales = (clone $vendorProductSalesBase)
+                ->orderByDesc('total_qty_sold')
+                ->orderByDesc('total_sales_amount')
+                ->get();
+            $categorySales = (clone $categorySalesBase)
+                ->orderByDesc('total_qty_sold')
+                ->orderByDesc('total_sales_amount')
+                ->get();
         }
 
         $summary = [
@@ -140,9 +247,12 @@ final class BuildReportDataAction
             'vendorPayments' => $vendorPayments,
             'receivables' => $receivables,
             'payables' => $payables,
+            'vendorProductSales' => $vendorProductSales,
+            'categorySales' => $categorySales,
             'summary' => $summary,
             'customers' => Customer::query()->where('branch_id', $branchId)->orderBy('name')->get(),
             'vendors' => Vendor::query()->where('branch_id', $branchId)->orderBy('name')->get(),
+            'categories' => Category::query()->orderBy('name')->get(),
             'saleStatuses' => SaleStatus::cases(),
             'purchaseStatuses' => PurchaseStatus::cases(),
             'invoiceTypes' => InvoiceType::cases(),

@@ -23,10 +23,7 @@ use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductHistoryController;
 use App\Http\Controllers\Tenant\ProfileController;
 use App\Http\Controllers\Tenant\PurchaseController;
-use App\Http\Controllers\Tenant\PurchaseItemController;
 use App\Http\Controllers\Tenant\PurchaseReturnController;
-use App\Http\Controllers\Tenant\PurchaseReturnItemController;
-use App\Http\Controllers\Tenant\PurchasesTreeController;
 use App\Http\Controllers\Tenant\ReportController;
 use App\Http\Controllers\Tenant\RoleController;
 use App\Http\Controllers\Tenant\SaleController;
@@ -69,7 +66,6 @@ Route::middleware([
         Route::get('dashboard', DashboardController::class)->name('dashboard');
         Route::get('end-of-day', EndOfDayController::class)->name('end-of-day');
         Route::get('products/history', ProductHistoryController::class)->name('products.history');
-        Route::get('purchases-tree', PurchasesTreeController::class)->name('purchases-tree.index');
 
         Route::get('employee-attendances', [EmployeeAttendanceController::class, 'index'])->name('employee-attendances.index');
         Route::post('employee-attendances', [EmployeeAttendanceController::class, 'store'])->name('employee-attendances.store');
@@ -118,6 +114,8 @@ Route::middleware([
             Route::get('reports/vendor-payments', 'vendorPayments')->name('reports.vendor-payments');
             Route::get('reports/receivables', 'receivables')->name('reports.receivables');
             Route::get('reports/payables', 'payables')->name('reports.payables');
+            Route::get('reports/vendor-products', 'vendorProducts')->name('reports.vendor-products');
+            Route::get('reports/category-sales', 'categorySales')->name('reports.category-sales');
 
             Route::get('reports/export/pdf', 'exportPdf')->name('reports.export.pdf');
             Route::get('reports/export/sales-pdf', 'exportSalesPdf')->name('reports.export.sales-pdf');
@@ -131,6 +129,8 @@ Route::middleware([
 
         Route::get('sales/{sale}/print', [SaleController::class, 'print'])
             ->name('sales.print');
+        Route::get('sales/job-card-items/{jobCard}', [SaleController::class, 'jobCardItems'])
+            ->name('sales.job-card-items');
 
         Route::resources([
             'branches' => BranchController::class,
@@ -150,9 +150,7 @@ Route::middleware([
             'sale-returns' => SaleReturnController::class,
             'sale-payments' => SalePaymentController::class,
             'purchases' => PurchaseController::class,
-            'purchase-items' => PurchaseItemController::class,
             'purchase-returns' => PurchaseReturnController::class,
-            'purchase-return-items' => PurchaseReturnItemController::class,
             'vendor-payments' => VendorPaymentController::class,
         ]);
         Route::resource('job-cards', JobCardController::class)->parameters(['job-cards' => 'jobCard']);

@@ -14,12 +14,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\SaleRequest;
 use App\Models\Customer;
 use App\Models\JobCard;
+use App\Models\JobCardPart;
+use App\Models\JobCardService;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\ServiceCatalog;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -64,6 +67,62 @@ final class SaleController extends Controller
     public function create(): View
     {
         return view('tenants.sales.create', $this->formOptions());
+    }
+
+    public function jobCardItems(string $jobCard): JsonResponse
+    {
+        $branchId = $this->currentBranchId();
+        $jobCardModel = JobCard::query()
+            ->withoutGlobalScopes()
+            ->with([
+                'services.serviceCatalog',
+                'parts.product',
+            ])
+            ->where('branch_id', $branchId)
+            ->whereKey($jobCard)
+            ->first();
+
+        if (! $jobCardModel instanceof JobCard) {
+            return response()->json([
+                'customer_id' => null,
+                'items' => [],
+            ]);
+        }
+
+        $serviceItems = $jobCardModel->services
+            ->map(fn (JobCardService $service): array => [
+                'line_type' => 'service',
+                'product_id' => null,
+                'service_catalog_id' => $service->service_catalog_id,
+                'job_card_service_id' => $service->id,
+                'mechanic_id' => $service->technician_id,
+                'description' => $service->service_name,
+                'qty' => (float) $service->qty,
+                'unit_price' => (float) $service->rate,
+                'discount_amount' => 0.0,
+                'tax_amount' => 0.0,
+                'mechanic_charge' => 0.0,
+            ]);
+
+        $partItems = $jobCardModel->parts
+            ->map(fn (JobCardPart $part): array => [
+                'line_type' => 'product',
+                'product_id' => $part->product_id,
+                'service_catalog_id' => null,
+                'job_card_service_id' => null,
+                'mechanic_id' => null,
+                'description' => $part->product?->name,
+                'qty' => (float) $part->qty,
+                'unit_price' => (float) $part->unit_price,
+                'discount_amount' => 0.0,
+                'tax_amount' => 0.0,
+                'mechanic_charge' => 0.0,
+            ]);
+
+        return response()->json([
+            'customer_id' => $jobCardModel->customer_id,
+            'items' => $serviceItems->concat($partItems)->values()->all(),
+        ]);
     }
 
     public function store(SaleRequest $request, CreateSaleAction $action): RedirectResponse

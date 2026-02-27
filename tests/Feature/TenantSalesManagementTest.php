@@ -14,6 +14,9 @@ use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\InventoryStock;
+use App\Models\JobCard;
+use App\Models\JobCardPart;
+use App\Models\JobCardService;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\ServiceCatalog;
@@ -309,6 +312,84 @@ it('stores sale and syncs totals from items', function (): void {
         ->firstOrFail();
 
     expect((float) $stock->qty_on_hand)->toBe(8.0);
+});
+
+it('returns job card services and parts as sale items payload', function (): void {
+    $fixture = authenticateSalesUser();
+
+    $jobCard = JobCard::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'job_no' => 'JC-INV-1',
+        'job_date' => now()->toDateString(),
+        'status' => 'in_progress',
+        'total_visits' => 1,
+    ]);
+
+    $jobCardService = JobCardService::query()->create([
+        'job_card_id' => $jobCard->id,
+        'service_catalog_id' => $fixture['service']->id,
+        'technician_id' => $fixture['user']->id,
+        'service_name' => 'Wheel Alignment',
+        'qty' => 2,
+        'rate' => 400,
+        'line_total' => 800,
+        'status' => 'in_progress',
+    ]);
+
+    JobCardPart::query()->create([
+        'job_card_id' => $jobCard->id,
+        'product_id' => $fixture['product']->id,
+        'qty' => 1,
+        'unit_price' => 900,
+        'line_total' => 900,
+    ]);
+
+    session()->put('tenant.current_branch_id', $fixture['current']->id);
+    $response = (new SaleController())->jobCardItems($jobCard->id);
+    $payload = $response->getData(true);
+
+    expect($response->status())->toBe(200);
+    expect($payload['customer_id'])->toBe($fixture['customer']->id);
+    expect($payload['items'])->toHaveCount(2);
+    expect($payload['items'][0]['line_type'])->toBe(SaleLineType::SERVICE->value);
+    expect($payload['items'][0]['service_catalog_id'])->toBe($fixture['service']->id);
+    expect($payload['items'][0]['job_card_service_id'])->toBe($jobCardService->id);
+    expect($payload['items'][0]['mechanic_id'])->toBe($fixture['user']->id);
+    expect($payload['items'][1]['line_type'])->toBe(SaleLineType::PRODUCT->value);
+    expect($payload['items'][1]['product_id'])->toBe($fixture['product']->id);
+});
+
+it('returns empty job card payload for a different branch', function (): void {
+    $fixture = authenticateSalesUser();
+
+    $secondaryCustomer = Customer::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['secondary']->id,
+        'code' => 'CUST-S-2',
+        'name' => 'Foreign Customer',
+        'status' => 'active',
+    ]);
+
+    $foreignJobCard = JobCard::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['secondary']->id,
+        'customer_id' => $secondaryCustomer->id,
+        'created_by' => $fixture['user']->id,
+        'job_no' => 'JC-FOREIGN-1',
+        'job_date' => now()->toDateString(),
+        'status' => 'new',
+        'total_visits' => 1,
+    ]);
+
+    session()->put('tenant.current_branch_id', $fixture['current']->id);
+    $response = (new SaleController())->jobCardItems($foreignJobCard->id);
+    $payload = $response->getData(true);
+
+    expect($response->status())->toBe(200);
+    expect($payload)->toBe([
+        'customer_id' => null,
+        'items' => [],
+    ]);
 });
 
 it('does not decrement stock for non tracked products in sales flow', function (): void {

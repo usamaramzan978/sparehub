@@ -48,9 +48,7 @@
                                     $isCustomerVehicles = request()->routeIs('tenant.customer-vehicles.*');
                                     $isVendors = request()->routeIs('tenant.vendors.*');
 
-                                    $isWorkshop = request()->routeIs(
-                                        'tenant.job-cards.*',
-                                    );
+                                    $isWorkshop = request()->routeIs('tenant.job-cards.*');
                                     $isJobCards = request()->routeIs('tenant.job-cards.*');
 
                                     $isSales = request()->routeIs(
@@ -66,17 +64,11 @@
 
                                     $isPurchases = request()->routeIs(
                                         'tenant.purchases.*',
-                                        'tenant.purchases-tree.*',
-                                        'tenant.purchase-items.*',
                                         'tenant.purchase-returns.*',
-                                        'tenant.purchase-return-items.*',
                                         'tenant.vendor-payments.*',
                                     );
                                     $isPurchaseInvoices = request()->routeIs('tenant.purchases.*');
-                                    $isPurchasesTree = request()->routeIs('tenant.purchases-tree.*');
-                                    $isPurchaseItems = request()->routeIs('tenant.purchase-items.*');
                                     $isPurchaseReturns = request()->routeIs('tenant.purchase-returns.*');
-                                    $isPurchaseReturnItems = request()->routeIs('tenant.purchase-return-items.*');
                                     $isVendorPayments = request()->routeIs('tenant.vendor-payments.*');
                                     $isExpenses = request()->routeIs('tenant.expenses.*');
                                     $isSupportTickets = request()->routeIs('tenant.support-tickets.*');
@@ -107,6 +99,8 @@
                                     $isReportsVendorPayments = request()->routeIs('tenant.reports.vendor-payments');
                                     $isReportsReceivables = request()->routeIs('tenant.reports.receivables');
                                     $isReportsPayables = request()->routeIs('tenant.reports.payables');
+                                    $isReportsVendorProducts = request()->routeIs('tenant.reports.vendor-products');
+                                    $isReportsCategorySales = request()->routeIs('tenant.reports.category-sales');
                                     $isSystem = request()->routeIs('tenant.settings.*', 'tenant.activity-timeline.*');
                                     $isSettings = request()->routeIs('tenant.settings.*');
                                     $isActivityTimeline = request()->routeIs('tenant.activity-timeline.*');
@@ -128,12 +122,207 @@
                                             <span class="side-menu__label">{{ __('Overview') }}</span>
                                         </a>
                                     </li>
-                                    <li class="slide {{ $isEndOfDay ? 'active' : '' }}">
-                                        <a href="{{ route('tenant.end-of-day') }}"
-                                            class="side-menu__item {{ $isEndOfDay ? 'active' : '' }}">
-                                            <i class="ri-file-chart-line side-menu__icon"></i>
-                                            <span class="side-menu__label">{{ __('End Of Day') }}</span>
+
+                                    <li class="slide has-sub {{ $isSales ? 'active open' : '' }}">
+                                        <a href="javascript:void(0);"
+                                            class="side-menu__item {{ $isSales ? 'active' : '' }}">
+                                            <i class="ri-shopping-cart-2-line side-menu__icon"></i>
+                                            <span class="side-menu__label">{{ __('Sales') }}</span>
+                                            <i class="ri-arrow-right-s-line side-menu__angle"></i>
                                         </a>
+                                        <ul class="slide-menu child1 {{ $isSales ? 'open' : '' }}">
+                                            <li class="slide {{ $isPos ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.pos.index') }}"
+                                                    class="side-menu__item {{ $isPos ? 'active' : '' }}">{{ __('POS') }}</a>
+                                            </li>
+                                            <li class="slide has-sub {{ $isSalesInvoices ? 'active open' : '' }}">
+                                                <a href="javascript:void(0);"
+                                                    class="side-menu__item {{ $isSalesInvoices ? 'active' : '' }}">
+                                                    {{ __('Sales Invoices') }}
+                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                                                </a>
+                                                <ul class="slide-menu child2 {{ $isSalesInvoices ? 'open' : '' }}">
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.sales.index') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.sales.index') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.sales.index') ? 'active' : '' }}">{{ __('List') }}</a>
+                                                    </li>
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.sales.create') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.sales.create') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.sales.create') ? 'active' : '' }}">{{ __('Create') }}</a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                            <li class="slide has-sub {{ $isSalePayments ? 'active open' : '' }}">
+                                                <a href="javascript:void(0);"
+                                                    class="side-menu__item {{ $isSalePayments ? 'active' : '' }}">
+                                                    {{ __('Sale Payments') }}
+                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                                                </a>
+                                                <ul class="slide-menu child2 {{ $isSalePayments ? 'open' : '' }}">
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.sale-payments.index') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.sale-payments.index') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.sale-payments.index') ? 'active' : '' }}">{{ __('List') }}</a>
+                                                    </li>
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.sale-payments.create') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.sale-payments.create') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.sale-payments.create') ? 'active' : '' }}">{{ __('Create') }}</a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                            <li class="slide {{ $isSaleReturns ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.sale-returns.index') }}"
+                                                    class="side-menu__item {{ $isSaleReturns ? 'active' : '' }}">{{ __('Sales Returns') }}</a>
+                                            </li>
+                                        </ul>
+                                    </li>
+
+                                    <li class="slide has-sub {{ $isPurchases ? 'active open' : '' }}">
+                                        <a href="javascript:void(0);"
+                                            class="side-menu__item {{ $isPurchases ? 'active' : '' }}">
+                                            <i class="ri-shopping-bag-3-line side-menu__icon"></i>
+                                            <span class="side-menu__label">{{ __('Purchases') }}</span>
+                                            <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                                        </a>
+                                        <ul class="slide-menu child1 {{ $isPurchases ? 'open' : '' }}">
+                                            <li class="slide has-sub {{ $isPurchaseInvoices ? 'active open' : '' }}">
+                                                <a href="javascript:void(0);"
+                                                    class="side-menu__item {{ $isPurchaseInvoices ? 'active' : '' }}">
+                                                    {{ __('Purchases') }}
+                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                                                </a>
+                                                <ul class="slide-menu child2 {{ $isPurchaseInvoices ? 'open' : '' }}">
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.purchases.index') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.purchases.index') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.purchases.index') ? 'active' : '' }}">{{ __('List') }}</a>
+                                                    </li>
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.purchases.create') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.purchases.create') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.purchases.create') ? 'active' : '' }}">{{ __('Create') }}</a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                            <li class="slide has-sub {{ $isPurchaseReturns ? 'active open' : '' }}">
+                                                <a href="javascript:void(0);"
+                                                    class="side-menu__item {{ $isPurchaseReturns ? 'active' : '' }}">
+                                                    {{ __('Purchase Returns') }}
+                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                                                </a>
+                                                <ul class="slide-menu child2 {{ $isPurchaseReturns ? 'open' : '' }}">
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.purchase-returns.index') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.purchase-returns.index') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.purchase-returns.index') ? 'active' : '' }}">{{ __('List') }}</a>
+                                                    </li>
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.purchase-returns.create') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.purchase-returns.create') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.purchase-returns.create') ? 'active' : '' }}">{{ __('Create') }}</a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                            <li class="slide has-sub {{ $isVendorPayments ? 'active open' : '' }}">
+                                                <a href="javascript:void(0);"
+                                                    class="side-menu__item {{ $isVendorPayments ? 'active' : '' }}">
+                                                    {{ __('Vendor Payments') }}
+                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                                                </a>
+                                                <ul class="slide-menu child2 {{ $isVendorPayments ? 'open' : '' }}">
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.vendor-payments.index') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.vendor-payments.index') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.vendor-payments.index') ? 'active' : '' }}">{{ __('List') }}</a>
+                                                    </li>
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.vendor-payments.create') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.vendor-payments.create') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.vendor-payments.create') ? 'active' : '' }}">{{ __('Create') }}</a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </li>
+
+                                    <li class="slide has-sub {{ $isReports ? 'active open' : '' }}">
+                                        <a href="javascript:void(0);"
+                                            class="side-menu__item {{ $isReports ? 'active' : '' }}">
+                                            <i class="ri-file-chart-line side-menu__icon"></i>
+                                            <span class="side-menu__label">{{ __('Reports') }}</span>
+                                            <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                                        </a>
+                                        <ul class="slide-menu child1 {{ $isReports ? 'open' : '' }}">
+                                            <li class="slide {{ $isReportsOverview ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.overview') }}"
+                                                    class="side-menu__item {{ $isReportsOverview ? 'active' : '' }}">{{ __('Overview') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsSales ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.sales') }}"
+                                                    class="side-menu__item {{ $isReportsSales ? 'active' : '' }}">{{ __('Sales') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsCategorySales ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.category-sales') }}"
+                                                    class="side-menu__item {{ $isReportsCategorySales ? 'active' : '' }}">{{ __('Category Sales') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsPurchases ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.purchases') }}"
+                                                    class="side-menu__item {{ $isReportsPurchases ? 'active' : '' }}">{{ __('Purchases') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsReceivables ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.receivables') }}"
+                                                    class="side-menu__item {{ $isReportsReceivables ? 'active' : '' }}">{{ __('Receivables') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsPayables ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.payables') }}"
+                                                    class="side-menu__item {{ $isReportsPayables ? 'active' : '' }}">{{ __('Payables') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsVendorProducts ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.vendor-products') }}"
+                                                    class="side-menu__item {{ $isReportsVendorProducts ? 'active' : '' }}">{{ __('Vendor Products') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsSalePayments ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.sale-payments') }}"
+                                                    class="side-menu__item {{ $isReportsSalePayments ? 'active' : '' }}">{{ __('Sale Payments') }}</a>
+                                            </li>
+                                            <li class="slide {{ $isReportsVendorPayments ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.reports.vendor-payments') }}"
+                                                    class="side-menu__item {{ $isReportsVendorPayments ? 'active' : '' }}">{{ __('Vendor Payments') }}</a>
+                                            </li>
+                                        </ul>
+                                    </li>
+
+                                    <li class="slide has-sub {{ $isWorkshop ? 'active open' : '' }}">
+                                        <a href="javascript:void(0);"
+                                            class="side-menu__item {{ $isWorkshop ? 'active' : '' }}">
+                                            <i class="ri-tools-line side-menu__icon"></i>
+                                            <span class="side-menu__label">{{ __('Workshop') }}</span>
+                                            <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                                        </a>
+                                        <ul class="slide-menu child1 {{ $isWorkshop ? 'open' : '' }}">
+                                            <li class="slide has-sub {{ $isJobCards ? 'active open' : '' }}">
+                                                <a href="javascript:void(0);"
+                                                    class="side-menu__item {{ $isJobCards ? 'active' : '' }}">
+                                                    {{ __('Job Cards') }}
+                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                                                </a>
+                                                <ul class="slide-menu child2 {{ $isJobCards ? 'open' : '' }}">
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.job-cards.index') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.job-cards.index') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.job-cards.index') ? 'active' : '' }}">{{ __('List') }}</a>
+                                                    </li>
+                                                    <li
+                                                        class="slide {{ request()->routeIs('tenant.job-cards.create') ? 'active' : '' }}">
+                                                        <a href="{{ route('tenant.job-cards.create') }}"
+                                                            class="side-menu__item {{ request()->routeIs('tenant.job-cards.create') ? 'active' : '' }}">{{ __('Create') }}</a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                        </ul>
                                     </li>
 
                                     <li class="slide has-sub {{ $isMasterData ? 'active open' : '' }}">
@@ -242,206 +431,6 @@
                                         </ul>
                                     </li>
 
-                                    <li class="slide has-sub {{ $isWorkshop ? 'active open' : '' }}">
-                                        <a href="javascript:void(0);"
-                                            class="side-menu__item {{ $isWorkshop ? 'active' : '' }}">
-                                            <i class="ri-tools-line side-menu__icon"></i>
-                                            <span class="side-menu__label">{{ __('Workshop') }}</span>
-                                            <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                        </a>
-                                        <ul class="slide-menu child1 {{ $isWorkshop ? 'open' : '' }}">
-                                            <li class="slide has-sub {{ $isJobCards ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
-                                                    class="side-menu__item {{ $isJobCards ? 'active' : '' }}">
-                                                    {{ __('Job Cards') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                                </a>
-                                                <ul class="slide-menu child2 {{ $isJobCards ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.job-cards.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.job-cards.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.job-cards.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.job-cards.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.job-cards.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.job-cards.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                        </ul>
-                                    </li>
-
-                                    <li class="slide has-sub {{ $isSales ? 'active open' : '' }}">
-                                        <a href="javascript:void(0);"
-                                            class="side-menu__item {{ $isSales ? 'active' : '' }}">
-                                            <i class="ri-shopping-cart-2-line side-menu__icon"></i>
-                                            <span class="side-menu__label">{{ __('Sales') }}</span>
-                                            <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                        </a>
-                                        <ul class="slide-menu child1 {{ $isSales ? 'open' : '' }}">
-                                            <li class="slide {{ $isPos ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.pos.index') }}"
-                                                    class="side-menu__item {{ $isPos ? 'active' : '' }}">{{ __('POS') }}</a>
-                                            </li>
-                                            <li class="slide has-sub {{ $isSalesInvoices ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
-                                                    class="side-menu__item {{ $isSalesInvoices ? 'active' : '' }}">
-                                                    {{ __('Sales Invoices') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                                </a>
-                                                <ul class="slide-menu child2 {{ $isSalesInvoices ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.sales.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.sales.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.sales.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.sales.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.sales.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.sales.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                            <li class="slide has-sub {{ $isSalePayments ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
-                                                    class="side-menu__item {{ $isSalePayments ? 'active' : '' }}">
-                                                    {{ __('Sale Payments') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                                </a>
-                                                <ul class="slide-menu child2 {{ $isSalePayments ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.sale-payments.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.sale-payments.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.sale-payments.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.sale-payments.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.sale-payments.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.sale-payments.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                            <li class="slide {{ $isSaleReturns ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.sale-returns.index') }}"
-                                                    class="side-menu__item {{ $isSaleReturns ? 'active' : '' }}">{{ __('Sales Returns') }}</a>
-                                            </li>
-                                        </ul>
-                                    </li>
-
-                                    <li class="slide has-sub {{ $isPurchases ? 'active open' : '' }}">
-                                        <a href="javascript:void(0);"
-                                            class="side-menu__item {{ $isPurchases ? 'active' : '' }}">
-                                            <i class="ri-shopping-bag-3-line side-menu__icon"></i>
-                                            <span class="side-menu__label">{{ __('Purchases') }}</span>
-                                            <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                        </a>
-                                        <ul class="slide-menu child1 {{ $isPurchases ? 'open' : '' }}">
-                                            <li class="slide has-sub {{ $isPurchaseInvoices ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
-                                                    class="side-menu__item {{ $isPurchaseInvoices ? 'active' : '' }}">
-                                                    {{ __('Purchases') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                                </a>
-                                                <ul
-                                                    class="slide-menu child2 {{ $isPurchaseInvoices ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.purchases.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.purchases.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.purchases.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.purchases.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.purchases.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.purchases.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                            <li class="slide {{ $isPurchasesTree ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.purchases-tree.index') }}"
-                                                    class="side-menu__item {{ $isPurchasesTree ? 'active' : '' }}">{{ __('Purchases Tree') }}</a>
-                                            </li>
-                                            <li class="slide has-sub {{ $isPurchaseItems ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
-                                                    class="side-menu__item {{ $isPurchaseItems ? 'active' : '' }}">
-                                                    {{ __('Purchase Items') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                                </a>
-                                                <ul class="slide-menu child2 {{ $isPurchaseItems ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.purchase-items.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.purchase-items.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.purchase-items.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.purchase-items.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.purchase-items.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.purchase-items.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                            <li class="slide has-sub {{ $isPurchaseReturns ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
-                                                    class="side-menu__item {{ $isPurchaseReturns ? 'active' : '' }}">
-                                                    {{ __('Purchase Returns') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                                </a>
-                                                <ul class="slide-menu child2 {{ $isPurchaseReturns ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.purchase-returns.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.purchase-returns.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.purchase-returns.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.purchase-returns.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.purchase-returns.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.purchase-returns.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                            <li
-                                                class="slide has-sub {{ $isPurchaseReturnItems ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
-                                                    class="side-menu__item {{ $isPurchaseReturnItems ? 'active' : '' }}">
-                                                    {{ __('Purchase Return Items') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                                </a>
-                                                <ul
-                                                    class="slide-menu child2 {{ $isPurchaseReturnItems ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.purchase-return-items.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.purchase-return-items.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.purchase-return-items.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.purchase-return-items.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.purchase-return-items.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.purchase-return-items.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                            <li class="slide has-sub {{ $isVendorPayments ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
-                                                    class="side-menu__item {{ $isVendorPayments ? 'active' : '' }}">
-                                                    {{ __('Vendor Payments') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                                </a>
-                                                <ul class="slide-menu child2 {{ $isVendorPayments ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.vendor-payments.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.vendor-payments.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.vendor-payments.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.vendor-payments.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.vendor-payments.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.vendor-payments.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </li>
-                                        </ul>
-                                    </li>
-
                                     <li class="slide {{ $isExpenses ? 'active' : '' }}">
                                         <a href="{{ route('tenant.expenses.index') }}"
                                             class="side-menu__item {{ $isExpenses ? 'active' : '' }}">
@@ -449,15 +438,16 @@
                                             <span class="side-menu__label">{{ __('Expenses') }}</span>
                                         </a>
                                     </li>
-                                    <li class="slide {{ $isSupportTickets ? 'active' : '' }}">
-                                        <a href="{{ route('tenant.support-tickets.index') }}"
-                                            class="side-menu__item {{ $isSupportTickets ? 'active' : '' }}">
-                                            <i class="ri-customer-service-2-line side-menu__icon"></i>
-                                            <span class="side-menu__label">{{ __('Support Tickets') }}</span>
+
+                                    <li class="slide {{ $isEndOfDay ? 'active' : '' }}">
+                                        <a href="{{ route('tenant.end-of-day') }}"
+                                            class="side-menu__item {{ $isEndOfDay ? 'active' : '' }}">
+                                            <i class="ri-file-chart-line side-menu__icon"></i>
+                                            <span class="side-menu__label">{{ __('End Of Day') }}</span>
                                         </a>
                                     </li>
 
-                                    {{-- <li class="slide has-sub {{ $isAccessControl ? 'active open' : '' }}">
+                                    <li class="slide has-sub {{ $isAccessControl ? 'active open' : '' }}">
                                         <a href="javascript:void(0);"
                                             class="side-menu__item {{ $isAccessControl ? 'active' : '' }}">
                                             <i class="ri-shield-user-line side-menu__icon"></i>
@@ -465,25 +455,6 @@
                                             <i class="ri-arrow-right-s-line side-menu__angle"></i>
                                         </a>
                                         <ul class="slide-menu child1 {{ $isAccessControl ? 'open' : '' }}">
-                                            <li class="slide has-sub {{ $isUsers ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
-                                                    class="side-menu__item {{ $isUsers ? 'active' : '' }}">
-                                                    {{ __('Users') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                                </a>
-                                                <ul class="slide-menu child2 {{ $isUsers ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.users.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.users.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.users.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.users.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.users.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.users.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </li>
                                             <li class="slide {{ $isRoles ? 'active' : '' }}">
                                                 <a href="{{ route('tenant.roles.index') }}"
                                                     class="side-menu__item {{ $isRoles ? 'active' : '' }}">
@@ -497,7 +468,7 @@
                                                 </a>
                                             </li>
                                         </ul>
-                                    </li> --}}
+                                    </li>
 
                                     <li class="slide has-sub {{ $isEmployees ? 'active open' : '' }}">
                                         <a href="javascript:void(0);"
@@ -528,45 +499,6 @@
                                         </ul>
                                     </li>
 
-                                    <li class="slide has-sub {{ $isReports ? 'active open' : '' }}">
-                                        <a href="javascript:void(0);"
-                                            class="side-menu__item {{ $isReports ? 'active' : '' }}">
-                                            <i class="ri-file-chart-line side-menu__icon"></i>
-                                            <span class="side-menu__label">{{ __('Reports') }}</span>
-                                            <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                        </a>
-                                        <ul class="slide-menu child1 {{ $isReports ? 'open' : '' }}">
-                                            <li class="slide {{ $isReportsOverview ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.reports.overview') }}"
-                                                    class="side-menu__item {{ $isReportsOverview ? 'active' : '' }}">{{ __('Overview') }}</a>
-                                            </li>
-                                            <li class="slide {{ $isReportsSales ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.reports.sales') }}"
-                                                    class="side-menu__item {{ $isReportsSales ? 'active' : '' }}">{{ __('Sales') }}</a>
-                                            </li>
-                                            <li class="slide {{ $isReportsPurchases ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.reports.purchases') }}"
-                                                    class="side-menu__item {{ $isReportsPurchases ? 'active' : '' }}">{{ __('Purchases') }}</a>
-                                            </li>
-                                            <li class="slide {{ $isReportsSalePayments ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.reports.sale-payments') }}"
-                                                    class="side-menu__item {{ $isReportsSalePayments ? 'active' : '' }}">{{ __('Sale Payments') }}</a>
-                                            </li>
-                                            <li class="slide {{ $isReportsVendorPayments ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.reports.vendor-payments') }}"
-                                                    class="side-menu__item {{ $isReportsVendorPayments ? 'active' : '' }}">{{ __('Vendor Payments') }}</a>
-                                            </li>
-                                            <li class="slide {{ $isReportsReceivables ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.reports.receivables') }}"
-                                                    class="side-menu__item {{ $isReportsReceivables ? 'active' : '' }}">{{ __('Receivables') }}</a>
-                                            </li>
-                                            <li class="slide {{ $isReportsPayables ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.reports.payables') }}"
-                                                    class="side-menu__item {{ $isReportsPayables ? 'active' : '' }}">{{ __('Payables') }}</a>
-                                            </li>
-                                        </ul>
-                                    </li>
-
                                     <li class="slide has-sub {{ $isSystem ? 'active open' : '' }}">
                                         <a href="javascript:void(0);"
                                             class="side-menu__item {{ $isSystem ? 'active' : '' }}">
@@ -586,6 +518,13 @@
                                             <li class="slide"><a href="#"
                                                     class="side-menu__item">{{ __('Reminders') }}</a></li>
                                         </ul>
+                                    </li>
+                                    <li class="slide {{ $isSupportTickets ? 'active' : '' }}">
+                                        <a href="{{ route('tenant.support-tickets.index') }}"
+                                            class="side-menu__item {{ $isSupportTickets ? 'active' : '' }}">
+                                            <i class="ri-customer-service-2-line side-menu__icon"></i>
+                                            <span class="side-menu__label">{{ __('Support Tickets') }}</span>
+                                        </a>
                                     </li>
 
                                     <li class="slide__category"><span

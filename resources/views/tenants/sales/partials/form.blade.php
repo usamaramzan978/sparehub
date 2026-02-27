@@ -10,6 +10,7 @@
                 'line_type' => $item->line_type->value,
                 'product_id' => $item->product_id,
                 'service_catalog_id' => $item->service_catalog_id,
+                'job_card_service_id' => $item->job_card_service_id,
                 'mechanic_id' => $item->mechanic_id,
                 'description' => $item->description,
                 'qty' => (string) $item->qty,
@@ -23,6 +24,7 @@
                 'line_type' => 'product',
                 'product_id' => '',
                 'service_catalog_id' => '',
+                'job_card_service_id' => '',
                 'mechanic_id' => '',
                 'description' => '',
                 'qty' => '1',
@@ -33,6 +35,11 @@
             ]];
         }
     }
+
+    $jobCardItemsUrlTemplate = route('tenant.sales.job-card-items', [
+        'tenant' => request()->route('tenant'),
+        'jobCard' => '__JOB_CARD__',
+    ]);
 @endphp
 
 @if ($errors->any())
@@ -91,7 +98,8 @@
         <div class="col-md-3 mb-3">
             <label class="form-label" for="job_card_id">{{ __('Job Card') }}</label>
             <select name="job_card_id" id="job_card_id"
-                class="form-select singl-select-2 @error('job_card_id') is-invalid @enderror">
+                class="form-select singl-select-2 @error('job_card_id') is-invalid @enderror"
+                data-items-url-template="{{ $jobCardItemsUrlTemplate }}">
                 <option value="">{{ __('None') }}</option>
                 @foreach ($jobCards as $jobCard)
                     <option value="{{ $jobCard->id }}" @selected(old('job_card_id', $currentSale?->job_card_id) === $jobCard->id)>
@@ -168,6 +176,8 @@
                                     @endphp
                                     <tr class="sale-item-row" data-index="{{ $index }}">
                                         <td>
+                                            <input type="hidden" name="items[{{ $index }}][job_card_service_id]"
+                                                class="sale-job-card-service-id" value="{{ $item['job_card_service_id'] ?? '' }}">
                                             <select name="items[{{ $index }}][line_type]" class="form-select sale-line-type" required>
                                                 <option value="product" @selected($lineType === 'product')>{{ __('Product') }}</option>
                                                 <option value="service" @selected($lineType === 'service')>{{ __('Service') }}</option>
@@ -345,6 +355,7 @@
 <template id="sale-item-row-template">
     <tr class="sale-item-row" data-index="__INDEX__">
         <td>
+            <input type="hidden" name="items[__INDEX__][job_card_service_id]" class="sale-job-card-service-id" value="">
             <select name="items[__INDEX__][line_type]" class="form-select sale-line-type" required>
                 <option value="product" __PRODUCT_SELECTED__>{{ __('Product') }}</option>
                 <option value="service" __SERVICE_SELECTED__>{{ __('Service') }}</option>
@@ -405,6 +416,8 @@
             const taxTotalInput = document.getElementById('tax_total');
             const grandTotalInput = document.getElementById('grand_total');
             const balanceDueInput = document.getElementById('balance_due');
+            const customerSelect = document.getElementById('customer_id');
+            const jobCardSelect = document.getElementById('job_card_id');
 
             const parseNumber = (value) => {
                 const parsed = parseFloat(value);
@@ -424,6 +437,20 @@
                 $el.select2({
                     width: '100%',
                 });
+            };
+
+            const setSelectValue = (select, value) => {
+                if (!(select instanceof HTMLSelectElement)) {
+                    return;
+                }
+
+                const normalizedValue = value === null || value === undefined ? '' : String(value);
+
+                if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                    window.jQuery(select).val(normalizedValue).trigger('change.select2');
+                } else {
+                    select.value = normalizedValue;
+                }
             };
 
             const setSelectVisibility = (select, visible, clearValue = false) => {
@@ -467,6 +494,7 @@
                 const serviceSelect = row.querySelector('.sale-service-select');
                 const mechanicSelect = row.querySelector('.sale-mechanic-select');
                 const mechanicChargeInput = row.querySelector('.sale-item-mechanic-charge');
+                const jobCardServiceInput = row.querySelector('.sale-job-card-service-id');
                 const lineType = typeSelect ? typeSelect.value : 'product';
 
                 if (!productSelect || !serviceSelect) {
@@ -485,6 +513,9 @@
                     setSelectVisibility(serviceSelect, false, true);
                     setSelectVisibility(productSelect, true);
                     setSelectVisibility(mechanicSelect, false, true);
+                    if (jobCardServiceInput instanceof HTMLInputElement) {
+                        jobCardServiceInput.value = '';
+                    }
                     if (mechanicChargeInput) {
                         mechanicChargeInput.value = '0';
                         mechanicChargeInput.disabled = true;
@@ -570,7 +601,64 @@
                 });
             };
 
-            const addRow = (lineType) => {
+            const applyRowValues = (row, item = null) => {
+                if (!(row instanceof HTMLElement) || !item || typeof item !== 'object') {
+                    return;
+                }
+
+                const lineType = item.line_type === 'service' ? 'service' : 'product';
+                const lineTypeSelect = row.querySelector('.sale-line-type');
+                const productSelect = row.querySelector('.sale-product-select');
+                const serviceSelect = row.querySelector('.sale-service-select');
+                const mechanicSelect = row.querySelector('.sale-mechanic-select');
+                const qtyInput = row.querySelector('.sale-item-qty');
+                const unitPriceInput = row.querySelector('.sale-item-price');
+                const discountInput = row.querySelector('.sale-item-discount');
+                const taxInput = row.querySelector('.sale-item-tax');
+                const mechanicChargeInput = row.querySelector('.sale-item-mechanic-charge');
+                const descriptionInput = row.querySelector('input[name$="[description]"]');
+                const jobCardServiceInput = row.querySelector('.sale-job-card-service-id');
+
+                if (lineTypeSelect instanceof HTMLSelectElement) {
+                    lineTypeSelect.value = lineType;
+                }
+
+                toggleLineTypeFields(row);
+
+                setSelectValue(productSelect, item.product_id);
+                setSelectValue(serviceSelect, item.service_catalog_id);
+                setSelectValue(mechanicSelect, item.mechanic_id);
+
+                if (descriptionInput instanceof HTMLInputElement) {
+                    descriptionInput.value = item.description ? String(item.description) : '';
+                }
+
+                if (jobCardServiceInput instanceof HTMLInputElement) {
+                    jobCardServiceInput.value = item.job_card_service_id ? String(item.job_card_service_id) : '';
+                }
+
+                if (qtyInput instanceof HTMLInputElement) {
+                    qtyInput.value = parseNumber(item.qty).toString();
+                }
+
+                if (unitPriceInput instanceof HTMLInputElement) {
+                    unitPriceInput.value = parseNumber(item.unit_price).toString();
+                }
+
+                if (discountInput instanceof HTMLInputElement) {
+                    discountInput.value = parseNumber(item.discount_amount).toString();
+                }
+
+                if (taxInput instanceof HTMLInputElement) {
+                    taxInput.value = parseNumber(item.tax_amount).toString();
+                }
+
+                if (mechanicChargeInput instanceof HTMLInputElement) {
+                    mechanicChargeInput.value = parseNumber(item.mechanic_charge).toString();
+                }
+            };
+
+            const addRow = (lineType, item = null) => {
                 let nextIndex = parseInt(body.dataset.nextIndex ?? '0', 10);
                 if (!Number.isFinite(nextIndex)) {
                     nextIndex = body.querySelectorAll('.sale-item-row').length;
@@ -603,13 +691,68 @@
                 const row = body.querySelector('.sale-item-row:last-child');
                 if (row) {
                     initializeRow(row);
+                    applyRowValues(row, item);
                 }
 
                 recalculateTotals();
             };
 
+            const replaceRowsFromJobCard = (items) => {
+                body.innerHTML = '';
+                body.dataset.nextIndex = '0';
+
+                if (!Array.isArray(items) || items.length === 0) {
+                    addRow('product');
+
+                    return;
+                }
+
+                items.forEach((item) => {
+                    const lineType = item?.line_type === 'service' ? 'service' : 'product';
+                    addRow(lineType, item);
+                });
+            };
+
+            const syncItemsFromSelectedJobCard = async () => {
+                if (!(jobCardSelect instanceof HTMLSelectElement)) {
+                    return;
+                }
+
+                const selectedJobCardId = jobCardSelect.value;
+                if (selectedJobCardId === '') {
+                    return;
+                }
+
+                const urlTemplate = jobCardSelect.dataset.itemsUrlTemplate;
+                if (!urlTemplate) {
+                    return;
+                }
+
+                const url = urlTemplate.replace('__JOB_CARD__', selectedJobCardId);
+                const response = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const payload = await response.json();
+                replaceRowsFromJobCard(payload.items);
+
+                if ((customerSelect instanceof HTMLSelectElement) && payload.customer_id) {
+                    setSelectValue(customerSelect, payload.customer_id);
+                }
+            };
+
             addProductButton?.addEventListener('click', () => addRow('product'));
             addServiceButton?.addEventListener('click', () => addRow('service'));
+            jobCardSelect?.addEventListener('change', () => {
+                syncItemsFromSelectedJobCard().catch(() => {});
+            });
 
             body.addEventListener('change', (event) => {
                 const target = event.target;

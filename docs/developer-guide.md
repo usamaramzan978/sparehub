@@ -184,15 +184,15 @@ Central sidebar is in:
 
 High-level groups from `routes/tenant.php` and tenant sidebar:
 - Dashboard + End of Day
-- Employee (attendance, salaries)
-- Expenses
-- Master Data
-- Workshop
 - Sales
 - Purchases
-- Access Control (users, roles, permissions)
 - Reports
-- Settings/Profile
+- Workshop
+- Master Data
+- Expenses
+- Employee (attendance, salaries)
+- System + Support
+- Account (profile/security)
 
 Tenant sidebar:
 - `resources/views/layouts/shared/sidebar.blade.php`
@@ -329,6 +329,17 @@ Purpose split:
 
 Operationally: invoice creation records what was sold; sale payments record when/how much cash was collected later.
 
+Job Card billing helper (implemented):
+- Route: `GET /firm/{tenant}/sales/job-card-items/{jobCard}` (`tenant.sales.job-card-items`)
+- Controller method: `SaleController@jobCardItems`
+- Returns branch-validated JSON:
+  - `customer_id`
+  - `items[]` normalized for sales form rows:
+    - service lines map from `job_card_services` with `job_card_service_id` + `service_catalog_id` + `technician_id -> mechanic_id`
+    - part lines map from `job_card_parts` with `product_id`
+- Used by sales form JS in `resources/views/tenants/sales/partials/form.blade.php` to replace current rows when `job_card_id` changes.
+- `SaleRequest` accepts `items.*.job_card_service_id` and `SyncSaleItemsAction` persists it into `sale_items.job_card_service_id`.
+
 Sales returns flow:
 - Return document is created in `sale_returns` with line items in `sale_return_items`.
 - Stock is increased for tracked products on create/update.
@@ -425,6 +436,11 @@ Suggested future enforcement:
 - Unique per (`branch_id`, `user_id`, `attendance_date`)
 - `employee_salaries` belongs to `branches` and `users`
 - Unique per (`branch_id`, `user_id`, `salary_month`)
+- Salary calculation is day-based:
+  - `per_day_salary`
+  - `working_days`
+  - `basic_salary` derived as `per_day_salary * working_days`
+  - `net_salary` derived as `(basic_salary + bonus) - deduction`
 
 ### 6.10 Access control
 
@@ -525,7 +541,7 @@ Practical scenario:
 - Employees:
   Mark attendance and create salary record for same user/month branch context.
 - Reports:
-  Open per-report page (sales/purchases/etc.) and export page-specific PDF route.
+  Open per-report page (overview/sales/category-sales/purchases/vendor-products/receivables/payables/payments) and export page-specific PDF route.
 
 ## 13. Action Pattern Used in Tenant Modules
 

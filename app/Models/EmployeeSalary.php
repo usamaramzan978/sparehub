@@ -22,6 +22,8 @@ final class EmployeeSalary extends Model
         'branch_id',
         'user_id',
         'salary_month',
+        'per_day_salary',
+        'working_days',
         'basic_salary',
         'bonus',
         'deduction',
@@ -44,6 +46,8 @@ final class EmployeeSalary extends Model
     {
         return [
             'salary_month' => 'date',
+            'per_day_salary' => 'decimal:2',
+            'working_days' => 'integer',
             'basic_salary' => 'decimal:2',
             'bonus' => 'decimal:2',
             'deduction' => 'decimal:2',

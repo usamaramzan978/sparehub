@@ -83,6 +83,8 @@ it('shows salary index and summary', function (): void {
         'branch_id' => $fixture['branch']->id,
         'user_id' => $fixture['employee']->id,
         'salary_month' => now()->startOfMonth()->toDateString(),
+        'per_day_salary' => 100,
+        'working_days' => 10,
         'basic_salary' => 1000,
         'bonus' => 100,
         'deduction' => 50,
@@ -156,7 +158,8 @@ it('stores salary record with computed net salary', function (): void {
     $response = $this->post(salaryTenantRoute('employee-salaries.store'), [
         'user_id' => $fixture['employee']->id,
         'salary_month' => now()->format('Y-m'),
-        'basic_salary' => 1000,
+        'per_day_salary' => 100,
+        'working_days' => 10,
         'bonus' => 100,
         'deduction' => 200,
         'action' => 'save',
@@ -165,6 +168,7 @@ it('stores salary record with computed net salary', function (): void {
     $response->assertRedirect();
 
     $record = EmployeeSalary::query()->firstOrFail();
+    expect((float) $record->basic_salary)->toBe(1000.0);
     expect((float) $record->net_salary)->toBe(900.0);
     expect($record->paid_at)->toBeNull();
 });
@@ -175,7 +179,8 @@ it('marks salary record as paid when action is mark_paid', function (): void {
     $response = $this->post(salaryTenantRoute('employee-salaries.store'), [
         'user_id' => $fixture['employee']->id,
         'salary_month' => now()->format('Y-m'),
-        'basic_salary' => 1000,
+        'per_day_salary' => 100,
+        'working_days' => 10,
         'bonus' => 0,
         'deduction' => 0,
         'action' => 'mark_paid',
@@ -193,10 +198,11 @@ it('validates salary payload', function (): void {
     $response = $this->from(salaryTenantRoute('employee-salaries.index'))
         ->post(salaryTenantRoute('employee-salaries.store'), [
             'salary_month' => 'bad-month',
-            'basic_salary' => -1,
+            'per_day_salary' => -1,
+            'working_days' => 35,
             'action' => 'invalid',
         ]);
 
     $response->assertRedirect(salaryTenantRoute('employee-salaries.index'));
-    $response->assertSessionHasErrors(['user_id', 'salary_month', 'basic_salary', 'action']);
+    $response->assertSessionHasErrors(['user_id', 'salary_month', 'per_day_salary', 'working_days', 'action']);
 });

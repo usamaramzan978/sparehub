@@ -66,6 +66,11 @@ final class SaleRequest extends FormRequest
                 'uuid',
                 $serviceCatalogExists,
             ],
+            'items.*.job_card_service_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('job_card_services', 'id'),
+            ],
             'items.*.mechanic_id' => [
                 'nullable',
                 'uuid',

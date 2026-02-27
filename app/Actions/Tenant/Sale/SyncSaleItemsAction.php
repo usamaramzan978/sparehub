@@ -30,6 +30,7 @@ final readonly class SyncSaleItemsAction
             $lineType = (string) $item['line_type'];
             $productId = $lineType === 'product' ? $item['product_id'] : null;
             $serviceCatalogId = $lineType === 'service' ? $item['service_catalog_id'] : null;
+            $jobCardServiceId = $lineType === 'service' ? ($item['job_card_service_id'] ?? null) : null;
             $mechanicId = $lineType === 'service' ? ($item['mechanic_id'] ?? null) : null;
             $mechanicCharge = $lineType === 'service' ? (float) ($item['mechanic_charge'] ?? 0) : 0.0;
 
@@ -38,7 +39,7 @@ final readonly class SyncSaleItemsAction
                 'branch_id' => $branchId,
                 'product_id' => $productId,
                 'service_catalog_id' => $serviceCatalogId,
-                'job_card_service_id' => null,
+                'job_card_service_id' => $jobCardServiceId,
                 'mechanic_id' => $mechanicId,
                 'line_type' => $lineType,
                 'description' => $item['description'] ?? null,

@@ -81,7 +81,8 @@
                         <tr>
                             <x-sortable-column :label="__('Employee')" column="name" :current-sort-by="$sortBy"
                                 :current-sort-direction="$sortDirection" />
-                            <th>{{ __('Basic') }}</th>
+                            <th>{{ __('Per Day') }}</th>
+                            <th>{{ __('Working Days') }}</th>
                             <th>{{ __('Bonus') }}</th>
                             <th>{{ __('Deduction') }}</th>
                             <th>{{ __('Net') }}</th>
@@ -93,7 +94,9 @@
                         @forelse ($employees as $employee)
                             @php
                                 $record = $records->get($employee->id);
-                                $basic = (float) ($record?->basic_salary ?? 0);
+                                $perDaySalary = (float) ($record?->per_day_salary ?? 0);
+                                $workingDays = (int) ($record?->working_days ?? 0);
+                                $basic = $perDaySalary * $workingDays;
                                 $bonus = (float) ($record?->bonus ?? 0);
                                 $deduction = (float) ($record?->deduction ?? 0);
                                 $net = max($basic + $bonus - $deduction, 0);
@@ -105,8 +108,14 @@
                                 </td>
                                 <td>
                                     <input type="number" step="0.01" min="0" class="form-control form-control-sm"
-                                        name="basic_salary" form="salary-form-{{ $employee->id }}"
-                                        value="{{ number_format($basic, 2, '.', '') }}" placeholder="{{ __('Basic') }}"
+                                        name="per_day_salary" form="salary-form-{{ $employee->id }}"
+                                        value="{{ number_format($perDaySalary, 2, '.', '') }}"
+                                        placeholder="{{ __('Per Day Salary') }}" required>
+                                </td>
+                                <td>
+                                    <input type="number" step="1" min="0" max="31" class="form-control form-control-sm"
+                                        name="working_days" form="salary-form-{{ $employee->id }}"
+                                        value="{{ $workingDays }}" placeholder="{{ __('Working Days') }}"
                                         required>
                                 </td>
                                 <td>
@@ -152,7 +161,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted">
+                                <td colspan="8" class="text-center text-muted">
                                     {{ __('No employees found for this branch.') }}</td>
                             </tr>
                         @endforelse

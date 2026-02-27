@@ -15,7 +15,9 @@ final class UpsertEmployeeSalaryAction
     public function handle(array $payload, string $branchId): EmployeeSalary
     {
         $salaryMonth = Date::parse((string) $payload['salary_month'])->startOfMonth()->toDateString();
-        $basicSalary = (float) $payload['basic_salary'];
+        $perDaySalary = (float) $payload['per_day_salary'];
+        $workingDays = (int) $payload['working_days'];
+        $basicSalary = $perDaySalary * $workingDays;
         $bonus = (float) ($payload['bonus'] ?? 0);
         $deduction = (float) ($payload['deduction'] ?? 0);
         $netSalary = max(($basicSalary + $bonus) - $deduction, 0);
@@ -27,6 +29,8 @@ final class UpsertEmployeeSalaryAction
                 'salary_month' => $salaryMonth,
             ],
             [
+                'per_day_salary' => $perDaySalary,
+                'working_days' => $workingDays,
                 'basic_salary' => $basicSalary,
                 'bonus' => $bonus,
                 'deduction' => $deduction,
