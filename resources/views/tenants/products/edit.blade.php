@@ -27,7 +27,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('tenant.products.update', $product) }}">
+            <form method="POST" action="{{ route('tenant.products.update', $product) }}" id="product-form">
                 @csrf
                 @method('PUT')
                 <div class="row">
@@ -285,7 +285,7 @@
                 'qty' => 1,
             ])
             : null;
-    @endphp
+@endphp
 
     <div class="card custom-card border-0 shadow-sm h-100">
         <div class="card-header">
@@ -395,3 +395,72 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('product-form');
+            if (!form) {
+                return;
+            }
+
+            const costInput = document.getElementById('cost');
+            const mrpInput = document.getElementById('mrp');
+            const retailInput = document.getElementById('retail_price');
+            const wholesaleInput = document.getElementById('wholesale_price');
+
+            const toNumber = (value) => {
+                const parsed = Number.parseFloat(value);
+                return Number.isFinite(parsed) ? parsed : 0;
+            };
+
+            const setFieldError = (input, message) => {
+                if (!input) {
+                    return;
+                }
+
+                input.classList.toggle('is-invalid', message !== '');
+                input.setCustomValidity(message);
+
+                let feedback = input.parentElement?.querySelector('[data-price-error]');
+                if (!feedback) {
+                    feedback = document.createElement('span');
+                    feedback.className = 'invalid-feedback d-block';
+                    feedback.setAttribute('data-price-error', '1');
+                    input.parentElement?.appendChild(feedback);
+                }
+
+                feedback.textContent = message;
+            };
+
+            const validatePricing = () => {
+                const cost = toNumber(costInput?.value ?? '0');
+                const mrp = toNumber(mrpInput?.value ?? '0');
+                const retail = toNumber(retailInput?.value ?? '0');
+                const wholesale = toNumber(wholesaleInput?.value ?? '0');
+
+                setFieldError(mrpInput, mrp < cost ? 'MRP must be greater than or equal to Cost.' : '');
+                setFieldError(retailInput, retail < cost
+                    ? 'Retail Price must be greater than or equal to Cost.'
+                    : (retail > mrp ? 'Retail Price must be less than or equal to MRP.' : ''));
+                setFieldError(wholesaleInput, wholesale < cost
+                    ? 'Wholesale Price must be greater than or equal to Cost.'
+                    : (wholesale > retail ? 'Wholesale Price must be less than or equal to Retail Price.' : ''));
+
+                return form.checkValidity();
+            };
+
+            [costInput, mrpInput, retailInput, wholesaleInput].forEach((input) => {
+                input?.addEventListener('input', validatePricing);
+                input?.addEventListener('change', validatePricing);
+            });
+
+            form.addEventListener('submit', (event) => {
+                if (!validatePricing()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            });
+        });
+    </script>
+@endpush

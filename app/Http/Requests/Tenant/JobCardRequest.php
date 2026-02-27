@@ -71,9 +71,8 @@ final class JobCardRequest extends FormRequest
             'out_time' => ['nullable', 'date', 'after_or_equal:in_time'],
             'services' => ['nullable', 'array'],
             'services.*.id' => ['nullable', 'uuid', $serviceExistsInJobCard],
-            'services.*.service_catalog_id' => ['nullable', 'uuid', $serviceCatalogExists],
+            'services.*.service_catalog_id' => ['required', 'uuid', $serviceCatalogExists],
             'services.*.technician_id' => ['nullable', 'uuid', $employeeExists],
-            'services.*.service_name' => ['required', 'string', 'max:160'],
             'services.*.qty' => ['required', 'numeric', 'gt:0'],
             'services.*.rate' => ['required', 'numeric', 'min:0'],
             'services.*.status' => ['required', Rule::enum(JobCardServiceStatus::class)],
@@ -82,6 +81,10 @@ final class JobCardRequest extends FormRequest
             'parts.*.id' => ['nullable', 'uuid', $partExistsInJobCard],
             'parts.*.product_id' => ['required', 'uuid', $productExists],
             'parts.*.qty' => ['required', 'numeric', 'gt:0'],
+            'parts.*.cost' => ['nullable', 'numeric', 'min:0'],
+            'parts.*.mrp' => ['nullable', 'numeric', 'min:0'],
+            'parts.*.retail_price' => ['nullable', 'numeric', 'min:0'],
+            'parts.*.wholesale_price' => ['nullable', 'numeric', 'min:0'],
             'parts.*.unit_price' => ['required', 'numeric', 'min:0'],
         ];
     }

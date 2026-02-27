@@ -4,16 +4,25 @@ declare(strict_types=1);
 
 use App\Actions\Tenant\User\DeleteUserAction;
 use App\Enums\BranchStatus;
+use App\Enums\InvoiceType;
 use App\Enums\RoleName;
+use App\Enums\SaleStatus;
+use App\Enums\ServiceCatalogType;
 use App\Enums\UserDeletionResult;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Tenant\UserController;
 use App\Models\Branch;
 use App\Models\Role;
+use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\ServiceCatalog;
 use App\Models\User;
+use App\Models\UserCommissionRule;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -232,6 +241,76 @@ it('validates user create request payload', function (): void {
     $response->assertSessionHasErrors(['name', 'email', 'password', 'status']);
 });
 
+it('stores user cnic and image', function (): void {
+    $fixture = authenticateUsersModuleUser();
+    Storage::fake('public');
+    $image = UploadedFile::fake()->image('mechanic.jpg');
+
+    $response = $this
+        ->withSession(['tenant.current_branch_id' => $fixture['current']->id])
+        ->post(usersTenantRoute('users.store'), [
+            'name' => 'Mechanic With Image',
+            'email' => 'mechanic.image+'.uniqid('', true).'@example.test',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'phone' => '+92-300-9999999',
+            'cnic' => '35202-1234567-1',
+            'status' => UserStatus::ACTIVE->value,
+            'image' => $image,
+        ]);
+
+    $response->assertRedirect(usersTenantRoute('users.index'));
+
+    $createdUser = User::query()
+        ->where('branch_id', $fixture['current']->id)
+        ->where('name', 'Mechanic With Image')
+        ->first();
+
+    expect($createdUser)->not->toBeNull();
+    expect($createdUser?->cnic)->toBe('35202-1234567-1');
+    expect($createdUser?->image_path)->not->toBeNull();
+    Storage::disk('public')->assertExists((string) $createdUser?->image_path);
+});
+
+it('replaces user image on update', function (): void {
+    $fixture = authenticateUsersModuleUser();
+    Storage::fake('public');
+
+    $existingUser = User::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'name' => 'Mechanic Replace Image',
+        'email' => 'mechanic.replace+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+
+    $oldPath = UploadedFile::fake()->image('old.jpg')->store('users', 'public');
+    $existingUser->update(['image_path' => $oldPath]);
+    $newImage = UploadedFile::fake()->image('new.jpg');
+    $updated = app(App\Actions\Tenant\User\UpdateUserAction::class)->handle(
+        $existingUser,
+        [
+            'name' => 'Mechanic Replace Image',
+            'email' => $existingUser->email,
+            'phone' => '',
+            'cnic' => '35202-7654321-1',
+            'status' => UserStatus::ACTIVE->value,
+            'image' => $newImage,
+        ],
+        $fixture['current']->id,
+        app(App\Actions\Tenant\User\SyncUserCommissionRulesAction::class),
+    );
+
+    $existingUser->refresh();
+
+    expect($updated)->toBeTrue();
+    expect($existingUser->cnic)->toBe('35202-7654321-1');
+    expect($existingUser->image_path)->not->toBeNull();
+    expect($existingUser->image_path)->not->toBe($oldPath);
+    Storage::disk('public')->assertMissing($oldPath);
+    Storage::disk('public')->assertExists((string) $existingUser->image_path);
+});
+
 it('prevents creating more users than tenant max limit', function (): void {
     $fixture = authenticateUsersModuleUser();
 
@@ -313,4 +392,124 @@ it('allows deleting a tenant owner user when another tenant owner remains', func
 
     expect($result)->toBe(UserDeletionResult::Deleted);
     expect(User::query()->find($secondOwner->id))->toBeNull();
+});
+
+it('stores user commission rules via sync action', function (): void {
+    $fixture = authenticateUsersModuleUser();
+    $createdUser = User::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'name' => 'Mechanic One',
+        'email' => 'mechanic.one+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+
+    $oilLabourService = ServiceCatalog::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'code' => 'LAB-OIL',
+        'name' => 'Oil Labour',
+        'type' => ServiceCatalogType::Labour->value,
+        'base_price' => 0,
+        'status' => 'active',
+    ]);
+
+    $alignmentLabourService = ServiceCatalog::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'code' => 'LAB-ALIGN',
+        'name' => 'Alignment Labour',
+        'type' => ServiceCatalogType::Labour->value,
+        'base_price' => 0,
+        'status' => 'active',
+    ]);
+
+    app(App\Actions\Tenant\User\SyncUserCommissionRulesAction::class)->handle($createdUser, [
+        [
+            'service_catalog_id' => $oilLabourService->id,
+            'total_amount' => 1000,
+            'commission_type' => 'percentage',
+            'commission_value' => 10,
+        ],
+        [
+            'service_catalog_id' => $alignmentLabourService->id,
+            'total_amount' => 0,
+            'commission_type' => 'fixed',
+            'commission_value' => 250,
+        ],
+    ]);
+
+    expect($createdUser->commissionRules()->count())->toBe(2);
+
+    $this->assertDatabaseHas('user_commission_rules', [
+        'user_id' => $createdUser->id,
+        'service_catalog_id' => $oilLabourService->id,
+        'payable_amount' => 100,
+    ], 'tenant');
+
+    $this->assertDatabaseHas('user_commission_rules', [
+        'user_id' => $createdUser->id,
+        'service_catalog_id' => $alignmentLabourService->id,
+        'payable_amount' => 250,
+    ], 'tenant');
+});
+
+it('shows user commission summary and service payable details', function (): void {
+    $fixture = authenticateUsersModuleUser();
+    $mechanic = User::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'name' => 'Mechanic Detail',
+        'email' => 'mechanic.detail+'.uniqid('', true).'@example.test',
+        'password' => Hash::make('password'),
+        'status' => UserStatus::ACTIVE->value,
+    ]);
+
+    $brakeLabourService = ServiceCatalog::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'code' => 'LAB-BRAKE',
+        'name' => 'Brake Labour',
+        'type' => ServiceCatalogType::Labour->value,
+        'base_price' => 0,
+        'status' => 'active',
+    ]);
+
+    UserCommissionRule::query()->create([
+        'user_id' => $mechanic->id,
+        'service_catalog_id' => $brakeLabourService->id,
+        'total_amount' => 500,
+        'commission_type' => 'percentage',
+        'commission_value' => 20,
+        'payable_amount' => 100,
+        'sort_order' => 0,
+    ]);
+
+    $sale = Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-USER-1',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::SERVICE->value,
+        'grand_total' => 500,
+    ]);
+
+    SaleItem::query()->withoutGlobalScopes()->create([
+        'sale_id' => $sale->id,
+        'branch_id' => $fixture['current']->id,
+        'mechanic_id' => $mechanic->id,
+        'line_type' => 'service',
+        'description' => 'Brake Service Labour',
+        'qty' => 1,
+        'unit_price' => 500,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'mechanic_charge' => 120,
+        'line_total' => 500,
+    ]);
+
+    session()->put('tenant.current_branch_id', $fixture['current']->id);
+    $response = (new UserController())->show($mechanic);
+
+    expect($response->name())->toBe('tenants.users.show');
+    expect($response->getData()['commissionSummary']['rules_count'])->toBe(1);
+    expect($response->getData()['commissionSummary']['service_entries_count'])->toBe(1);
+    expect($response->getData()['servicePayables']->count())->toBe(1);
 });

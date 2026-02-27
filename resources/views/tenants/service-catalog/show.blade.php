@@ -13,7 +13,7 @@
 
         $metaRows = [
             ['label' => __('Code'), 'value' => $serviceCatalog->code],
-            ['label' => __('Category'), 'value' => $serviceCatalog->category ?: null],
+            ['label' => __('Type'), 'value' => ucfirst($serviceCatalog->type->value)],
             ['label' => __('Branch'), 'value' => $serviceCatalog->branch?->name],
             ['label' => __('Duration (Min)'), 'value' => $serviceCatalog->duration_minutes],
             [

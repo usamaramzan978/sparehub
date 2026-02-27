@@ -116,7 +116,6 @@ function authenticateSalesUser(): array
         'default_tax_id' => $tax->id,
         'code' => 'SALE-S-1',
         'name' => 'Wheel Alignment',
-        'category' => 'Workshop',
         'base_price' => 500,
         'status' => RecordStatus::ACTIVE->value,
     ]);

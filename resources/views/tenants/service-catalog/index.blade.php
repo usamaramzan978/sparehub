@@ -31,7 +31,7 @@
                 class="d-flex align-items-end gap-2 flex-wrap" id="service-catalog-search-form">
                 <div class="position-relative">
                     <input type="text" name="search" id="service-catalog-search" class="form-control pe-5"
-                        value="{{ request('search') }}" placeholder="{{ __('Search by code, name, category') }}">
+                        value="{{ request('search') }}" placeholder="{{ __('Search by code, name, type') }}">
                     <span id="service-catalog-search-loading"
                         class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
                         style="transition: opacity 0.2s ease;" aria-hidden="true">
@@ -49,7 +49,7 @@
                                 :current-sort-direction="$sortDirection" />
                             <x-sortable-column :label="__('Name')" column="name" :current-sort-by="$sortBy"
                                 :current-sort-direction="$sortDirection" />
-                            <x-sortable-column :label="__('Category')" column="category" :current-sort-by="$sortBy"
+                            <x-sortable-column :label="__('Type')" column="type" :current-sort-by="$sortBy"
                                 :current-sort-direction="$sortDirection" />
                             <x-sortable-column :label="__('Base Price')" column="base_price" :current-sort-by="$sortBy"
                                 :current-sort-direction="$sortDirection" />
@@ -65,7 +65,13 @@
                             <tr>
                                 <td>{{ $serviceCatalog->code }}</td>
                                 <td>{{ $serviceCatalog->name }}</td>
-                                <td>{{ $serviceCatalog->category ?: '-' }}</td>
+                                <td>
+                                    @if ($serviceCatalog->type->value === 'labour')
+                                        <span class="badge bg-info-transparent">{{ __('Labour') }}</span>
+                                    @else
+                                        <span class="badge bg-primary-transparent">{{ __('Workshop') }}</span>
+                                    @endif
+                                </td>
                                 <td>{{ number_format((float) $serviceCatalog->base_price, 2) }}</td>
                                 <td>{{ $serviceCatalog->duration_minutes ?: '-' }}</td>
                                 <td>
@@ -106,7 +112,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted">{{ __('No services found.') }}</td>
+                                <td colspan="7" class="text-center text-muted">{{ __('No services found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

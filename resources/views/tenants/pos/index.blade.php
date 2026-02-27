@@ -84,7 +84,7 @@
                             </div>
                             <div class="list-group mt-2 d-none" data-pos-suggestions></div>
                         </div>
-                        @if ($categories->isNotEmpty() || $serviceCategories->isNotEmpty())
+                        @if ($categories->isNotEmpty())
                             <div class="mt-3">
                                 <div class="d-flex flex-wrap gap-2" data-pos-categories
                                     data-pos-category-url="{{ route('tenant.pos.catalog') }}">
@@ -94,16 +94,14 @@
                                             {{ __('Product') }}: {{ $category->name }}
                                         </button>
                                     @endforeach
-                                    @foreach ($serviceCategories as $serviceCategory)
-                                        <button type="button" class="btn btn-sm btn-outline-info rounded-pill"
-                                            data-catalog-type="service" data-category-id="{{ $serviceCategory }}">
-                                            {{ __('Service') }}: {{ $serviceCategory }}
-                                        </button>
-                                    @endforeach
+                                    <button type="button" class="btn btn-sm btn-outline-info rounded-pill"
+                                        data-catalog-type="service" data-category-id="all">
+                                        {{ __('Services') }}
+                                    </button>
                                 </div>
                                 <div class="row g-3 mt-2" data-pos-catalog-grid>
                                     <div class="col-12 text-muted small" data-pos-catalog-empty>
-                                        Select a category to browse items.
+                                        Select a product category or services to browse items.
                                     </div>
                                 </div>
                             </div>
@@ -857,7 +855,7 @@
                 if (!items.length) {
                     const empty = document.createElement('div');
                     empty.className = 'col-12 text-muted small';
-                    empty.textContent = 'No items found for this category.';
+                    empty.textContent = 'No items found.';
                     catalogGrid.appendChild(empty);
                     return;
                 }

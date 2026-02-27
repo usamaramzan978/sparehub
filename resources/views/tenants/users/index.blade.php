@@ -17,7 +17,7 @@
                 <div class="col-md-5">
                     <label class="form-label" for="search">{{ __('Search') }}</label>
                     <input type="text" name="search" id="search" class="form-control" value="{{ request('search') }}"
-                        placeholder="{{ __('Name, email, phone') }}">
+                        placeholder="{{ __('Name, email, phone, cnic') }}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label" for="status">{{ __('Status') }}</label>

@@ -8,6 +8,7 @@ use App\Actions\Tenant\ServiceCatalog\CreateServiceCatalogAction;
 use App\Actions\Tenant\ServiceCatalog\DeleteServiceCatalogAction;
 use App\Actions\Tenant\ServiceCatalog\UpdateServiceCatalogAction;
 use App\Enums\RecordStatus;
+use App\Enums\ServiceCatalogType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\ServiceCatalogRequest;
 use App\Models\ServiceCatalog;
@@ -24,7 +25,7 @@ final class ServiceCatalogController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
-        $allowedSortColumns = ['code', 'name', 'category', 'base_price', 'duration_minutes', 'status', 'created_at'];
+        $allowedSortColumns = ['code', 'name', 'type', 'base_price', 'duration_minutes', 'status', 'created_at'];
         [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
 
         $servicesQuery = ServiceCatalog::query()
@@ -35,7 +36,7 @@ final class ServiceCatalogController extends Controller
                     $builder
                         ->where('code', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('name', 'like', sprintf('%%%s%%', $search))
-                        ->orWhere('category', 'like', sprintf('%%%s%%', $search));
+                        ->orWhere('type', 'like', sprintf('%%%s%%', $search));
                 });
             });
 
@@ -66,6 +67,7 @@ final class ServiceCatalogController extends Controller
         return view('tenants.service-catalog.create', [
             'taxes' => $taxes,
             'statuses' => RecordStatus::cases(),
+            'serviceTypes' => ServiceCatalogType::cases(),
         ]);
     }
 
@@ -101,6 +103,7 @@ final class ServiceCatalogController extends Controller
             'serviceCatalog' => $serviceCatalog,
             'taxes' => $taxes,
             'statuses' => RecordStatus::cases(),
+            'serviceTypes' => ServiceCatalogType::cases(),
         ]);
     }
 

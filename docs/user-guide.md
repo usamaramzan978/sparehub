@@ -60,6 +60,18 @@ Inside tenant panel, menu is organized as:
 - Use `Sales > POS` for quick billing.
 - You can also manage full invoices in `Sales > Sales Invoices`.
 - Record collections in `Sales > Sale Payments`.
+- Handle customer product returns in `Sales > Sales Returns` (returned qty goes back to stock).
+
+Sales Invoices vs Sale Payments:
+- `Sales Invoices`: this is the bill itself (items/services, totals, tax, discount, grand total, paid, balance).
+- `Sale Payments`: this is money received against an invoice (cash/online/partial collections with date/reference).
+- One invoice can have multiple payment entries until balance becomes `0`.
+- Use invoice screen to define what customer bought; use sale payments screen to track what customer actually paid and when.
+
+Sales Returns purpose:
+- Use this when customer returns sold product items (full or partial qty).
+- System creates a return document and increases product stock again.
+- Return qty cannot exceed the remaining sold quantity for that sale item.
 
 ### 6.2 Workshop Jobs
 
@@ -96,6 +108,13 @@ You can review stock movement history from:
 
 Opening stock is managed from product create/edit.
 
+Product price safety on create/edit:
+- system auto-validates prices while you type
+- wholesale price cannot be less than purchase/cost
+- retail price cannot be less than cost and cannot be greater than MRP
+- MRP cannot be less than cost
+- invalid price combinations are blocked on submit
+
 ### 6.6 Units and Fractional (Important)
 
 Units explain quantity meaning for products.
@@ -128,6 +147,15 @@ It helps answer:
 
 - `Employee Attendances`: mark check-in/check-out/absent.
 - `Employee Salaries`: track month-wise salary and paid status.
+- `Users`: maintain employee commission rules directly in user create/edit.
+
+Commission rule fields:
+- labour service (from Service Catalog where type is `labour`)
+- total amount
+- commission type (`fixed` or `percentage`)
+- commission value
+
+System shows payable totals and service payable details on each user profile.
 
 ### 6.9 Expenses
 

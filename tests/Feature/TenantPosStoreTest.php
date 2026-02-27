@@ -90,7 +90,6 @@ function createPosFixture(): array
         'branch_id' => $branch->id,
         'code' => 'SRV-001',
         'name' => 'Oil Change',
-        'category' => 'Workshop',
         'base_price' => 250,
         'status' => RecordStatus::ACTIVE->value,
     ]);

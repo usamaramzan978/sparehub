@@ -7,6 +7,7 @@ namespace App\Actions\Tenant\JobCard;
 use App\Models\JobCard;
 use App\Models\JobCardPart;
 use App\Models\JobCardService;
+use App\Models\ServiceCatalog;
 use Illuminate\Support\Facades\DB;
 
 final class SyncJobCardLinesAction
@@ -32,14 +33,18 @@ final class SyncJobCardLinesAction
      */
     private function syncServices(JobCard $jobCard, array $rows): void
     {
+        $serviceCatalogNameMap = ServiceCatalog::query()
+            ->whereIn('id', collect($rows)->pluck('service_catalog_id')->filter()->values()->all())
+            ->pluck('name', 'id');
         $keptIds = [];
 
         foreach ($rows as $row) {
             $serviceId = isset($row['id']) && is_string($row['id']) ? $row['id'] : null;
+            $serviceCatalogId = $this->nullableString($row['service_catalog_id'] ?? null);
             $attributes = [
-                'service_catalog_id' => $this->nullableString($row['service_catalog_id'] ?? null),
+                'service_catalog_id' => $serviceCatalogId,
                 'technician_id' => $this->nullableString($row['technician_id'] ?? null),
-                'service_name' => (string) ($row['service_name'] ?? ''),
+                'service_name' => $serviceCatalogId !== null ? (string) ($serviceCatalogNameMap[$serviceCatalogId] ?? '') : '',
                 'qty' => (float) ($row['qty'] ?? 0),
                 'rate' => (float) ($row['rate'] ?? 0),
                 'line_total' => (float) ($row['qty'] ?? 0) * (float) ($row['rate'] ?? 0),
@@ -81,6 +86,10 @@ final class SyncJobCardLinesAction
             $attributes = [
                 'product_id' => (string) ($row['product_id'] ?? ''),
                 'qty' => (float) ($row['qty'] ?? 0),
+                'cost' => (float) ($row['cost'] ?? 0),
+                'mrp' => (float) ($row['mrp'] ?? 0),
+                'retail_price' => (float) ($row['retail_price'] ?? 0),
+                'wholesale_price' => (float) ($row['wholesale_price'] ?? 0),
                 'unit_price' => (float) ($row['unit_price'] ?? 0),
                 'line_total' => (float) ($row['qty'] ?? 0) * (float) ($row['unit_price'] ?? 0),
             ];

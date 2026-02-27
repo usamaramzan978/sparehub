@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
+use App\Enums\ServiceCatalogType;
 use App\Models\Branch;
 use App\Models\Brand;
 use App\Models\Category;
@@ -466,14 +467,16 @@ final class TenantBootstrapSeeder extends Seeder
              * ---------------------------------------------------------
              */
             $services = [
-                ['code' => 'TUNE-UP',       'name' => 'Bike Tuning',               'category' => 'Workshop', 'base_price' => 800, 'duration_minutes' => 45],
-                ['code' => 'OIL-CHANGE',    'name' => 'Engine Oil Change',         'category' => 'Workshop', 'base_price' => 300, 'duration_minutes' => 15],
-                ['code' => 'CHAIN-SERVICE', 'name' => 'Chain Adjustment + Grease', 'category' => 'Workshop', 'base_price' => 250, 'duration_minutes' => 15],
-                ['code' => 'BRAKE-SERVICE', 'name' => 'Brake Service',             'category' => 'Workshop', 'base_price' => 400, 'duration_minutes' => 20],
-                ['code' => 'CLUTCH-FIT',    'name' => 'Clutch Plate Fitting',      'category' => 'Workshop', 'base_price' => 700, 'duration_minutes' => 35],
-                ['code' => 'PUNCTURE',      'name' => 'Puncture Repair',           'category' => 'Workshop', 'base_price' => 100, 'duration_minutes' => 10],
-                ['code' => 'CARB-SERVICE',  'name' => 'Carburetor Service',        'category' => 'Workshop', 'base_price' => 600, 'duration_minutes' => 30],
-                ['code' => 'PLUG-CLEAN',    'name' => 'Spark Plug Cleaning',       'category' => 'Workshop', 'base_price' => 80,  'duration_minutes' => 5],
+                ['code' => 'TUNE-UP',       'name' => 'Bike Tuning',               'type' => ServiceCatalogType::Workshop->value, 'base_price' => 800, 'duration_minutes' => 45],
+                ['code' => 'OIL-CHANGE',    'name' => 'Engine Oil Change',         'type' => ServiceCatalogType::Workshop->value, 'base_price' => 300, 'duration_minutes' => 15],
+                ['code' => 'CHAIN-SERVICE', 'name' => 'Chain Adjustment + Grease', 'type' => ServiceCatalogType::Workshop->value, 'base_price' => 250, 'duration_minutes' => 15],
+                ['code' => 'BRAKE-SERVICE', 'name' => 'Brake Service',             'type' => ServiceCatalogType::Workshop->value, 'base_price' => 400, 'duration_minutes' => 20],
+                ['code' => 'CLUTCH-FIT',    'name' => 'Clutch Plate Fitting',      'type' => ServiceCatalogType::Workshop->value, 'base_price' => 700, 'duration_minutes' => 35],
+                ['code' => 'PUNCTURE',      'name' => 'Puncture Repair',           'type' => ServiceCatalogType::Workshop->value, 'base_price' => 100, 'duration_minutes' => 10],
+                ['code' => 'CARB-SERVICE',  'name' => 'Carburetor Service',        'type' => ServiceCatalogType::Workshop->value, 'base_price' => 600, 'duration_minutes' => 30],
+                ['code' => 'PLUG-CLEAN',    'name' => 'Spark Plug Cleaning',       'type' => ServiceCatalogType::Workshop->value, 'base_price' => 80,  'duration_minutes' => 5],
+                ['code' => 'LAB-GENERAL',   'name' => 'General Labour',            'type' => ServiceCatalogType::Labour->value, 'base_price' => 0, 'duration_minutes' => 30],
+                ['code' => 'LAB-ENGINE',    'name' => 'Engine Labour',             'type' => ServiceCatalogType::Labour->value, 'base_price' => 0, 'duration_minutes' => 45],
             ];
 
             foreach ($services as $s) {
@@ -483,9 +486,9 @@ final class TenantBootstrapSeeder extends Seeder
                         'code' => $s['code'],
                     ],
                     [
-                        'default_tax_id' => $taxGST->id,
+                        'default_tax_id' => $s['type'] === ServiceCatalogType::Labour->value ? null : $taxGST->id,
                         'name' => $s['name'],
-                        'category' => $s['category'],
+                        'type' => $s['type'],
                         'base_price' => $s['base_price'],
                         'duration_minutes' => $s['duration_minutes'],
                         'status' => RecordStatus::ACTIVE->value,

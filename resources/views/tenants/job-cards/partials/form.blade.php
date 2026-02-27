@@ -9,7 +9,6 @@
                 'id' => $line->id,
                 'service_catalog_id' => $line->service_catalog_id,
                 'technician_id' => $line->technician_id,
-                'service_name' => $line->service_name,
                 'qty' => (string) $line->qty,
                 'rate' => (string) $line->rate,
                 'status' => $line->status?->value,
@@ -27,12 +26,19 @@
                 'id' => $line->id,
                 'product_id' => $line->product_id,
                 'qty' => (string) $line->qty,
+                'cost' => (string) $line->cost,
+                'mrp' => (string) $line->mrp,
+                'retail_price' => (string) $line->retail_price,
+                'wholesale_price' => (string) $line->wholesale_price,
                 'unit_price' => (string) $line->unit_price,
             ])->values()->all();
         } else {
             $partLines = [];
         }
     }
+
+    $productPriceMap = is_array($productPriceMap ?? null) ? $productPriceMap : [];
+    $productStockMap = is_array($productStockMap ?? null) ? $productStockMap : [];
 @endphp
 
 <form method="POST" action="{{ $formAction }}">
@@ -187,8 +193,7 @@
                         <table class="table table-striped align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th style="min-width: 220px;">{{ __('Service Name') }}</th>
-                                    <th style="min-width: 220px;">{{ __('Catalog') }}</th>
+                                    <th style="min-width: 260px;">{{ __('Service') }}</th>
                                     <th style="min-width: 180px;">{{ __('Technician') }}</th>
                                     <th style="min-width: 100px;">{{ __('Qty') }}</th>
                                     <th style="min-width: 120px;">{{ __('Rate') }}</th>
@@ -204,19 +209,13 @@
                                         <td>
                                             <input type="hidden" name="services[{{ $index }}][id]"
                                                 value="{{ $line['id'] ?? '' }}">
-                                            <input type="text" name="services[{{ $index }}][service_name]"
-                                                class="form-control" value="{{ $line['service_name'] ?? '' }}" required>
-                                            @error("services.$index.service_name")
-                                                <span class="text-danger small d-block">{{ $message }}</span>
-                                            @enderror
-                                        </td>
-                                        <td>
                                             <select name="services[{{ $index }}][service_catalog_id]"
-                                                class="form-select singl-select-2">
-                                                <option value="">{{ __('None') }}</option>
+                                                class="form-select singl-select-2 job-service-catalog-select" required>
+                                                <option value="">{{ __('Select service') }}</option>
                                                 @foreach ($serviceCatalogs as $catalog)
-                                                    <option value="{{ $catalog->id }}" @selected(($line['service_catalog_id'] ?? '') === $catalog->id)>
-                                                        {{ $catalog->name }}
+                                                    <option value="{{ $catalog->id }}" data-base-price="{{ (float) $catalog->base_price }}"
+                                                        @selected(($line['service_catalog_id'] ?? '') === $catalog->id)>
+                                                        {{ $catalog->name }}{{ $catalog->code ? ' (' . $catalog->code . ')' : '' }}
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -308,6 +307,10 @@
                                 <tr>
                                     <th style="min-width: 260px;">{{ __('Product') }}</th>
                                     <th style="min-width: 120px;">{{ __('Qty') }}</th>
+                                    <th style="min-width: 130px;">{{ __('Cost') }}</th>
+                                    <th style="min-width: 130px;">{{ __('MRP') }}</th>
+                                    <th style="min-width: 130px;">{{ __('Retail') }}</th>
+                                    <th style="min-width: 130px;">{{ __('Wholesale') }}</th>
                                     <th style="min-width: 140px;">{{ __('Unit Price') }}</th>
                                     <th style="min-width: 140px;">{{ __('Line Total') }}</th>
                                     <th style="width: 70px;"></th>
@@ -320,11 +323,27 @@
                                             <input type="hidden" name="parts[{{ $index }}][id]"
                                                 value="{{ $line['id'] ?? '' }}">
                                             <select name="parts[{{ $index }}][product_id]"
-                                                class="form-select singl-select-2" required>
+                                                class="form-select singl-select-2 job-part-product-select" required>
                                                 <option value="">{{ __('Select product') }}</option>
                                                 @foreach ($products as $product)
-                                                    <option value="{{ $product->id }}" @selected(($line['product_id'] ?? '') === $product->id)>
-                                                        {{ $product->name }} {{ $product->sku ? '(' . $product->sku . ')' : '' }}
+                                                    @php
+                                                        $productPrices = $productPriceMap[$product->id] ?? [
+                                                            'cost' => 0,
+                                                            'mrp' => 0,
+                                                            'retail_price' => 0,
+                                                            'wholesale_price' => 0,
+                                                        ];
+                                                        $availableQty = (float) ($productStockMap[$product->id] ?? 0);
+                                                    @endphp
+                                                    <option value="{{ $product->id }}"
+                                                        data-cost="{{ (float) ($productPrices['cost'] ?? 0) }}"
+                                                        data-mrp="{{ (float) ($productPrices['mrp'] ?? 0) }}"
+                                                        data-retail-price="{{ (float) ($productPrices['retail_price'] ?? 0) }}"
+                                                        data-wholesale-price="{{ (float) ($productPrices['wholesale_price'] ?? 0) }}"
+                                                        data-unit-price="{{ (float) ($productPrices['retail_price'] ?? 0) }}"
+                                                        data-available-qty="{{ $availableQty }}" @selected(($line['product_id'] ?? '') === $product->id)>
+                                                        {{ $product->name }} {{ $product->sku ? '(' . $product->sku . ')' : '' }} - {{ __('Available') }}:
+                                                        {{ number_format($availableQty, 0) }}
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -333,7 +352,7 @@
                                             @enderror
                                         </td>
                                         <td>
-                                            <input type="number" step="0.001" min="0.001"
+                                            <input type="number" step="1" min="1"
                                                 name="parts[{{ $index }}][qty]"
                                                 class="form-control job-part-line-qty" value="{{ $line['qty'] ?? '1' }}"
                                                 required>
@@ -342,7 +361,39 @@
                                             @enderror
                                         </td>
                                         <td>
-                                            <input type="number" step="0.01" min="0"
+                                            <input type="number" step="1" min="0" name="parts[{{ $index }}][cost]"
+                                                class="form-control job-part-line-cost" value="{{ $line['cost'] ?? '0' }}">
+                                            @error("parts.$index.cost")
+                                                <span class="text-danger small d-block">{{ $message }}</span>
+                                            @enderror
+                                        </td>
+                                        <td>
+                                            <input type="number" step="1" min="0" name="parts[{{ $index }}][mrp]"
+                                                class="form-control job-part-line-mrp" value="{{ $line['mrp'] ?? '0' }}">
+                                            @error("parts.$index.mrp")
+                                                <span class="text-danger small d-block">{{ $message }}</span>
+                                            @enderror
+                                        </td>
+                                        <td>
+                                            <input type="number" step="1" min="0"
+                                                name="parts[{{ $index }}][retail_price]"
+                                                class="form-control job-part-line-retail-price"
+                                                value="{{ $line['retail_price'] ?? '0' }}">
+                                            @error("parts.$index.retail_price")
+                                                <span class="text-danger small d-block">{{ $message }}</span>
+                                            @enderror
+                                        </td>
+                                        <td>
+                                            <input type="number" step="1" min="0"
+                                                name="parts[{{ $index }}][wholesale_price]"
+                                                class="form-control job-part-line-wholesale-price"
+                                                value="{{ $line['wholesale_price'] ?? '0' }}">
+                                            @error("parts.$index.wholesale_price")
+                                                <span class="text-danger small d-block">{{ $message }}</span>
+                                            @enderror
+                                        </td>
+                                        <td>
+                                            <input type="number" step="1" min="0"
                                                 name="parts[{{ $index }}][unit_price]"
                                                 class="form-control job-part-line-price"
                                                 value="{{ $line['unit_price'] ?? '0' }}" required>
@@ -379,13 +430,13 @@
     <tr class="job-service-line-row" data-index="__INDEX__">
         <td>
             <input type="hidden" name="services[__INDEX__][id]" value="">
-            <input type="text" name="services[__INDEX__][service_name]" class="form-control" required>
-        </td>
-        <td>
-            <select name="services[__INDEX__][service_catalog_id]" class="form-select singl-select-2">
-                <option value="">{{ __('None') }}</option>
+            <select name="services[__INDEX__][service_catalog_id]" class="form-select singl-select-2 job-service-catalog-select"
+                required>
+                <option value="">{{ __('Select service') }}</option>
                 @foreach ($serviceCatalogs as $catalog)
-                    <option value="{{ $catalog->id }}">{{ $catalog->name }}</option>
+                    <option value="{{ $catalog->id }}" data-base-price="{{ (float) $catalog->base_price }}">
+                        {{ $catalog->name }}{{ $catalog->code ? ' (' . $catalog->code . ')' : '' }}
+                    </option>
                 @endforeach
             </select>
         </td>
@@ -422,15 +473,36 @@
     <tr class="job-part-line-row" data-index="__INDEX__">
         <td>
             <input type="hidden" name="parts[__INDEX__][id]" value="">
-            <select name="parts[__INDEX__][product_id]" class="form-select singl-select-2" required>
+            <select name="parts[__INDEX__][product_id]" class="form-select singl-select-2 job-part-product-select" required>
                 <option value="">{{ __('Select product') }}</option>
                 @foreach ($products as $product)
-                    <option value="{{ $product->id }}">{{ $product->name }} {{ $product->sku ? '(' . $product->sku . ')' : '' }}</option>
+                    @php
+                        $productPrices = $productPriceMap[$product->id] ?? [
+                            'cost' => 0,
+                            'mrp' => 0,
+                            'retail_price' => 0,
+                            'wholesale_price' => 0,
+                        ];
+                        $availableQty = (float) ($productStockMap[$product->id] ?? 0);
+                    @endphp
+                    <option value="{{ $product->id }}" data-cost="{{ (float) ($productPrices['cost'] ?? 0) }}"
+                        data-mrp="{{ (float) ($productPrices['mrp'] ?? 0) }}"
+                        data-retail-price="{{ (float) ($productPrices['retail_price'] ?? 0) }}"
+                        data-wholesale-price="{{ (float) ($productPrices['wholesale_price'] ?? 0) }}"
+                        data-unit-price="{{ (float) ($productPrices['retail_price'] ?? 0) }}"
+                        data-available-qty="{{ $availableQty }}">
+                        {{ $product->name }} {{ $product->sku ? '(' . $product->sku . ')' : '' }} - {{ __('Available') }}:
+                        {{ number_format($availableQty, 0) }}
+                    </option>
                 @endforeach
             </select>
         </td>
-        <td><input type="number" step="0.001" min="0.001" name="parts[__INDEX__][qty]" class="form-control job-part-line-qty" value="1" required></td>
-        <td><input type="number" step="0.01" min="0" name="parts[__INDEX__][unit_price]" class="form-control job-part-line-price" value="0" required></td>
+        <td><input type="number" step="1" min="1" name="parts[__INDEX__][qty]" class="form-control job-part-line-qty" value="1" required></td>
+        <td><input type="number" step="1" min="0" name="parts[__INDEX__][cost]" class="form-control job-part-line-cost" value="0"></td>
+        <td><input type="number" step="1" min="0" name="parts[__INDEX__][mrp]" class="form-control job-part-line-mrp" value="0"></td>
+        <td><input type="number" step="1" min="0" name="parts[__INDEX__][retail_price]" class="form-control job-part-line-retail-price" value="0"></td>
+        <td><input type="number" step="1" min="0" name="parts[__INDEX__][wholesale_price]" class="form-control job-part-line-wholesale-price" value="0"></td>
+        <td><input type="number" step="1" min="0" name="parts[__INDEX__][unit_price]" class="form-control job-part-line-price" value="0" required></td>
         <td><input type="text" class="form-control job-part-line-total" value="0.00" readonly></td>
         <td>
             <button type="button" class="btn btn-sm btn-danger-light job-part-remove-line">
@@ -488,13 +560,83 @@
                 }
             };
 
+            const applyServiceCatalogDefaults = (row, forceUpdateRate = false) => {
+                const serviceSelect = row.querySelector('.job-service-catalog-select');
+                const rateInput = row.querySelector('.job-service-line-rate');
+                if (!(serviceSelect instanceof HTMLSelectElement) || !(rateInput instanceof HTMLInputElement)) {
+                    return;
+                }
+
+                const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+                if (!selectedOption) {
+                    return;
+                }
+
+                const basePrice = parseNumber(selectedOption.getAttribute('data-base-price') ?? '0');
+                if (forceUpdateRate || parseNumber(rateInput.value) <= 0) {
+                    rateInput.value = basePrice.toFixed(2);
+                }
+                recalculateServiceRow(row);
+            };
+
+            const applyPartProductDefaults = (row, forceUpdate = false) => {
+                const productSelect = row.querySelector('.job-part-product-select');
+                if (!(productSelect instanceof HTMLSelectElement)) {
+                    return;
+                }
+
+                if (productSelect.value === '') {
+                    return;
+                }
+
+                const selectedOption = productSelect.options[productSelect.selectedIndex];
+                const defaults = {
+                    cost: parseNumber(selectedOption?.getAttribute('data-cost') ?? '0'),
+                    mrp: parseNumber(selectedOption?.getAttribute('data-mrp') ?? '0'),
+                    retail: parseNumber(selectedOption?.getAttribute('data-retail-price') ?? '0'),
+                    wholesale: parseNumber(selectedOption?.getAttribute('data-wholesale-price') ?? '0'),
+                    unitPrice: parseNumber(selectedOption?.getAttribute('data-unit-price') ?? '0'),
+                };
+
+                const costInput = row.querySelector('.job-part-line-cost');
+                const mrpInput = row.querySelector('.job-part-line-mrp');
+                const retailInput = row.querySelector('.job-part-line-retail-price');
+                const wholesaleInput = row.querySelector('.job-part-line-wholesale-price');
+                const unitPriceInput = row.querySelector('.job-part-line-price');
+                const qtyInput = row.querySelector('.job-part-line-qty');
+
+                if (qtyInput instanceof HTMLInputElement && (forceUpdate || parseNumber(qtyInput.value) <= 0)) {
+                    qtyInput.value = '1';
+                }
+
+                if (costInput instanceof HTMLInputElement && (forceUpdate || parseNumber(costInput.value) <= 0)) {
+                    costInput.value = defaults.cost.toFixed(2);
+                }
+                if (mrpInput instanceof HTMLInputElement && (forceUpdate || parseNumber(mrpInput.value) <= 0)) {
+                    mrpInput.value = defaults.mrp.toFixed(2);
+                }
+                if (retailInput instanceof HTMLInputElement && (forceUpdate || parseNumber(retailInput.value) <= 0)) {
+                    retailInput.value = defaults.retail.toFixed(2);
+                }
+                if (wholesaleInput instanceof HTMLInputElement && (forceUpdate || parseNumber(wholesaleInput.value) <= 0)) {
+                    wholesaleInput.value = defaults.wholesale.toFixed(2);
+                }
+                if (unitPriceInput instanceof HTMLInputElement && (forceUpdate || parseNumber(unitPriceInput.value) <= 0)) {
+                    unitPriceInput.value = defaults.unitPrice.toFixed(2);
+                }
+
+                recalculatePartRow(row);
+            };
+
             const initializeServiceRow = (row) => {
                 row.querySelectorAll('.singl-select-2').forEach((select) => initSelect2(select));
+                applyServiceCatalogDefaults(row);
                 recalculateServiceRow(row);
             };
 
             const initializePartRow = (row) => {
                 row.querySelectorAll('.singl-select-2').forEach((select) => initSelect2(select));
+                applyPartProductDefaults(row);
                 recalculatePartRow(row);
             };
 
@@ -554,6 +696,54 @@
                     }
                 }
             });
+
+            serviceBody.addEventListener('change', (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement)) {
+                    return;
+                }
+
+                const serviceSelect = target.closest('.job-service-catalog-select');
+                if (!serviceSelect) {
+                    return;
+                }
+
+                const row = serviceSelect.closest('.job-service-line-row');
+                if (row) {
+                    applyServiceCatalogDefaults(row, true);
+                }
+            });
+
+            const handlePartProductSelection = (selectElement) => {
+                const row = selectElement.closest('.job-part-line-row');
+                if (row) {
+                    applyPartProductDefaults(row, true);
+                }
+            };
+
+            partBody.addEventListener('change', (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement)) {
+                    return;
+                }
+
+                const productSelect = target.closest('.job-part-product-select');
+                if (!productSelect) {
+                    return;
+                }
+
+                handlePartProductSelection(productSelect);
+            });
+
+            if (window.jQuery) {
+                window.jQuery(document).on('select2:select change', '.job-part-product-select', function () {
+                    if (!(this instanceof HTMLSelectElement)) {
+                        return;
+                    }
+
+                    handlePartProductSelection(this);
+                });
+            }
 
             serviceBody.addEventListener('click', (event) => {
                 const target = event.target;

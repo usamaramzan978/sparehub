@@ -56,9 +56,9 @@ final class ProductRequest extends FormRequest
             'track_stock' => ['sometimes', 'boolean'],
             'opening_stock' => ['nullable', 'numeric', 'min:0'],
             'cost' => ['nullable', 'numeric', 'min:0'],
-            'mrp' => ['nullable', 'numeric', 'min:0'],
-            'retail_price' => ['nullable', 'numeric', 'min:0'],
-            'wholesale_price' => ['nullable', 'numeric', 'min:0'],
+            'mrp' => ['nullable', 'numeric', 'min:0', 'gte:cost'],
+            'retail_price' => ['nullable', 'numeric', 'min:0', 'gte:cost', 'lte:mrp'],
+            'wholesale_price' => ['nullable', 'numeric', 'min:0', 'gte:cost', 'lte:retail_price'],
             'effective_from' => ['nullable', 'date'],
             'status' => ['required', Rule::enum(RecordStatus::class)],
             'description' => ['nullable', 'string'],
@@ -80,8 +80,13 @@ final class ProductRequest extends FormRequest
             'status.required' => 'Please select a product status.',
             'cost.min' => 'Cost must be zero or greater.',
             'mrp.min' => 'MRP must be zero or greater.',
+            'mrp.gte' => 'MRP must be greater than or equal to cost.',
             'retail_price.min' => 'Retail price must be zero or greater.',
+            'retail_price.gte' => 'Retail price must be greater than or equal to cost.',
+            'retail_price.lte' => 'Retail price must be less than or equal to MRP.',
             'wholesale_price.min' => 'Wholesale price must be zero or greater.',
+            'wholesale_price.gte' => 'Wholesale price must be greater than or equal to cost.',
+            'wholesale_price.lte' => 'Wholesale price must be less than or equal to retail price.',
         ];
     }
 }

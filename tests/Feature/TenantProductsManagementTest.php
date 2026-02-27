@@ -417,6 +417,24 @@ it('validates product status and relation id formats', function (): void {
     $response->assertSessionHasErrors(['category_id', 'brand_id', 'default_tax_id', 'default_unit_id', 'status']);
 });
 
+it('validates pricing hierarchy so wholesale is not less than cost', function (): void {
+    authenticateProductUser();
+
+    $response = $this->from(productsTenantRoute('products.create'))
+        ->post(productsTenantRoute('products.store'), [
+            'name' => 'Invalid Pricing Product',
+            'sku' => 'SKU-PRICE-1',
+            'status' => RecordStatus::ACTIVE->value,
+            'cost' => '100',
+            'mrp' => '150',
+            'retail_price' => '130',
+            'wholesale_price' => '90',
+        ]);
+
+    $response->assertRedirect(productsTenantRoute('products.create'));
+    $response->assertSessionHasErrors(['wholesale_price']);
+});
+
 it('shows product details', function (): void {
     $branch = authenticateProductUser();
 

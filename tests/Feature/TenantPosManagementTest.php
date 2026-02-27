@@ -136,7 +136,6 @@ function authenticatePosUser(): array
         'default_tax_id' => $tax->id,
         'code' => 'POS-S-1',
         'name' => 'Oil Change',
-        'category' => 'Workshop',
         'base_price' => 250,
         'status' => RecordStatus::ACTIVE->value,
     ]);
@@ -146,7 +145,6 @@ function authenticatePosUser(): array
         'default_tax_id' => $tax->id,
         'code' => 'POS-S-2',
         'name' => 'Alt Service',
-        'category' => 'Workshop',
         'base_price' => 300,
         'status' => RecordStatus::ACTIVE->value,
     ]);
@@ -212,7 +210,6 @@ it('returns service catalog scoped to current branch', function (): void {
 
     $response = $this->getJson(posTenantRoute('pos.catalog', [
         'type' => 'service',
-        'category' => 'Workshop',
     ]));
 
     $response->assertSuccessful();

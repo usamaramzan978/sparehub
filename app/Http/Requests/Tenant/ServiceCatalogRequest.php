@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Tenant;
 
 use App\Enums\RecordStatus;
+use App\Enums\ServiceCatalogType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -33,7 +34,7 @@ final class ServiceCatalogRequest extends FormRequest
                     ->ignore($serviceCatalogId),
             ],
             'name' => ['required', 'string', 'max:160'],
-            'category' => ['nullable', 'string', 'max:80'],
+            'type' => ['required', Rule::enum(ServiceCatalogType::class)],
             'default_tax_id' => ['nullable', 'uuid', Rule::exists('taxes', 'id')],
             'base_price' => ['required', 'numeric', 'min:0'],
             'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:65535'],

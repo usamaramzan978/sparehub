@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignUuid('default_tax_id')->nullable()->constrained('taxes')->nullOnDelete();
             $table->string('code', 30);
             $table->string('name', 160);
-            $table->string('category', 80)->nullable();
+            $table->string('type', 20)->default('workshop');
             $table->decimal('base_price', 18, 2)->default(0);
             $table->unsignedSmallInteger('duration_minutes')->nullable();
             $table->string('status', 20)->default('active');
@@ -24,6 +24,7 @@ return new class extends Migration
 
             $table->unique(['branch_id', 'code']);
             $table->index(['branch_id', 'status']);
+            $table->index(['branch_id', 'type']);
             $table->index('name');
         });
     }

@@ -9,6 +9,7 @@ use App\Enums\PaymentMethodType;
 use App\Enums\RecordStatus;
 use App\Enums\SaleLineType;
 use App\Enums\SaleStatus;
+use App\Enums\ServiceCatalogType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\PosStoreRequest;
 use App\Models\Category;
@@ -42,14 +43,6 @@ final class PosController extends Controller
             ->where('status', RecordStatus::ACTIVE->value)
             ->orderBy('name')
             ->get();
-        $serviceCategories = ServiceCatalog::query()
-            ->where('branch_id', $branchId)
-            ->where('status', RecordStatus::ACTIVE->value)
-            ->whereNotNull('category')
-            ->where('category', '!=', '')
-            ->distinct()
-            ->orderBy('category')
-            ->pluck('category');
         $statuses = [
             SaleStatus::POSTED,
             SaleStatus::DRAFT,
@@ -66,7 +59,6 @@ final class PosController extends Controller
         return view('tenants.pos.index', [
             'customers' => $customers,
             'categories' => $categories,
-            'serviceCategories' => $serviceCategories,
             'paymentMethods' => $paymentMethods,
             'mechanics' => $mechanics,
             'statuses' => $statuses,
@@ -112,7 +104,7 @@ final class PosController extends Controller
                 ->with('defaultTax')
                 ->where('branch_id', $branchId)
                 ->where('status', RecordStatus::ACTIVE->value)
-                ->when($category !== '', fn ($query) => $query->where('category', $category))
+                ->where('type', ServiceCatalogType::Workshop->value)
                 ->orderBy('name')
                 ->limit($limit)
                 ->get();
@@ -483,11 +475,12 @@ final class PosController extends Controller
             ->with('defaultTax')
             ->where('branch_id', $branchId)
             ->where('status', RecordStatus::ACTIVE->value)
+            ->where('type', ServiceCatalogType::Workshop->value)
             ->where(function ($builder) use ($query): void {
                 $builder
                     ->where('name', 'like', sprintf('%%%s%%', $query))
                     ->orWhere('code', 'like', sprintf('%%%s%%', $query))
-                    ->orWhere('category', 'like', sprintf('%%%s%%', $query));
+                    ->orWhere('type', 'like', sprintf('%%%s%%', $query));
             })
             ->limit($limit)
             ->get()
@@ -529,7 +522,7 @@ final class PosController extends Controller
             'ref_id' => $service->id,
             'type' => 'service',
             'name' => $service->name,
-            'product_name' => $service->category,
+            'product_name' => ucfirst($service->type->value),
             'sku' => $service->code,
             'price' => (float) $service->base_price,
             'tax_rate' => $taxRate,

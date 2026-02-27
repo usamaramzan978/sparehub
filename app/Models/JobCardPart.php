@@ -20,12 +20,20 @@ final class JobCardPart extends Model
         'job_card_id',
         'product_id',
         'qty',
+        'cost',
+        'mrp',
+        'retail_price',
+        'wholesale_price',
         'unit_price',
         'line_total',
     ];
 
     protected $casts = [
         'qty' => 'decimal:3',
+        'cost' => 'decimal:2',
+        'mrp' => 'decimal:2',
+        'retail_price' => 'decimal:2',
+        'wholesale_price' => 'decimal:2',
         'unit_price' => 'decimal:2',
         'line_total' => 'decimal:2',
     ];

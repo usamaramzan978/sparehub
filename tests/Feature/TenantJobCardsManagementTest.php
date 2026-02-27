@@ -120,7 +120,6 @@ function authenticateJobCardUser(): array
         'branch_id' => $currentBranch->id,
         'code' => 'SVC-MAIN-1',
         'name' => 'Inspection',
-        'category' => 'Workshop',
         'base_price' => 150,
         'status' => RecordStatus::ACTIVE->value,
     ]);
@@ -307,7 +306,6 @@ it('stores inline service and part lines from job card form', function (): void 
             [
                 'service_catalog_id' => $fixture['serviceCatalog']->id,
                 'technician_id' => $fixture['currentEmployee']->id,
-                'service_name' => 'Inspection Service',
                 'qty' => 2,
                 'rate' => 125,
                 'status' => JobCardServiceStatus::PENDING->value,
@@ -329,7 +327,8 @@ it('stores inline service and part lines from job card form', function (): void 
 
     $this->assertDatabaseHas('job_card_services', [
         'job_card_id' => $jobCard->id,
-        'service_name' => 'Inspection Service',
+        'service_name' => 'Inspection',
+        'service_catalog_id' => $fixture['serviceCatalog']->id,
         'line_total' => 250,
     ], 'tenant');
 
@@ -382,7 +381,6 @@ it('syncs inline service and part lines when updating a job card', function (): 
                 'id' => $existingService->id,
                 'service_catalog_id' => $fixture['serviceCatalog']->id,
                 'technician_id' => $fixture['currentEmployee']->id,
-                'service_name' => 'Updated Service',
                 'qty' => 2,
                 'rate' => 120,
                 'status' => JobCardServiceStatus::DONE->value,
@@ -406,7 +404,8 @@ it('syncs inline service and part lines when updating a job card', function (): 
     $this->assertDatabaseHas('job_card_services', [
         'id' => $existingService->id,
         'job_card_id' => $jobCard->id,
-        'service_name' => 'Updated Service',
+        'service_name' => 'Inspection',
+        'service_catalog_id' => $fixture['serviceCatalog']->id,
         'line_total' => 240,
         'status' => JobCardServiceStatus::DONE->value,
     ], 'tenant');

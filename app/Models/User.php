@@ -40,6 +40,8 @@ final class User extends Authenticatable
         'name',
         'email',
         'phone',
+        'cnic',
+        'image_path',
         'password',
         'status',
         'last_login_at',
@@ -130,6 +132,11 @@ final class User extends Authenticatable
     public function mechanicSaleItems(): HasMany
     {
         return $this->hasMany(SaleItem::class, 'mechanic_id');
+    }
+
+    public function commissionRules(): HasMany
+    {
+        return $this->hasMany(UserCommissionRule::class)->orderBy('sort_order');
     }
 
     /**

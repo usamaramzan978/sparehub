@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Enums\BranchStatus;
+use App\Enums\CommissionType;
 use App\Enums\LoginUserType;
 use App\Enums\RecordStatus;
 use App\Enums\RoleName;
+use App\Enums\ServiceCatalogType;
 use App\Enums\UserStatus;
 use App\Models\Branch;
 use App\Models\Brand;
@@ -21,6 +23,7 @@ use App\Models\Tax;
 use App\Models\TenantSetting;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\UserCommissionRule;
 use App\Models\Vendor;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -59,6 +62,7 @@ final class TenantDemoSeeder extends Seeder
                 'branch_id' => $branch->id,
                 'name' => 'Demo Owner',
                 'phone' => '+92-300-1111111',
+                'cnic' => '35202-0000001-1',
                 'password' => Hash::make('password'),
                 'status' => UserStatus::ACTIVE->value,
                 'email_verified_at' => now(),
@@ -141,10 +145,39 @@ final class TenantDemoSeeder extends Seeder
             [
                 'default_tax_id' => $tax->id,
                 'name' => 'Bike Tuning',
-                'category' => 'Workshop',
+                'type' => ServiceCatalogType::Workshop->value,
                 'base_price' => 800,
                 'duration_minutes' => 45,
                 'status' => RecordStatus::ACTIVE->value,
+            ]
+        );
+
+        $labourService = ServiceCatalog::query()->firstOrCreate(
+            [
+                'branch_id' => $branch->id,
+                'code' => 'LAB-GENERAL',
+            ],
+            [
+                'default_tax_id' => null,
+                'name' => 'General Labour',
+                'type' => ServiceCatalogType::Labour->value,
+                'base_price' => 0,
+                'duration_minutes' => 30,
+                'status' => RecordStatus::ACTIVE->value,
+            ]
+        );
+
+        UserCommissionRule::query()->firstOrCreate(
+            [
+                'user_id' => $owner->id,
+                'service_catalog_id' => $labourService->id,
+            ],
+            [
+                'total_amount' => 800,
+                'commission_type' => CommissionType::PERCENTAGE->value,
+                'commission_value' => 20,
+                'payable_amount' => 160,
+                'sort_order' => 0,
             ]
         );
 

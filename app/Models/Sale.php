@@ -88,6 +88,11 @@ final class Sale extends Model implements HasMedia
         return $this->hasMany(SalePayment::class);
     }
 
+    public function returns(): HasMany
+    {
+        return $this->hasMany(SaleReturn::class);
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('online_payment_proof')->singleFile();

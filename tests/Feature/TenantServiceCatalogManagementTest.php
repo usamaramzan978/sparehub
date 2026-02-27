@@ -6,6 +6,7 @@ use App\Actions\Tenant\ServiceCatalog\DeleteServiceCatalogAction;
 use App\Actions\Tenant\ServiceCatalog\UpdateServiceCatalogAction;
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
+use App\Enums\ServiceCatalogType;
 use App\Http\Controllers\Tenant\ServiceCatalogController;
 use App\Models\Branch;
 use App\Models\ServiceCatalog;
@@ -119,7 +120,6 @@ it('filters service catalog by search keyword in current branch', function (): v
         'branch_id' => $branches['current']->id,
         'code' => 'SRV-OIL',
         'name' => 'Oil Service',
-        'category' => 'General',
         'base_price' => 120,
         'status' => RecordStatus::ACTIVE->value,
     ]);
@@ -128,7 +128,6 @@ it('filters service catalog by search keyword in current branch', function (): v
         'branch_id' => $branches['current']->id,
         'code' => 'SRV-BRK',
         'name' => 'Brake Service',
-        'category' => 'Brake',
         'base_price' => 140,
         'status' => RecordStatus::ACTIVE->value,
     ]);
@@ -217,7 +216,7 @@ it('stores service catalog for current branch', function (): void {
     $response = $this->post(serviceCatalogTenantRoute('service-catalog.store'), [
         'code' => 'SRV-NEW',
         'name' => 'Wheel Alignment',
-        'category' => 'Workshop',
+        'type' => ServiceCatalogType::Workshop->value,
         'default_tax_id' => $tax->id,
         'base_price' => 250,
         'duration_minutes' => 45,
@@ -251,6 +250,7 @@ it('derives service catalog taxable flag from selected default tax', function ()
     $this->post(serviceCatalogTenantRoute('service-catalog.store'), [
         'code' => 'SRV-TAX-1',
         'name' => 'Taxed Service',
+        'type' => ServiceCatalogType::Workshop->value,
         'default_tax_id' => $tax->id,
         'base_price' => 100,
         'status' => RecordStatus::ACTIVE->value,
@@ -259,6 +259,7 @@ it('derives service catalog taxable flag from selected default tax', function ()
     $this->post(serviceCatalogTenantRoute('service-catalog.store'), [
         'code' => 'SRV-TAX-0',
         'name' => 'Non Taxed Service',
+        'type' => ServiceCatalogType::Workshop->value,
         'base_price' => 80,
         'status' => RecordStatus::ACTIVE->value,
     ])->assertRedirect(serviceCatalogTenantRoute('service-catalog.index'));
@@ -274,6 +275,7 @@ it('validates required service catalog fields', function (string $field): void {
     $payload = [
         'code' => 'SRV-VAL',
         'name' => 'Validation Service',
+        'type' => ServiceCatalogType::Workshop->value,
         'base_price' => 100,
         'status' => RecordStatus::ACTIVE->value,
     ];
@@ -288,6 +290,7 @@ it('validates required service catalog fields', function (string $field): void {
 })->with([
     'code' => 'code',
     'name' => 'name',
+    'type' => 'type',
     'base_price' => 'base_price',
     'status' => 'status',
 ]);
@@ -307,6 +310,7 @@ it('validates unique service code per branch', function (): void {
         ->post(serviceCatalogTenantRoute('service-catalog.store'), [
             'code' => 'SRV-DUP',
             'name' => 'Duplicate Service',
+            'type' => ServiceCatalogType::Workshop->value,
             'base_price' => 120,
             'status' => RecordStatus::ACTIVE->value,
         ]);
@@ -329,6 +333,7 @@ it('allows same service code in different branch', function (): void {
     $response = $this->post(serviceCatalogTenantRoute('service-catalog.store'), [
         'code' => 'SRV-COM',
         'name' => 'Current Branch Service',
+        'type' => ServiceCatalogType::Workshop->value,
         'base_price' => 90,
         'status' => RecordStatus::ACTIVE->value,
     ]);
@@ -356,6 +361,7 @@ it('validates service catalog enum and duration limits', function (): void {
         ->post(serviceCatalogTenantRoute('service-catalog.store'), [
             'code' => 'SRV-LIMIT',
             'name' => 'Limit Service',
+            'type' => ServiceCatalogType::Workshop->value,
             'base_price' => 100,
             'duration_minutes' => 0,
             'status' => 'bad-status',

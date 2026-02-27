@@ -56,17 +56,13 @@
                                     $isSales = request()->routeIs(
                                         'tenant.pos.*',
                                         'tenant.sales.*',
-                                        'tenant.sales-tree.*',
-                                        'tenant.sale-items.*',
+                                        'tenant.sale-returns.*',
                                         'tenant.sale-payments.*',
-                                        'tenant.sale-holds.*',
                                     );
                                     $isPos = request()->routeIs('tenant.pos.*');
                                     $isSalesInvoices = request()->routeIs('tenant.sales.*');
-                                    $isSalesTree = request()->routeIs('tenant.sales-tree.*');
-                                    $isSaleItems = request()->routeIs('tenant.sale-items.*');
+                                    $isSaleReturns = request()->routeIs('tenant.sale-returns.*');
                                     $isSalePayments = request()->routeIs('tenant.sale-payments.*');
-                                    $isSaleHolds = request()->routeIs('tenant.sale-holds.*');
 
                                     $isPurchases = request()->routeIs(
                                         'tenant.purchases.*',
@@ -94,11 +90,9 @@
                                         'tenant.users.*',
                                         'tenant.employee-attendances.*',
                                         'tenant.employee-salaries.*',
-                                        'tenant.mechanic-payables.*',
                                     );
                                     $isEmployeeAttendances = request()->routeIs('tenant.employee-attendances.*');
                                     $isEmployeeSalaries = request()->routeIs('tenant.employee-salaries.*');
-                                    $isMechanicPayables = request()->routeIs('tenant.mechanic-payables.*');
                                     $isUsers = request()->routeIs('tenant.users.*');
                                     $isRoles = request()->routeIs('tenant.roles.*');
                                     $isPermissions = request()->routeIs('tenant.permissions.*');
@@ -309,29 +303,6 @@
                                                     </li>
                                                 </ul>
                                             </li>
-                                            <li class="slide {{ $isSalesTree ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.sales-tree.index') }}"
-                                                    class="side-menu__item {{ $isSalesTree ? 'active' : '' }}">{{ __('Sales Tree') }}</a>
-                                            </li>
-                                            <li class="slide has-sub {{ $isSaleItems ? 'active open' : '' }}">
-                                                <a href="javascript:void(0);"
-                                                    class="side-menu__item {{ $isSaleItems ? 'active' : '' }}">
-                                                    {{ __('Sale Items') }}
-                                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                                                </a>
-                                                <ul class="slide-menu child2 {{ $isSaleItems ? 'open' : '' }}">
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.sale-items.index') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.sale-items.index') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.sale-items.index') ? 'active' : '' }}">{{ __('List') }}</a>
-                                                    </li>
-                                                    <li
-                                                        class="slide {{ request()->routeIs('tenant.sale-items.create') ? 'active' : '' }}">
-                                                        <a href="{{ route('tenant.sale-items.create') }}"
-                                                            class="side-menu__item {{ request()->routeIs('tenant.sale-items.create') ? 'active' : '' }}">{{ __('Create') }}</a>
-                                                    </li>
-                                                </ul>
-                                            </li>
                                             <li class="slide has-sub {{ $isSalePayments ? 'active open' : '' }}">
                                                 <a href="javascript:void(0);"
                                                     class="side-menu__item {{ $isSalePayments ? 'active' : '' }}">
@@ -351,9 +322,9 @@
                                                     </li>
                                                 </ul>
                                             </li>
-                                            <li class="slide {{ $isSaleHolds ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.sale-holds.index') }}"
-                                                    class="side-menu__item {{ $isSaleHolds ? 'active' : '' }}">{{ __('Sale Holds (POS Hold)') }}</a>
+                                            <li class="slide {{ $isSaleReturns ? 'active' : '' }}">
+                                                <a href="{{ route('tenant.sale-returns.index') }}"
+                                                    class="side-menu__item {{ $isSaleReturns ? 'active' : '' }}">{{ __('Sales Returns') }}</a>
                                             </li>
                                         </ul>
                                     </li>
@@ -552,12 +523,6 @@
                                                 <a href="{{ route('tenant.employee-salaries.index') }}"
                                                     class="side-menu__item {{ $isEmployeeSalaries ? 'active' : '' }}">
                                                     {{ __('Salaries') }}
-                                                </a>
-                                            </li>
-                                            <li class="slide {{ $isMechanicPayables ? 'active' : '' }}">
-                                                <a href="{{ route('tenant.mechanic-payables.index') }}"
-                                                    class="side-menu__item {{ $isMechanicPayables ? 'active' : '' }}">
-                                                    {{ __('Mechanic Payables') }}
                                                 </a>
                                             </li>
                                         </ul>

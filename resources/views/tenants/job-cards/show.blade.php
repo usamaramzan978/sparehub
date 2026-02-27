@@ -110,7 +110,7 @@
                     <tbody>
                         @forelse ($jobCard->services as $serviceLine)
                             <tr>
-                                <td>{{ $serviceLine->service_name }}</td>
+                                <td>{{ $serviceLine->serviceCatalog?->name ?? $serviceLine->service_name }}</td>
                                 <td>{{ $serviceLine->technician?->name ?? '-' }}</td>
                                 <td class="text-end">{{ number_format((float) $serviceLine->qty, 3) }}</td>
                                 <td class="text-end">{{ number_format((float) $serviceLine->rate, 2) }}</td>

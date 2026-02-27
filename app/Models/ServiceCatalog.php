@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\RecordStatus;
+use App\Enums\ServiceCatalogType;
 use App\Models\Concerns\BranchScopedBySession;
 use App\Models\Concerns\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -26,7 +27,7 @@ final class ServiceCatalog extends Model
         'default_tax_id',
         'code',
         'name',
-        'category',
+        'type',
         'base_price',
         'duration_minutes',
         'status',
@@ -36,6 +37,7 @@ final class ServiceCatalog extends Model
         'base_price' => 'decimal:2',
         'duration_minutes' => 'int',
         'status' => RecordStatus::class,
+        'type' => ServiceCatalogType::class,
     ];
 
     public function branch(): BelongsTo

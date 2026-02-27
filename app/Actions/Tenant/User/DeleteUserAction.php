@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Support\AuditTimelineLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 final class DeleteUserAction
 {
@@ -28,6 +29,7 @@ final class DeleteUserAction
         ];
 
         $this->deleteLoginMap($user);
+        $this->deleteImage($user);
 
         $user->delete();
 
@@ -74,5 +76,14 @@ final class DeleteUserAction
             ->count();
 
         return $tenantOwnersCount <= 1;
+    }
+
+    private function deleteImage(User $user): void
+    {
+        if (! filled($user->image_path)) {
+            return;
+        }
+
+        Storage::disk('public')->delete((string) $user->image_path);
     }
 }

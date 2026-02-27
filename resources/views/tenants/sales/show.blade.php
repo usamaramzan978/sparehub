@@ -139,7 +139,6 @@
                             <th>{{ __('Mechanic') }}</th>
                             <th class="text-end">{{ __('Mechanic Payable') }}</th>
                             <th class="text-end">{{ __('Line Total') }}</th>
-                            <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -155,17 +154,10 @@
                                 <td>{{ $saleItem->mechanic?->name ?? '-' }}</td>
                                 <td class="text-end">{{ number_format((float) $saleItem->mechanic_charge, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) $saleItem->line_total, 2) }}</td>
-                                <td class="text-end">
-                                    <a href="{{ route('tenant.sale-items.show', $saleItem) }}"
-                                        class="btn btn-sm btn-icon btn-primary-light btn-wave waves-effect waves-light"
-                                        title="{{ __('View') }}">
-                                        <i class="ri-eye-line"></i>
-                                    </a>
-                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center text-muted">{{ __('No sale items found.') }}</td>
+                                <td colspan="9" class="text-center text-muted">{{ __('No sale items found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

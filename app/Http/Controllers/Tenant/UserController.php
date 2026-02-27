@@ -6,18 +6,22 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Actions\Tenant\User\CreateUserAction;
 use App\Actions\Tenant\User\DeleteUserAction;
+use App\Actions\Tenant\User\SyncUserCommissionRulesAction;
 use App\Actions\Tenant\User\UpdateUserAction;
+use App\Enums\ServiceCatalogType;
 use App\Enums\UserDeletionResult;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\UserRequest;
 use App\Models\Branch;
+use App\Models\ServiceCatalog;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 
 final class UserController extends Controller
 {
@@ -39,7 +43,8 @@ final class UserController extends Controller
                     $builder
                         ->where('name', 'like', sprintf('%%%s%%', $search))
                         ->orWhere('email', 'like', sprintf('%%%s%%', $search))
-                        ->orWhere('phone', 'like', sprintf('%%%s%%', $search));
+                        ->orWhere('phone', 'like', sprintf('%%%s%%', $search))
+                        ->orWhere('cnic', 'like', sprintf('%%%s%%', $search));
                 });
             })
             ->when(in_array($status, $allowedStatuses, true), fn (Builder $query): Builder => $query->where('status', $status));
@@ -70,27 +75,52 @@ final class UserController extends Controller
         return view('tenants.users.create', [
             'statuses' => $statuses,
             'branch' => $branch,
+            'labourServices' => $this->labourServices(),
         ]);
     }
 
-    public function show(User $user): View
+    public function show(User|string $user): View
     {
+        $user = $this->resolveUser($user);
         $this->ensureUserInCurrentBranch($user);
-        $user->load('branch');
+        $user->load(['branch', 'commissionRules.serviceCatalog']);
 
-        return view('tenants.users.show', ['user' => $user]);
+        $servicePayables = $user->mechanicSaleItems()
+            ->with(['sale:id,invoice_no,invoice_date', 'serviceCatalog:id,name'])
+            ->where('line_type', 'service')
+            ->where('mechanic_charge', '>', 0)
+            ->latest('created_at')
+            ->limit(100)
+            ->get();
+
+        $commissionSummary = [
+            'rules_count' => $user->commissionRules->count(),
+            'total_payable' => (float) $user->commissionRules->sum('payable_amount'),
+            'service_entries_count' => $servicePayables->count(),
+            'service_entries_payable_total' => (float) $servicePayables->sum('mechanic_charge'),
+        ];
+
+        return view('tenants.users.show', [
+            'user' => $user,
+            'servicePayables' => $servicePayables,
+            'commissionSummary' => $commissionSummary,
+        ]);
     }
 
-    public function store(UserRequest $request, CreateUserAction $action): RedirectResponse
-    {
-        $action->handle($request->validated(), $this->currentBranchId());
+    public function store(
+        UserRequest $request,
+        CreateUserAction $action,
+        SyncUserCommissionRulesAction $syncUserCommissionRulesAction
+    ): RedirectResponse {
+        $action->handle($request->validated(), $this->currentBranchId(), $syncUserCommissionRulesAction);
 
         return to_route('tenant.users.index')
             ->with('status', 'Created.');
     }
 
-    public function edit(User $user): View
+    public function edit(User|string $user): View
     {
+        $user = $this->resolveUser($user);
         $this->ensureUserInCurrentBranch($user);
 
         $statuses = UserStatus::cases();
@@ -100,21 +130,28 @@ final class UserController extends Controller
             'user' => $user,
             'statuses' => $statuses,
             'branch' => $branch,
+            'labourServices' => $this->labourServices(),
         ]);
     }
 
-    public function update(UserRequest $request, User $user, UpdateUserAction $action): RedirectResponse
-    {
+    public function update(
+        UserRequest $request,
+        User|string $user,
+        UpdateUserAction $action,
+        SyncUserCommissionRulesAction $syncUserCommissionRulesAction
+    ): RedirectResponse {
+        $user = $this->resolveUser($user);
         $this->ensureUserInCurrentBranch($user);
 
-        $action->handle($user, $request->validated(), $this->currentBranchId());
+        $action->handle($user, $request->validated(), $this->currentBranchId(), $syncUserCommissionRulesAction);
 
         return to_route('tenant.users.index')
             ->with('status', 'Updated.');
     }
 
-    public function destroy(User $user, DeleteUserAction $action): RedirectResponse
+    public function destroy(User|string $user, DeleteUserAction $action): RedirectResponse
     {
+        $user = $this->resolveUser($user);
         $this->ensureUserInCurrentBranch($user);
 
         return match ($action->handle($user)) {
@@ -123,5 +160,26 @@ final class UserController extends Controller
             UserDeletionResult::Deleted => to_route('tenant.users.index')
                 ->with('status', 'Deleted.'),
         };
+    }
+
+    private function resolveUser(User|string $user): User
+    {
+        if ($user instanceof User) {
+            return $user;
+        }
+
+        return User::query()->findOrFail($user);
+    }
+
+    /**
+     * @return Collection<int, ServiceCatalog>
+     */
+    private function labourServices(): Collection
+    {
+        return ServiceCatalog::query()
+            ->where('branch_id', $this->currentBranchId())
+            ->where('type', ServiceCatalogType::Labour->value)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
     }
 }

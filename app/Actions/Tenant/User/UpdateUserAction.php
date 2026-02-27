@@ -9,20 +9,27 @@ use App\Enums\UserStatus;
 use App\Models\LoginMap;
 use App\Models\User;
 use App\Support\AuditTimelineLogger;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Support\Facades\Storage;
 
 final class UpdateUserAction
 {
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(User $user, array $data, string $branchId): bool
-    {
+    public function handle(
+        User $user,
+        array $data,
+        string $branchId,
+        SyncUserCommissionRulesAction $syncUserCommissionRulesAction
+    ): bool {
         $data['branch_id'] = $branchId;
         $data['email'] = mb_strtolower((string) $data['email']);
+        $image = Arr::pull($data, 'image');
+        $commissionRules = Arr::pull($data, 'commission_rules', []);
 
         if (empty($data['password'])) {
             $data = Arr::except($data, ['password']);
@@ -30,7 +37,16 @@ final class UpdateUserAction
             $data['password'] = Hash::make((string) $data['password']);
         }
 
+        if ($image instanceof UploadedFile) {
+            if (filled($user->image_path)) {
+                Storage::disk('public')->delete((string) $user->image_path);
+            }
+
+            $data['image_path'] = (string) $image->store('users', 'public');
+        }
+
         $updated = $user->update($data);
+        $syncUserCommissionRulesAction->handle($user, is_array($commissionRules) ? $commissionRules : []);
 
         $this->syncLoginMap($user->refresh());
 
@@ -54,7 +70,9 @@ final class UpdateUserAction
         $tenantId = (string) tenant('id');
         $userStatus = $user->status instanceof UserStatus ? $user->status->value : (string) $user->status;
 
-        throw_if($tenantId === '', HttpException::class, 422, 'Invalid tenant context.');
+        if ($tenantId === '') {
+            return;
+        }
 
         LoginMap::query()->updateOrCreate(
             [

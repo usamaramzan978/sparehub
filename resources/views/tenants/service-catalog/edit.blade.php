@@ -52,12 +52,17 @@
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label" for="category">{{ __('Category') }}</label>
-                        <input type="text" name="category" id="category"
-                            class="form-control @error('category') is-invalid @enderror"
-                            value="{{ old('category', $serviceCatalog->category) }}">
-                        @error('category')
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label" for="type">{{ __('Type') }}</label>
+                        <select name="type" id="type"
+                            class="form-select singl-select-2 @error('type') is-invalid @enderror" required>
+                            @foreach ($serviceTypes as $serviceType)
+                                <option value="{{ $serviceType->value }}" @selected(old('type', $serviceCatalog->type->value) === $serviceType->value)>
+                                    {{ ucfirst($serviceType->value) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('type')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror
                     </div>

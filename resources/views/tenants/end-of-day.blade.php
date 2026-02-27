@@ -65,8 +65,9 @@
                     <div class="text-muted small">{{ __('Mechanic Payable Today') }}</div>
                     <h4>{{ $currency($summary['mechanic_payable_total']) }}</h4>
                     <div class="small text-muted">{{ $summary['mechanic_payable_count'] }} {{ __('service entries') }}</div>
-                    <a href="{{ route('tenant.mechanic-payables.index', ['date_from' => $selectedDate, 'date_to' => $selectedDate]) }}"
-                        class="btn btn-outline-primary btn-sm mt-2">{{ __('Open Mechanic Payables') }}</a>
+                    <a href="{{ route('tenant.users.index') }}" class="btn btn-outline-primary btn-sm mt-2">
+                        {{ __('Open Users') }}
+                    </a>
                 </div>
             </div>
         </div>

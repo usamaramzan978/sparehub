@@ -272,6 +272,7 @@ Seeders ensure a default branch exists with baseline master data.
   - `units` (default unit)
 - `product_prices` references `products` and optional `branches`
 - `service_catalog` references `branches` and optional default `taxes`
+  - `type`: `workshop` or `labour`
 
 Practical example:
 - Product `Engine Oil 1L`:
@@ -286,6 +287,12 @@ Practical example:
 - `customers` belongs to `branches`
 - `customer_vehicles` belongs to `customers`
 - `vendors` belongs to `branches`
+- `user_commission_rules` belongs to `users` and stores labour-level commission setup:
+  - `service_catalog_id` (labour type service only)
+  - `total_amount`
+  - `commission_type` (`fixed` | `percentage`)
+  - `commission_value`
+  - `payable_amount`
 
 ### 6.4 Workshop
 
@@ -305,8 +312,28 @@ Sidebar purpose:
 
 - `sales` belongs to `branches`, optional `customers`, optional `job_cards`, optional creator `users`
 - `sale_items` belongs to `sales`, `branches`, optional `products`, optional `service_catalog`, optional `job_card_services`
+- `sale_returns` belongs to `branches`, optional `customers`, optional `sales`, optional creator `users`
+- `sale_return_items` belongs to `sale_returns`, optional `sale_items`, required `products`, optional `taxes`
 - `sale_payments` belongs to `sales`, `branches`, optional receiver `users`
 - `sale_holds` belongs to `branches`, optional `customers`, optional creator `users`
+
+Purpose split:
+- `sales` (Sales Invoice) is the commercial document and accounting base:
+  - stores invoice totals (`sub_total`, `discount_total`, `tax_total`, `grand_total`)
+  - stores receivable state (`paid_total`, `balance_due`) and invoice status/type
+  - owns line items via `sale_items`
+- `sale_payments` stores payment transactions only:
+  - each row is one collection event against one invoice (`sale_id`)
+  - supports multiple partial payments for a single invoice
+  - captures payment method, amount, paid timestamp, receiver, and reference/proof metadata
+
+Operationally: invoice creation records what was sold; sale payments record when/how much cash was collected later.
+
+Sales returns flow:
+- Return document is created in `sale_returns` with line items in `sale_return_items`.
+- Stock is increased for tracked products on create/update.
+- Stock is reversed if return is edited/deleted.
+- Validation ensures return qty for a linked `sale_item` does not exceed sold qty minus already returned qty.
 
 ### 6.6 Purchases
 
@@ -342,6 +369,19 @@ Notes:
 - Product listing shows current stock against opening stock (for example `17/20`).
 - Opening stock is managed from product create/edit.
 - Stock movement trail is reviewed from `Products > History`.
+
+#### Product Price Guard (Create/Edit)
+
+Price validation is enforced in two layers for products:
+1. Frontend JS guard in create/edit views to prevent accidental bad values before submit.
+2. Backend validation in `App\Http\Requests\Tenant\ProductRequest` to reject invalid payloads.
+
+Current enforced pricing hierarchy:
+- `mrp >= cost`
+- `retail_price >= cost`
+- `retail_price <= mrp`
+- `wholesale_price >= cost`
+- `wholesale_price <= retail_price`
 
 ### 6.11 Units and Fractional Quantities
 
@@ -402,6 +442,12 @@ Seeder `TenantRolePermissionSeeder` creates baseline permissions and roles:
 - `cashier`
 
 `TenantDemoSeeder` assigns `tenant_owner` to demo owner.
+
+Employee payable note:
+- Standalone `mechanic-payables` module is removed.
+- User-wise payable visibility is provided in `Users > User Details` using:
+  - configured `user_commission_rules`
+  - service payable entries from `sale_items.mechanic_charge`
 
 ## 7. Seeder Strategy
 

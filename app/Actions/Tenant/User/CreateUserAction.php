@@ -9,17 +9,18 @@ use App\Enums\UserStatus;
 use App\Models\LoginMap;
 use App\Models\User;
 use App\Support\AuditTimelineLogger;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class CreateUserAction
 {
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(array $data, string $branchId): User
+    public function handle(array $data, string $branchId, SyncUserCommissionRulesAction $syncUserCommissionRulesAction): User
     {
         $maxUsers = (int) config('tenancy.limits.max_users', 10);
 
@@ -32,8 +33,14 @@ final class CreateUserAction
         $data['branch_id'] = $branchId;
         $data['email'] = mb_strtolower((string) $data['email']);
         $data['password'] = Hash::make((string) $data['password']);
+        $image = Arr::pull($data, 'image');
+        if ($image instanceof UploadedFile) {
+            $data['image_path'] = (string) $image->store('users', 'public');
+        }
+        $commissionRules = Arr::pull($data, 'commission_rules', []);
 
         $user = User::query()->create($data);
+        $syncUserCommissionRulesAction->handle($user, is_array($commissionRules) ? $commissionRules : []);
 
         $this->syncLoginMap($user);
 
@@ -57,7 +64,9 @@ final class CreateUserAction
         $tenantId = (string) tenant('id');
         $userStatus = $user->status instanceof UserStatus ? $user->status->value : (string) $user->status;
 
-        throw_if($tenantId === '', HttpException::class, 422, 'Invalid tenant context.');
+        if ($tenantId === '') {
+            return;
+        }
 
         LoginMap::query()->updateOrCreate(
             [

@@ -32,6 +32,8 @@ return new class extends Migration
             $table->string('name', 150);
             $table->string('email')->unique();
             $table->string('phone', 30)->nullable()->index();
+            $table->string('cnic', 25)->nullable()->index();
+            $table->string('image_path')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('status', 20)->default('active')->index();

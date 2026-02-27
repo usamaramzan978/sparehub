@@ -15,6 +15,10 @@ return new class extends Migration
             $table->foreignUuid('job_card_id')->constrained('job_cards')->cascadeOnDelete();
             $table->foreignUuid('product_id')->constrained('products')->restrictOnDelete();
             $table->decimal('qty', 18, 3)->default(1);
+            $table->decimal('cost', 18, 2)->default(0);
+            $table->decimal('mrp', 18, 2)->default(0);
+            $table->decimal('retail_price', 18, 2)->default(0);
+            $table->decimal('wholesale_price', 18, 2)->default(0);
             $table->decimal('unit_price', 18, 2)->default(0);
             $table->decimal('line_total', 18, 2)->default(0);
             $table->timestamps();

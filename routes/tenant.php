@@ -17,7 +17,6 @@ use App\Http\Controllers\Tenant\EmployeeSalaryController;
 use App\Http\Controllers\Tenant\EndOfDayController;
 use App\Http\Controllers\Tenant\ExpenseController;
 use App\Http\Controllers\Tenant\JobCardController;
-use App\Http\Controllers\Tenant\MechanicPayableController;
 use App\Http\Controllers\Tenant\PermissionController;
 use App\Http\Controllers\Tenant\PosController;
 use App\Http\Controllers\Tenant\ProductController;
@@ -31,10 +30,8 @@ use App\Http\Controllers\Tenant\PurchasesTreeController;
 use App\Http\Controllers\Tenant\ReportController;
 use App\Http\Controllers\Tenant\RoleController;
 use App\Http\Controllers\Tenant\SaleController;
-use App\Http\Controllers\Tenant\SaleHoldController;
-use App\Http\Controllers\Tenant\SaleItemController;
 use App\Http\Controllers\Tenant\SalePaymentController;
-use App\Http\Controllers\Tenant\SalesTreeController;
+use App\Http\Controllers\Tenant\SaleReturnController;
 use App\Http\Controllers\Tenant\ServiceCatalogController;
 use App\Http\Controllers\Tenant\SettingController;
 use App\Http\Controllers\Tenant\SupportTicketController;
@@ -72,14 +69,12 @@ Route::middleware([
         Route::get('dashboard', DashboardController::class)->name('dashboard');
         Route::get('end-of-day', EndOfDayController::class)->name('end-of-day');
         Route::get('products/history', ProductHistoryController::class)->name('products.history');
-        Route::get('sales-tree', SalesTreeController::class)->name('sales-tree.index');
         Route::get('purchases-tree', PurchasesTreeController::class)->name('purchases-tree.index');
 
         Route::get('employee-attendances', [EmployeeAttendanceController::class, 'index'])->name('employee-attendances.index');
         Route::post('employee-attendances', [EmployeeAttendanceController::class, 'store'])->name('employee-attendances.store');
         Route::get('employee-salaries', [EmployeeSalaryController::class, 'index'])->name('employee-salaries.index');
         Route::post('employee-salaries', [EmployeeSalaryController::class, 'store'])->name('employee-salaries.store');
-        Route::get('mechanic-payables', MechanicPayableController::class)->name('mechanic-payables.index');
 
         Route::controller(TenantAuthController::class)->group(function (): void {
             Route::get('two-step', 'showTwoStep')->name('two-step');
@@ -152,9 +147,8 @@ Route::middleware([
             'customer-vehicles' => CustomerVehicleController::class,
             'vendors' => VendorController::class,
             'sales' => SaleController::class,
-            'sale-items' => SaleItemController::class,
+            'sale-returns' => SaleReturnController::class,
             'sale-payments' => SalePaymentController::class,
-            'sale-holds' => SaleHoldController::class,
             'purchases' => PurchaseController::class,
             'purchase-items' => PurchaseItemController::class,
             'purchase-returns' => PurchaseReturnController::class,
@@ -168,6 +162,8 @@ Route::middleware([
             ->parameters(['support-tickets' => 'supportTicket']);
         Route::post('support-tickets/{supportTicket}/messages', [SupportTicketController::class, 'storeMessage'])
             ->name('support-tickets.messages.store');
+        Route::get('sale-returns/invoice/{sale}/items', [SaleReturnController::class, 'invoiceItems'])
+            ->name('sale-returns.invoice-items');
 
         Route::resource('brands', BrandController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
