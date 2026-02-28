@@ -351,13 +351,16 @@ Sales returns flow:
 - `purchases` belongs to `branches`, required `vendors`, optional creator `users`
 - `purchase_items` belongs to `purchases`, `branches`, `products`, optional `taxes`
 - `purchase_returns` belongs to `branches`, `vendors`, optional `purchases`, optional creator `users`
-- `purchase_return_items` belongs to `purchase_returns`, optional `purchase_items`, required `products`, optional `taxes`
+- `purchase_return_items` belongs to `purchase_returns`, optional `purchase_items`, required `products`
 - `vendor_payments` belongs to `branches`, `vendors`, optional `purchases`, optional creator `users`
+- Numbering behavior:
+  - `purchase_no`, `return_no`, and `payment_no` are optional on create; blank values are auto-generated per branch.
+  - On update, these numbers are immutable in UI and enforced server-side (incoming changes are ignored).
 
 Practical flow example:
 1. Create purchase `PI-1004` for vendor `City Auto Supplier`.
-2. Add `purchase_items` for products and tax amounts.
-3. `syncStockForPurchaseItems()` increments `inventory_stocks` for tracked products.
+2. Add `purchase_items` using `qty`, `cost`, `mrp`, `retail_price`, and `wholesale_price`.
+3. `syncStockForPurchaseItems()` increments `inventory_stocks` for tracked products and syncs product pricing from the purchase item values.
 4. `vendor_payments` entries reduce outstanding payable.
 5. Purchase return reverses stock and payable as needed.
 

@@ -89,9 +89,11 @@ Workshop menu purpose:
 ### 6.3 Purchases & Stock
 
 - Add purchase invoice in `Purchases`.
-- Add line items and taxes.
+- Add line items with `Qty`, `Cost`, `MRP`, `Retail Price`, and `Wholesale Price`.
 - Record supplier payments in `Vendor Payments`.
 - Use returns screens when sending items back to vendor.
+- If `Purchase No`, `Return No`, or `Payment No` is left empty on create, system auto-generates it.
+- After create, these document numbers are locked (read-only on edit).
 
 Practical purchase example:
 1. Vendor `City Auto Supplier` sends invoice `PI-1004`.
@@ -100,6 +102,7 @@ Practical purchase example:
    - `Engine Oil 1L` qty `48` at cost `6.50`
 3. Save purchase and later record partial payment in `Vendor Payments`.
 4. Tracked stock increases for those products automatically.
+5. Product pricing is auto-synced from purchase item values (`cost`, `mrp`, `retail`, `wholesale`).
 
 Stock behavior for tracked products (`Track Stock` enabled):
 1. Create product with opening stock.
