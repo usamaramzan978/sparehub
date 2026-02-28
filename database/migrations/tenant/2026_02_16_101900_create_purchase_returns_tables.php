@@ -19,11 +19,8 @@ return new class extends Migration
             $table->string('return_no', 40);
             $table->date('return_date');
             $table->string('status', 30)->default('draft');
-            $table->decimal('sub_total', 18, 2)->default(0);
-            $table->decimal('tax_total', 18, 2)->default(0);
             $table->decimal('grand_total', 18, 2)->default(0);
             $table->text('notes')->nullable();
-            $table->timestamp('posted_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
@@ -38,12 +35,9 @@ return new class extends Migration
             $table->foreignUuid('purchase_return_id')->constrained('purchase_returns')->cascadeOnDelete();
             $table->foreignUuid('purchase_item_id')->nullable()->constrained('purchase_items')->nullOnDelete();
             $table->foreignUuid('product_id')->constrained('products')->restrictOnDelete();
-            $table->foreignUuid('tax_id')->nullable()->constrained('taxes')->nullOnDelete();
             $table->decimal('qty', 18, 3);
             $table->decimal('unit_cost', 18, 2)->default(0);
-            $table->decimal('tax_amount', 18, 2)->default(0);
             $table->decimal('line_total', 18, 2)->default(0);
-            $table->text('remarks')->nullable();
             $table->timestamps();
 
             $table->index(['purchase_return_id', 'created_at']);

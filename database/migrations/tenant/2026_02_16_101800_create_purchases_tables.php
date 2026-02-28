@@ -16,19 +16,11 @@ return new class extends Migration
             $table->foreignUuid('vendor_id')->constrained('vendors')->restrictOnDelete();
             $table->foreignUuid('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('purchase_no', 40);
-            $table->string('vendor_invoice_no', 60)->nullable();
             $table->date('purchase_date');
             $table->date('due_date')->nullable();
             $table->string('status', 30)->default('draft');
-            $table->decimal('sub_total', 18, 2)->default(0);
-            $table->decimal('discount_total', 18, 2)->default(0);
-            $table->decimal('tax_total', 18, 2)->default(0);
-            $table->decimal('shipping_total', 18, 2)->default(0);
             $table->decimal('grand_total', 18, 2)->default(0);
-            $table->decimal('paid_total', 18, 2)->default(0);
-            $table->decimal('balance_due', 18, 2)->default(0);
             $table->text('notes')->nullable();
-            $table->timestamp('posted_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
@@ -36,7 +28,6 @@ return new class extends Migration
             $table->index(['branch_id', 'purchase_date', 'status']);
             $table->index(['vendor_id', 'purchase_date']);
             $table->index(['status', 'due_date']);
-            $table->index(['branch_id', 'vendor_invoice_no']);
         });
 
         Schema::create('purchase_items', function (Blueprint $table): void {

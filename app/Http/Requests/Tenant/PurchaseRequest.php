@@ -36,28 +36,18 @@ final class PurchaseRequest extends FormRequest
 
         return [
             'vendor_id' => ['required', 'uuid', $vendorExists],
-            'purchase_no' => ['required', 'string', 'max:40', $purchaseUnique],
-            'vendor_invoice_no' => ['nullable', 'string', 'max:60'],
+            'purchase_no' => ['nullable', 'string', 'max:40', $purchaseUnique],
             'purchase_date' => ['required', 'date'],
             'due_date' => ['nullable', 'date'],
             'status' => ['required', Rule::enum(PurchaseStatus::class)],
-            'sub_total' => ['nullable', 'numeric', 'min:0'],
-            'discount_total' => ['nullable', 'numeric', 'min:0'],
-            'tax_total' => ['nullable', 'numeric', 'min:0'],
-            'shipping_total' => ['nullable', 'numeric', 'min:0'],
-            'grand_total' => ['nullable', 'numeric', 'min:0'],
-            'paid_total' => ['nullable', 'numeric', 'min:0'],
-            'balance_due' => ['nullable', 'numeric'],
             'notes' => ['nullable', 'string'],
-            'posted_at' => ['nullable', 'date'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'uuid', $productExists],
-            'items.*.tax_id' => ['nullable', 'uuid', Rule::exists('taxes', 'id')],
             'items.*.qty' => ['required', 'numeric', 'gt:0'],
-            'items.*.unit_cost' => ['required', 'numeric', 'min:0'],
-            'items.*.discount_amount' => ['nullable', 'numeric', 'min:0'],
-            'items.*.tax_amount' => ['nullable', 'numeric', 'min:0'],
-            'items.*.remarks' => ['nullable', 'string'],
+            'items.*.cost' => ['required', 'numeric', 'min:0'],
+            'items.*.mrp' => ['required', 'numeric', 'min:0'],
+            'items.*.retail_price' => ['required', 'numeric', 'min:0'],
+            'items.*.wholesale_price' => ['required', 'numeric', 'min:0'],
         ];
     }
 

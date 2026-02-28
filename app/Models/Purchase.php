@@ -27,32 +27,17 @@ final class Purchase extends Model
         'vendor_id',
         'created_by',
         'purchase_no',
-        'vendor_invoice_no',
         'purchase_date',
         'due_date',
         'status',
-        'sub_total',
-        'discount_total',
-        'tax_total',
-        'shipping_total',
         'grand_total',
-        'paid_total',
-        'balance_due',
         'notes',
-        'posted_at',
     ];
 
     protected $casts = [
         'purchase_date' => 'date',
         'due_date' => 'date',
-        'sub_total' => 'decimal:2',
-        'discount_total' => 'decimal:2',
-        'tax_total' => 'decimal:2',
-        'shipping_total' => 'decimal:2',
         'grand_total' => 'decimal:2',
-        'paid_total' => 'decimal:2',
-        'balance_due' => 'decimal:2',
-        'posted_at' => 'datetime',
         'status' => PurchaseStatus::class,
     ];
 

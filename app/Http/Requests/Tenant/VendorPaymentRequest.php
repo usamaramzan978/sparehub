@@ -36,7 +36,7 @@ final class VendorPaymentRequest extends FormRequest
         return [
             'vendor_id' => ['required', 'uuid', $vendorExists],
             'purchase_id' => ['nullable', 'uuid', $purchaseExists],
-            'payment_no' => ['required', 'string', 'max:40', $paymentUnique],
+            'payment_no' => ['nullable', 'string', 'max:40', $paymentUnique],
             'payment_method' => ['required', Rule::enum(PaymentMethodType::class)],
             'amount' => ['required', 'numeric', 'gt:0'],
             'reference_no' => ['nullable', 'string', 'max:60'],

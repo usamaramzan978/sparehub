@@ -41,22 +41,16 @@ final class PurchaseReturnRequest extends FormRequest
         return [
             'vendor_id' => ['required', 'uuid', $vendorExists],
             'purchase_id' => ['nullable', 'uuid', $purchaseExists],
-            'return_no' => ['required', 'string', 'max:40', $returnUnique],
+            'return_no' => ['nullable', 'string', 'max:40', $returnUnique],
             'return_date' => ['required', 'date'],
             'status' => ['required', Rule::enum(PurchaseReturnStatus::class)],
-            'sub_total' => ['nullable', 'numeric', 'min:0'],
-            'tax_total' => ['nullable', 'numeric', 'min:0'],
             'grand_total' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
-            'posted_at' => ['nullable', 'date'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.purchase_item_id' => ['nullable', 'uuid', $purchaseItemExists],
             'items.*.product_id' => ['required', 'uuid', $productExists],
-            'items.*.tax_id' => ['nullable', 'uuid', Rule::exists('taxes', 'id')],
             'items.*.qty' => ['required', 'numeric', 'gt:0'],
             'items.*.unit_cost' => ['required', 'numeric', 'min:0'],
-            'items.*.tax_amount' => ['nullable', 'numeric', 'min:0'],
-            'items.*.remarks' => ['nullable', 'string'],
         ];
     }
 

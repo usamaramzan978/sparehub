@@ -43,6 +43,7 @@ final class DashboardController extends Controller
             ->copy()
             ->startOfDay()
             ->diffInDays($endDate->copy()->startOfDay()) + 1;
+        $purchaseOutstandingExpression = 'purchases.grand_total - COALESCE((SELECT SUM(vendor_payments.amount) FROM vendor_payments WHERE vendor_payments.purchase_id = purchases.id), 0)';
 
         $salesBase = Sale::query()
             ->where('branch_id', $branchId)
@@ -78,13 +79,19 @@ final class DashboardController extends Controller
             ->whereBetween('purchase_date', [$previousStartDate->toDateString(), $previousEndDate->toDateString()])
             ->sum('grand_total');
 
+        $payablesTotal = (float) (Purchase::query()
+            ->where('branch_id', $branchId)
+            ->whereBetween('purchase_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->selectRaw('SUM(CASE WHEN ('.$purchaseOutstandingExpression.') > 0 THEN ('.$purchaseOutstandingExpression.') ELSE 0 END) as payables_total')
+            ->value('payables_total') ?? 0);
+
         $summary = [
             'sales_total' => $salesTotal,
             'sales_count' => (clone $salesBase)->count(),
             'purchases_total' => $purchasesTotal,
             'purchases_count' => (clone $purchasesBase)->count(),
             'receivables_total' => (float) (clone $salesBase)->where('balance_due', '>', 0)->sum('balance_due'),
-            'payables_total' => (float) (clone $purchasesBase)->where('balance_due', '>', 0)->sum('balance_due'),
+            'payables_total' => $payablesTotal,
             'sale_payments_total' => $salePaymentsTotal,
             'vendor_payments_total' => $vendorPaymentsTotal,
             'cashflow_net' => $salePaymentsTotal - $vendorPaymentsTotal,
@@ -220,7 +227,7 @@ final class DashboardController extends Controller
             'unpaid_vendors_count' => Purchase::query()
                 ->where('branch_id', $branchId)
                 ->whereNotNull('vendor_id')
-                ->where('balance_due', '>', 0)
+                ->whereRaw('('.$purchaseOutstandingExpression.') > 0')
                 ->distinct()
                 ->count('vendor_id'),
             'open_job_cards_count' => $summary['open_job_cards_count'],

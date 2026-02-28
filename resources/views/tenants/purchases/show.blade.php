@@ -40,51 +40,15 @@
                 </div>
                 <div class="col-12 col-md-6 col-xl-3">
                     <div class="border rounded p-3 h-100">
-                        <div class="text-muted small">{{ __('Vendor Invoice No') }}</div>
-                        <div class="fw-semibold">{{ $purchase->vendor_invoice_no ?: '-' }}</div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                    <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Due Date') }}</div>
                         <div class="fw-semibold">@tenantDate($purchase->due_date, 'Y-m-d')</div>
                     </div>
                 </div>
 
-                <div class="col-12 col-md-6 col-xl-2">
-                    <div class="border rounded p-3 h-100">
-                        <div class="text-muted small">{{ __('Sub Total') }}</div>
-                        <div class="fw-semibold">{{ number_format((float) $purchase->sub_total, 2) }}</div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-2">
-                    <div class="border rounded p-3 h-100">
-                        <div class="text-muted small">{{ __('Discount') }}</div>
-                        <div class="fw-semibold">{{ number_format((float) $purchase->discount_total, 2) }}</div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-2">
-                    <div class="border rounded p-3 h-100">
-                        <div class="text-muted small">{{ __('Tax') }}</div>
-                        <div class="fw-semibold">{{ number_format((float) $purchase->tax_total, 2) }}</div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-2">
-                    <div class="border rounded p-3 h-100">
-                        <div class="text-muted small">{{ __('Shipping') }}</div>
-                        <div class="fw-semibold">{{ number_format((float) $purchase->shipping_total, 2) }}</div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-2">
+                <div class="col-12 col-md-6 col-xl-3">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Grand Total') }}</div>
                         <div class="fw-semibold">{{ number_format((float) $purchase->grand_total, 2) }}</div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-2">
-                    <div class="border rounded p-3 h-100">
-                        <div class="text-muted small">{{ __('Balance Due') }}</div>
-                        <div class="fw-semibold">{{ number_format((float) $purchase->balance_due, 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -112,6 +76,7 @@
                             <th class="text-end">{{ __('Received') }}</th>
                             <th class="text-end">{{ __('Unit Cost') }}</th>
                             <th class="text-end">{{ __('Line Total') }}</th>
+                            <th>{{ __('Note') }}</th>
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
@@ -123,11 +88,12 @@
                                 <td class="text-end">{{ number_format((float) $purchaseItem->received_qty, 3) }}</td>
                                 <td class="text-end">{{ number_format((float) $purchaseItem->unit_cost, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) $purchaseItem->line_total, 2) }}</td>
+                                <td>{{ $purchaseItem->remarks ?: '-' }}</td>
                                 <td class="text-end text-muted">-</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted">{{ __('No purchase items found.') }}</td>
+                                <td colspan="7" class="text-center text-muted">{{ __('No purchase items found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

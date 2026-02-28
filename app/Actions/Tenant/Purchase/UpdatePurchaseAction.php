@@ -21,6 +21,7 @@ final readonly class UpdatePurchaseAction
         unset($payload['items']);
 
         $payload['branch_id'] = $branchId;
+        $payload['purchase_no'] = $purchase->purchase_no;
 
         Purchase::query()->getConnection()->transaction(function () use ($purchase, $payload, $items, $branchId): void {
             $purchase->update($payload);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Tenant\Purchase\DeletePurchaseAction;
 use App\Actions\Tenant\Purchase\EnsurePurchaseInBranchAction;
+use App\Actions\Tenant\Purchase\UpdatePurchaseAction;
 use App\Enums\BranchStatus;
 use App\Enums\PurchaseStatus;
 use App\Enums\RecordStatus;
@@ -12,6 +13,7 @@ use App\Models\Branch;
 use App\Models\Category;
 use App\Models\InventoryStock;
 use App\Models\Product;
+use App\Models\ProductPrice;
 use App\Models\Purchase;
 use App\Models\Tax;
 use App\Models\User;
@@ -206,26 +208,24 @@ it('stores purchase and syncs totals from items', function (): void {
     $response = $this->post(purchasesTenantRoute('purchases.store'), [
         'vendor_id' => $fixture['vendor']->id,
         'purchase_no' => 'PUR-STORE-1',
-        'vendor_invoice_no' => 'V-1',
         'purchase_date' => now()->toDateString(),
         'status' => PurchaseStatus::POSTED->value,
-        'shipping_total' => 30,
         'items' => [
             [
                 'product_id' => $fixture['product']->id,
-                'tax_id' => $fixture['tax']->id,
                 'qty' => 2,
-                'unit_cost' => 100,
-                'discount_amount' => 10,
-                'tax_amount' => 20,
+                'cost' => 100,
+                'mrp' => 150,
+                'retail_price' => 130,
+                'wholesale_price' => 120,
             ],
             [
                 'product_id' => $fixture['product']->id,
-                'tax_id' => $fixture['tax']->id,
                 'qty' => 1,
-                'unit_cost' => 200,
-                'discount_amount' => 5,
-                'tax_amount' => 10,
+                'cost' => 200,
+                'mrp' => 260,
+                'retail_price' => 230,
+                'wholesale_price' => 220,
             ],
         ],
     ]);
@@ -234,17 +234,83 @@ it('stores purchase and syncs totals from items', function (): void {
 
     $purchase = Purchase::query()->where('purchase_no', 'PUR-STORE-1')->firstOrFail();
 
-    expect((float) $purchase->sub_total)->toBe(400.0);
-    expect((float) $purchase->discount_total)->toBe(15.0);
-    expect((float) $purchase->tax_total)->toBe(30.0);
-    expect((float) $purchase->grand_total)->toBe(445.0);
-    expect((float) $purchase->balance_due)->toBe(445.0);
+    expect((float) $purchase->grand_total)->toBe(400.0);
     expect($purchase->items()->count())->toBe(2);
+    expect((string) $purchase->items()->firstOrFail()->remarks)->toBe('Stock qty updated and product prices synced from this purchase item.');
     expect((float) InventoryStock::query()
         ->where('branch_id', $fixture['current']->id)
         ->where('product_id', $fixture['product']->id)
         ->value('qty_on_hand'))
         ->toBe(3.0);
+
+    $latestPrice = ProductPrice::query()
+        ->where('branch_id', $fixture['current']->id)
+        ->where('product_id', $fixture['product']->id)
+        ->firstOrFail();
+
+    expect((float) $latestPrice->cost)->toBe(200.0);
+    expect((float) $latestPrice->mrp)->toBe(260.0);
+    expect((float) $latestPrice->retail_price)->toBe(230.0);
+    expect((float) $latestPrice->wholesale_price)->toBe(220.0);
+});
+
+it('auto generates purchase number when purchase no is empty on store', function (): void {
+    $fixture = authenticatePurchasesUser();
+
+    $response = $this->post(purchasesTenantRoute('purchases.store'), [
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_no' => '',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+        'items' => [
+            [
+                'product_id' => $fixture['product']->id,
+                'qty' => 1,
+                'cost' => 100,
+                'mrp' => 120,
+                'retail_price' => 110,
+                'wholesale_price' => 105,
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect(purchasesTenantRoute('purchases.index'));
+
+    $purchase = Purchase::query()->latest('created_at')->firstOrFail();
+    expect($purchase->purchase_no)->toMatch('/^PUR-\d{8}-\d{4}$/');
+});
+
+it('keeps purchase number unchanged on update even when purchase no is empty', function (): void {
+    $fixture = authenticatePurchasesUser();
+
+    $purchase = Purchase::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'created_by' => $fixture['user']->id,
+        'purchase_no' => 'PUR-UPD-OLD-1',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::DRAFT->value,
+    ]);
+
+    app(UpdatePurchaseAction::class)->handle($purchase, [
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_no' => '',
+        'purchase_date' => now()->toDateString(),
+        'status' => PurchaseStatus::POSTED->value,
+        'items' => [
+            [
+                'product_id' => $fixture['product']->id,
+                'qty' => 1,
+                'cost' => 100,
+                'mrp' => 120,
+                'retail_price' => 110,
+                'wholesale_price' => 105,
+            ],
+        ],
+    ], $fixture['current']->id);
+
+    $purchase->refresh();
+    expect($purchase->purchase_no)->toBe('PUR-UPD-OLD-1');
 });
 
 it('does not adjust stock for products with tracking disabled', function (): void {
@@ -267,9 +333,11 @@ it('does not adjust stock for products with tracking disabled', function (): voi
         'items' => [
             [
                 'product_id' => $untrackedProduct->id,
-                'tax_id' => $fixture['tax']->id,
                 'qty' => 2,
-                'unit_cost' => 100,
+                'cost' => 100,
+                'mrp' => 130,
+                'retail_price' => 120,
+                'wholesale_price' => 110,
             ],
         ],
     ]);

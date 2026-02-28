@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Tenant\PurchaseReturn\DeletePurchaseReturnAction;
 use App\Actions\Tenant\PurchaseReturn\EnsurePurchaseReturnInBranchAction;
+use App\Actions\Tenant\PurchaseReturn\UpdatePurchaseReturnAction;
 use App\Enums\BranchStatus;
 use App\Enums\PurchaseReturnStatus;
 use App\Enums\PurchaseStatus;
@@ -234,17 +235,13 @@ it('stores purchase return and syncs totals from items', function (): void {
         'items' => [
             [
                 'product_id' => $fixture['product']->id,
-                'tax_id' => $fixture['tax']->id,
                 'qty' => 1,
                 'unit_cost' => 100,
-                'tax_amount' => 10,
             ],
             [
                 'product_id' => $fixture['product']->id,
-                'tax_id' => $fixture['tax']->id,
                 'qty' => 2,
                 'unit_cost' => 50,
-                'tax_amount' => 5,
             ],
         ],
     ]);
@@ -253,15 +250,85 @@ it('stores purchase return and syncs totals from items', function (): void {
 
     $return = PurchaseReturn::query()->where('return_no', 'RET-STORE-1')->firstOrFail();
 
-    expect((float) $return->sub_total)->toBe(200.0);
-    expect((float) $return->tax_total)->toBe(15.0);
-    expect((float) $return->grand_total)->toBe(215.0);
+    expect((float) $return->grand_total)->toBe(200.0);
     expect($return->items()->count())->toBe(2);
     expect((float) InventoryStock::query()
         ->where('branch_id', $fixture['current']->id)
         ->where('product_id', $fixture['product']->id)
         ->value('qty_on_hand'))
         ->toBe(7.0);
+});
+
+it('auto generates return number when return no is empty on store', function (): void {
+    $fixture = authenticatePurchaseReturnsUser();
+
+    InventoryStock::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'product_id' => $fixture['product']->id,
+        'qty_on_hand' => 10,
+        'qty_reserved' => 0,
+        'avg_cost' => 0,
+    ]);
+
+    $response = $this->post(purchaseReturnsTenantRoute('purchase-returns.store'), [
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $fixture['purchase']->id,
+        'return_no' => '',
+        'return_date' => now()->toDateString(),
+        'status' => PurchaseReturnStatus::POSTED->value,
+        'items' => [
+            [
+                'product_id' => $fixture['product']->id,
+                'qty' => 1,
+                'unit_cost' => 100,
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect(purchaseReturnsTenantRoute('purchase-returns.index'));
+
+    $purchaseReturn = PurchaseReturn::query()->latest('created_at')->firstOrFail();
+    expect($purchaseReturn->return_no)->toMatch('/^PRET-\d{8}-\d{4}$/');
+});
+
+it('keeps return number unchanged on update even when return no is empty', function (): void {
+    $fixture = authenticatePurchaseReturnsUser();
+
+    InventoryStock::query()->create([
+        'branch_id' => $fixture['current']->id,
+        'product_id' => $fixture['product']->id,
+        'qty_on_hand' => 10,
+        'qty_reserved' => 0,
+        'avg_cost' => 0,
+    ]);
+
+    $purchaseReturn = PurchaseReturn::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $fixture['purchase']->id,
+        'created_by' => $fixture['user']->id,
+        'return_no' => 'RET-UPD-OLD-1',
+        'return_date' => now()->toDateString(),
+        'status' => PurchaseReturnStatus::DRAFT->value,
+    ]);
+
+    app(UpdatePurchaseReturnAction::class)->handle($purchaseReturn, [
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $fixture['purchase']->id,
+        'return_no' => '',
+        'return_date' => now()->toDateString(),
+        'status' => PurchaseReturnStatus::POSTED->value,
+        'items' => [
+            [
+                'product_id' => $fixture['product']->id,
+                'qty' => 1,
+                'unit_cost' => 100,
+            ],
+        ],
+    ], $fixture['current']->id);
+
+    $purchaseReturn->refresh();
+    expect($purchaseReturn->return_no)->toBe('RET-UPD-OLD-1');
 });
 
 it('validates required vendor and items when storing purchase return', function (): void {

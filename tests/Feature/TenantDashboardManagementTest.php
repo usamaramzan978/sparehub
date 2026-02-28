@@ -102,8 +102,6 @@ function authenticateDashboardUser(): void
         'purchase_date' => now()->toDateString(),
         'status' => PurchaseStatus::POSTED->value,
         'grand_total' => 200,
-        'paid_total' => 100,
-        'balance_due' => 100,
     ]);
 
     SalePayment::query()->withoutGlobalScopes()->create([

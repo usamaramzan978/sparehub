@@ -10,7 +10,10 @@ use Illuminate\Support\Facades\Auth;
 
 final readonly class CreatePurchaseReturnAction
 {
-    public function __construct(private SyncPurchaseReturnItemsAction $syncPurchaseReturnItemsAction) {}
+    public function __construct(
+        private SyncPurchaseReturnItemsAction $syncPurchaseReturnItemsAction,
+        private GeneratePurchaseReturnNumberAction $generatePurchaseReturnNumberAction
+    ) {}
 
     /**
      * @param  array<string, mixed>  $payload
@@ -22,6 +25,7 @@ final readonly class CreatePurchaseReturnAction
 
         $payload['branch_id'] = $branchId;
         $payload['created_by'] = $createdBy;
+        $payload['return_no'] = $this->resolveReturnNumber($payload, $branchId);
 
         $createdReturn = PurchaseReturn::query()->getConnection()->transaction(function () use ($payload, $items): PurchaseReturn {
             $purchaseReturn = PurchaseReturn::query()->create($payload);
@@ -43,5 +47,21 @@ final readonly class CreatePurchaseReturnAction
         );
 
         return $createdReturn;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function resolveReturnNumber(array $payload, string $branchId): string
+    {
+        $returnNumber = isset($payload['return_no']) && is_string($payload['return_no'])
+            ? mb_trim($payload['return_no'])
+            : '';
+
+        if ($returnNumber !== '') {
+            return $returnNumber;
+        }
+
+        return $this->generatePurchaseReturnNumberAction->handle($branchId);
     }
 }

@@ -112,8 +112,6 @@ function authenticateReportsModuleUser(): array
         'purchase_date' => now()->toDateString(),
         'status' => PurchaseStatus::POSTED->value,
         'grand_total' => 600,
-        'paid_total' => 200,
-        'balance_due' => 400,
     ]);
 
     SalePayment::query()->withoutGlobalScopes()->create([

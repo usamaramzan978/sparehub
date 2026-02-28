@@ -15,7 +15,6 @@ use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\PurchaseReturn;
-use App\Models\Tax;
 use App\Models\Vendor;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -81,7 +80,6 @@ final class PurchaseReturnController extends Controller
             'purchase',
             'creator',
             'items.product',
-            'items.tax',
             'items.purchaseItem',
         ]);
 
@@ -140,7 +138,6 @@ final class PurchaseReturnController extends Controller
                 ->latest()
                 ->get(),
             'products' => Product::query()->orderBy('name')->get(),
-            'taxes' => Tax::query()->orderBy('name')->get(),
             'statuses' => PurchaseReturnStatus::cases(),
         ];
     }

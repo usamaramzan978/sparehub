@@ -45,19 +45,7 @@
                         <div class="fw-semibold">{{ $purchaseReturn->purchase?->purchase_no ?? '-' }}</div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-xl-2">
-                    <div class="border rounded p-3 h-100">
-                        <div class="text-muted small">{{ __('Sub Total') }}</div>
-                        <div class="fw-semibold">{{ number_format((float) $purchaseReturn->sub_total, 2) }}</div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-2">
-                    <div class="border rounded p-3 h-100">
-                        <div class="text-muted small">{{ __('Tax') }}</div>
-                        <div class="fw-semibold">{{ number_format((float) $purchaseReturn->tax_total, 2) }}</div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-2">
+                <div class="col-12 col-md-6 col-xl-3">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small">{{ __('Grand Total') }}</div>
                         <div class="fw-semibold">{{ number_format((float) $purchaseReturn->grand_total, 2) }}</div>
@@ -86,7 +74,6 @@
                             <th>{{ __('Product') }}</th>
                             <th class="text-end">{{ __('Qty') }}</th>
                             <th class="text-end">{{ __('Unit Cost') }}</th>
-                            <th class="text-end">{{ __('Tax') }}</th>
                             <th class="text-end">{{ __('Line Total') }}</th>
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
@@ -97,13 +84,12 @@
                                 <td>{{ $returnItem->product?->name ?? '-' }}</td>
                                 <td class="text-end">{{ number_format((float) $returnItem->qty, 3) }}</td>
                                 <td class="text-end">{{ number_format((float) $returnItem->unit_cost, 2) }}</td>
-                                <td class="text-end">{{ number_format((float) $returnItem->tax_amount, 2) }}</td>
                                 <td class="text-end">{{ number_format((float) $returnItem->line_total, 2) }}</td>
                                 <td class="text-end text-muted">-</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted">{{ __('No return items found.') }}</td>
+                                <td colspan="5" class="text-center text-muted">{{ __('No return items found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

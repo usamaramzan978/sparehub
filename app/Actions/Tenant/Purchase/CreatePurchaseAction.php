@@ -10,7 +10,10 @@ use Illuminate\Support\Facades\Auth;
 
 final readonly class CreatePurchaseAction
 {
-    public function __construct(private SyncPurchaseItemsAction $syncPurchaseItemsAction) {}
+    public function __construct(
+        private SyncPurchaseItemsAction $syncPurchaseItemsAction,
+        private GeneratePurchaseNumberAction $generatePurchaseNumberAction
+    ) {}
 
     /**
      * @param  array<string, mixed>  $payload
@@ -22,6 +25,7 @@ final readonly class CreatePurchaseAction
 
         $payload['branch_id'] = $branchId;
         $payload['created_by'] = $createdBy;
+        $payload['purchase_no'] = $this->resolvePurchaseNumber($payload, $branchId);
 
         $createdPurchase = Purchase::query()->getConnection()->transaction(function () use ($payload, $items, $branchId): Purchase {
             $purchase = Purchase::query()->create($payload);
@@ -44,5 +48,21 @@ final readonly class CreatePurchaseAction
         );
 
         return $createdPurchase;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function resolvePurchaseNumber(array $payload, string $branchId): string
+    {
+        $purchaseNumber = isset($payload['purchase_no']) && is_string($payload['purchase_no'])
+            ? mb_trim($payload['purchase_no'])
+            : '';
+
+        if ($purchaseNumber !== '') {
+            return $purchaseNumber;
+        }
+
+        return $this->generatePurchaseNumberAction->handle($branchId);
     }
 }

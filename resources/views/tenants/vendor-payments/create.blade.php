@@ -33,8 +33,9 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label" for="payment_no">{{ __('Payment No') }}</label>
                         <input type="text" name="payment_no" id="payment_no"
-                            class="form-control @error('payment_no') is-invalid @enderror" value="{{ old('payment_no') }}"
-                            required>
+                            class="form-control @error('payment_no') is-invalid @enderror"
+                            value="{{ old('payment_no') }}">
+                        <small class="text-muted">{{ __('Leave empty to let the system generate payment no.') }}</small>
                         @error('payment_no')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror

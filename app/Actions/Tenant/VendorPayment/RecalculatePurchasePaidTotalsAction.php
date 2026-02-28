@@ -13,13 +13,5 @@ final class RecalculatePurchasePaidTotalsAction
         if (! $purchase instanceof Purchase) {
             return;
         }
-
-        $paid = (float) $purchase->payments()->sum('amount');
-        $grandTotal = (float) $purchase->grand_total;
-
-        $purchase->update([
-            'paid_total' => $paid,
-            'balance_due' => $grandTotal - $paid,
-        ]);
     }
 }

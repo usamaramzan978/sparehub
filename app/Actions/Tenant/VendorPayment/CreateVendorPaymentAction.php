@@ -10,7 +10,10 @@ use BackedEnum;
 
 final readonly class CreateVendorPaymentAction
 {
-    public function __construct(private RecalculatePurchasePaidTotalsAction $recalculatePurchasePaidTotalsAction) {}
+    public function __construct(
+        private RecalculatePurchasePaidTotalsAction $recalculatePurchasePaidTotalsAction,
+        private GenerateVendorPaymentNumberAction $generateVendorPaymentNumberAction
+    ) {}
 
     /**
      * @param  array<string, mixed>  $payload
@@ -19,6 +22,7 @@ final readonly class CreateVendorPaymentAction
     {
         $payload['branch_id'] = $branchId;
         $payload['created_by'] = $createdBy;
+        $payload['payment_no'] = $this->resolvePaymentNumber($payload, $branchId);
 
         $payment = VendorPayment::query()->create($payload);
         $this->recalculatePurchasePaidTotalsAction->handle($payment->purchase);
@@ -37,6 +41,22 @@ final readonly class CreateVendorPaymentAction
         );
 
         return $payment;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function resolvePaymentNumber(array $payload, string $branchId): string
+    {
+        $paymentNumber = isset($payload['payment_no']) && is_string($payload['payment_no'])
+            ? mb_trim($payload['payment_no'])
+            : '';
+
+        if ($paymentNumber !== '') {
+            return $paymentNumber;
+        }
+
+        return $this->generateVendorPaymentNumberAction->handle($branchId);
     }
 
     private function paymentMethodValue(mixed $method): string

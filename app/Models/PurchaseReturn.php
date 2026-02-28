@@ -30,19 +30,13 @@ final class PurchaseReturn extends Model
         'return_no',
         'return_date',
         'status',
-        'sub_total',
-        'tax_total',
         'grand_total',
         'notes',
-        'posted_at',
     ];
 
     protected $casts = [
         'return_date' => 'date',
-        'sub_total' => 'decimal:2',
-        'tax_total' => 'decimal:2',
         'grand_total' => 'decimal:2',
-        'posted_at' => 'datetime',
         'status' => PurchaseReturnStatus::class,
     ];
 

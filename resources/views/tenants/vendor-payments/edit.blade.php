@@ -35,7 +35,8 @@
                         <label class="form-label" for="payment_no">{{ __('Payment No') }}</label>
                         <input type="text" name="payment_no" id="payment_no"
                             class="form-control @error('payment_no') is-invalid @enderror"
-                            value="{{ old('payment_no', $vendorPayment->payment_no) }}" required>
+                            value="{{ old('payment_no', $vendorPayment->payment_no) }}" readonly>
+                        <small class="text-muted">{{ __('Payment no is locked after creation.') }}</small>
                         @error('payment_no')
                             <span class="invalid-feedback d-block">{{ $message }}</span>
                         @enderror

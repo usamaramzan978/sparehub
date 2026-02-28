@@ -21,6 +21,7 @@ final readonly class UpdatePurchaseReturnAction
         unset($payload['items']);
 
         $payload['branch_id'] = $branchId;
+        $payload['return_no'] = $purchaseReturn->return_no;
 
         PurchaseReturn::query()->getConnection()->transaction(function () use ($purchaseReturn, $payload, $items): void {
             $purchaseReturn->update($payload);

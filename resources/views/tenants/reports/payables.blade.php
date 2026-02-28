@@ -39,7 +39,7 @@
                                 <td>{{ $purchase->purchase_no }}</td>
                                 <td>{{ $purchase->vendor?->name ?? '-' }}</td>
                                 <td>@tenantDate($purchase->purchase_date, 'Y-m-d', '')</td>
-                                <td class="text-end">{{ number_format((float) $purchase->balance_due, 2) }}</td>
+                                <td class="text-end">{{ number_format((float) $purchase->outstanding_balance, 2) }}</td>
                             </tr>
                         @empty
                             <tr>

@@ -22,7 +22,7 @@
                 <div class="position-relative">
                     <input type="text" class="form-control pe-5" id="purchases-search" name="search"
                         value="{{ request('search') }}"
-                        placeholder="{{ __('Search by purchase no, vendor invoice, or vendor') }}">
+                        placeholder="{{ __('Search by purchase no or vendor') }}">
                     <span id="purchases-search-loading"
                         class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted opacity-0 pe-none"
                         style="transition: opacity 0.2s ease;" aria-hidden="true">
@@ -45,8 +45,6 @@
                                 :current-sort-direction="$sortDirection" />
                             <x-sortable-column :label="__('Grand Total')" column="grand_total" :current-sort-by="$sortBy"
                                 :current-sort-direction="$sortDirection" />
-                            <x-sortable-column :label="__('Balance')" column="balance_due" :current-sort-by="$sortBy"
-                                :current-sort-direction="$sortDirection" />
                             <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
@@ -58,7 +56,6 @@
                                 <td>{{ $purchase->vendor?->name ?? '-' }}</td>
                                 <td>{{ ucfirst(str_replace('_', ' ', $purchase->status->value)) }}</td>
                                 <td>{{ number_format((float) $purchase->grand_total, 2) }}</td>
-                                <td>{{ number_format((float) $purchase->balance_due, 2) }}</td>
                                 <td class="text-end">
                                     <div class="btn-list">
                                         <a href="{{ route('tenant.purchases.show', $purchase) }}"
@@ -84,7 +81,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted">{{ __('No purchases found.') }}</td>
+                                <td colspan="6" class="text-center text-muted">{{ __('No purchases found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

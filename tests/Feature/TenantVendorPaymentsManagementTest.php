@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Tenant\VendorPayment\DeleteVendorPaymentAction;
 use App\Actions\Tenant\VendorPayment\EnsureVendorPaymentInBranchAction;
+use App\Actions\Tenant\VendorPayment\UpdateVendorPaymentAction;
 use App\Enums\BranchStatus;
 use App\Enums\PaymentMethodType;
 use App\Enums\PurchaseStatus;
@@ -91,8 +92,6 @@ function authenticateVendorPaymentsUser(): array
         'purchase_date' => now()->toDateString(),
         'status' => PurchaseStatus::POSTED->value,
         'grand_total' => 500,
-        'paid_total' => 0,
-        'balance_due' => 500,
     ]);
 
     test()->actingAs($user, 'user');
@@ -172,8 +171,6 @@ it('searches vendor payments by payment number, vendor, purchase, and method', f
         'purchase_date' => now()->toDateString(),
         'status' => PurchaseStatus::POSTED->value,
         'grand_total' => 200,
-        'paid_total' => 0,
-        'balance_due' => 200,
     ]);
 
     VendorPayment::query()->withoutGlobalScopes()->create([
@@ -198,7 +195,7 @@ it('searches vendor payments by payment number, vendor, purchase, and method', f
     expect($byMethod->viewData('items')->total())->toBe(1);
 });
 
-it('stores vendor payment and recalculates purchase totals', function (): void {
+it('stores vendor payment against purchase', function (): void {
     $fixture = authenticateVendorPaymentsUser();
 
     $response = $this->post(vendorPaymentsTenantRoute('vendor-payments.store'), [
@@ -212,9 +209,54 @@ it('stores vendor payment and recalculates purchase totals', function (): void {
 
     $response->assertRedirect(vendorPaymentsTenantRoute('vendor-payments.index'));
 
-    $fixture['purchase']->refresh();
-    expect((float) $fixture['purchase']->paid_total)->toBe(150.0);
-    expect((float) $fixture['purchase']->balance_due)->toBe(350.0);
+    $stored = VendorPayment::query()->where('payment_no', 'VP-STORE-1')->firstOrFail();
+    expect((float) $stored->amount)->toBe(150.0);
+    expect((string) $stored->purchase_id)->toBe($fixture['purchase']->id);
+});
+
+it('auto generates payment number when payment no is empty on store', function (): void {
+    $fixture = authenticateVendorPaymentsUser();
+
+    $response = $this->post(vendorPaymentsTenantRoute('vendor-payments.store'), [
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $fixture['purchase']->id,
+        'payment_no' => '',
+        'payment_method' => PaymentMethodType::CASH->value,
+        'amount' => 150,
+        'paid_at' => now()->toDateTimeString(),
+    ]);
+
+    $response->assertRedirect(vendorPaymentsTenantRoute('vendor-payments.index'));
+
+    $payment = VendorPayment::query()->latest('created_at')->firstOrFail();
+    expect($payment->payment_no)->toMatch('/^VP-\d{8}-\d{4}$/');
+});
+
+it('keeps payment number unchanged on update even when payment no is empty', function (): void {
+    $fixture = authenticateVendorPaymentsUser();
+
+    $vendorPayment = VendorPayment::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $fixture['purchase']->id,
+        'created_by' => $fixture['user']->id,
+        'payment_no' => 'VP-UPD-OLD-1',
+        'payment_method' => PaymentMethodType::CASH->value,
+        'amount' => 100,
+        'paid_at' => now(),
+    ]);
+
+    app(UpdateVendorPaymentAction::class)->handle($vendorPayment, [
+        'vendor_id' => $fixture['vendor']->id,
+        'purchase_id' => $fixture['purchase']->id,
+        'payment_no' => '',
+        'payment_method' => PaymentMethodType::BANK->value,
+        'amount' => 150,
+        'paid_at' => now()->toDateTimeString(),
+    ], $fixture['current']->id, $fixture['user']);
+
+    $vendorPayment->refresh();
+    expect($vendorPayment->payment_no)->toBe('VP-UPD-OLD-1');
 });
 
 it('validates amount must be greater than zero for vendor payment', function (): void {
@@ -234,7 +276,7 @@ it('validates amount must be greater than zero for vendor payment', function ():
     $response->assertSessionHasErrors(['amount']);
 });
 
-it('deletes vendor payment and recalculates purchase totals', function (): void {
+it('deletes vendor payment', function (): void {
     $fixture = authenticateVendorPaymentsUser();
 
     $payment = VendorPayment::query()->withoutGlobalScopes()->create([
@@ -248,11 +290,6 @@ it('deletes vendor payment and recalculates purchase totals', function (): void 
         'paid_at' => now(),
     ]);
 
-    $fixture['purchase']->update([
-        'paid_total' => 200,
-        'balance_due' => 300,
-    ]);
-
     session()->put('tenant.current_branch_id', $fixture['current']->id);
     $response = (new VendorPaymentController())->destroy(
         $payment,
@@ -263,10 +300,6 @@ it('deletes vendor payment and recalculates purchase totals', function (): void 
     expect($response->getTargetUrl())->toBe(vendorPaymentsTenantRoute('vendor-payments.index'));
     expect($response->getSession()->get('status'))->toBe('Deleted.');
     $this->assertDatabaseMissing('vendor_payments', ['id' => $payment->id], 'tenant');
-
-    $fixture['purchase']->refresh();
-    expect((float) $fixture['purchase']->paid_total)->toBe(0.0);
-    expect((float) $fixture['purchase']->balance_due)->toBe(500.0);
 });
 
 it('throws not found when showing vendor payment outside current branch', function (): void {

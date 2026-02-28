@@ -13,7 +13,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\PurchaseRequest;
 use App\Models\Product;
 use App\Models\Purchase;
-use App\Models\Tax;
 use App\Models\Vendor;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,7 +26,7 @@ final class PurchaseController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
-        $allowedSortColumns = ['purchase_no', 'purchase_date', 'status', 'grand_total', 'balance_due', 'created_at'];
+        $allowedSortColumns = ['purchase_no', 'purchase_date', 'status', 'grand_total', 'created_at'];
         [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
 
         $purchasesQuery = Purchase::query()
@@ -37,7 +36,6 @@ final class PurchaseController extends Controller
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('purchase_no', 'like', sprintf('%%%s%%', $search))
-                        ->orWhere('vendor_invoice_no', 'like', sprintf('%%%s%%', $search))
                         ->orWhereHas('vendor', fn (Builder $q) => $q->where('name', 'like', sprintf('%%%s%%', $search)));
                 });
             });
@@ -79,7 +77,6 @@ final class PurchaseController extends Controller
             'vendor',
             'creator',
             'items.product',
-            'items.tax',
             'returns.vendor',
             'payments.vendor',
             'payments.creator',
@@ -134,7 +131,6 @@ final class PurchaseController extends Controller
         return [
             'vendors' => Vendor::query()->where('branch_id', $branchId)->orderBy('name')->get(),
             'products' => Product::query()->orderBy('name')->get(),
-            'taxes' => Tax::query()->orderBy('name')->get(),
             'statuses' => PurchaseStatus::cases(),
         ];
     }

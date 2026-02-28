@@ -20,6 +20,7 @@ final readonly class UpdateVendorPaymentAction
         $oldPurchase = $vendorPayment->purchase;
 
         $payload['branch_id'] = $branchId;
+        $payload['payment_no'] = $vendorPayment->payment_no;
 
         $updated = $vendorPayment->update($payload);
 

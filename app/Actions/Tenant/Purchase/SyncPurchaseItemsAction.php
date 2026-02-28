@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace App\Actions\Tenant\Purchase;
 
+use App\Actions\Tenant\Product\SyncProductPriceAction;
+use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 
 final readonly class SyncPurchaseItemsAction
 {
-    public function __construct(private SyncPurchaseItemStocksAction $syncPurchaseItemStocksAction) {}
+    private const AUTO_PRICE_SYNC_NOTE = 'Stock qty updated and product prices synced from this purchase item.';
+
+    public function __construct(
+        private SyncPurchaseItemStocksAction $syncPurchaseItemStocksAction,
+        private SyncProductPriceAction $syncProductPriceAction
+    ) {}
 
     /**
      * @param  array<int, array<string, mixed>>  $items
@@ -19,44 +26,50 @@ final readonly class SyncPurchaseItemsAction
         $existingItems = $purchase->items()->get();
         $this->syncPurchaseItemStocksAction->handle($existingItems, $branchId, reverse: true);
         $purchase->items()->delete();
+        $products = Product::query()
+            ->whereIn('id', array_column($items, 'product_id'))
+            ->get()
+            ->keyBy('id');
 
         foreach ($items as $item) {
             $qty = (float) $item['qty'];
-            $unitCost = (float) $item['unit_cost'];
-            $discountAmount = (float) ($item['discount_amount'] ?? 0);
-            $taxAmount = (float) ($item['tax_amount'] ?? 0);
-            $lineTotal = ($qty * $unitCost) - $discountAmount + $taxAmount;
+            $cost = (float) $item['cost'];
+            $mrp = (float) $item['mrp'];
+            $retailPrice = (float) $item['retail_price'];
+            $wholesalePrice = (float) $item['wholesale_price'];
+            $lineTotal = $qty * $cost;
 
             PurchaseItem::query()->create([
                 'purchase_id' => $purchase->id,
                 'branch_id' => $branchId,
                 'product_id' => $item['product_id'],
-                'tax_id' => $item['tax_id'] ?? null,
                 'qty' => $qty,
                 'received_qty' => $qty,
-                'unit_cost' => $unitCost,
-                'discount_amount' => $discountAmount,
-                'tax_amount' => $taxAmount,
+                'unit_cost' => $cost,
+                'discount_amount' => 0,
+                'tax_amount' => 0,
                 'line_total' => $lineTotal,
-                'remarks' => $item['remarks'] ?? null,
+                'remarks' => self::AUTO_PRICE_SYNC_NOTE,
             ]);
+
+            $product = $products->get($item['product_id']);
+            if ($product instanceof Product) {
+                $this->syncProductPriceAction->handle($product, [
+                    'cost' => $cost,
+                    'mrp' => $mrp,
+                    'retail_price' => $retailPrice,
+                    'wholesale_price' => $wholesalePrice,
+                    'effective_from' => $purchase->purchase_date,
+                ], $branchId);
+            }
         }
 
         $createdItems = $purchase->items()->get();
         $this->syncPurchaseItemStocksAction->handle($createdItems, $branchId);
-        $subTotal = (float) $createdItems->sum(fn (PurchaseItem $item): float => (float) $item->qty * (float) $item->unit_cost);
-        $discountTotal = (float) $createdItems->sum(fn (PurchaseItem $item): float => (float) $item->discount_amount);
-        $taxTotal = (float) $createdItems->sum(fn (PurchaseItem $item): float => (float) $item->tax_amount);
-        $shippingTotal = (float) $purchase->shipping_total;
-        $grandTotal = $subTotal - $discountTotal + $taxTotal + $shippingTotal;
-        $paidTotal = (float) $purchase->paid_total;
+        $grandTotal = (float) $createdItems->sum(fn (PurchaseItem $item): float => (float) $item->line_total);
 
         $purchase->update([
-            'sub_total' => $subTotal,
-            'discount_total' => $discountTotal,
-            'tax_total' => $taxTotal,
             'grand_total' => $grandTotal,
-            'balance_due' => $grandTotal - $paidTotal,
         ]);
     }
 }

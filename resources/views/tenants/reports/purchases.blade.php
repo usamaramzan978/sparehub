@@ -43,7 +43,7 @@
                                 <td>{{ $purchase->vendor?->name ?? '-' }}</td>
                                 <td>{{ ucfirst(str_replace('_', ' ', $purchase->status->value)) }}</td>
                                 <td class="text-end">{{ number_format((float) $purchase->grand_total, 2) }}</td>
-                                <td class="text-end">{{ number_format((float) $purchase->balance_due, 2) }}</td>
+                                <td class="text-end">{{ number_format((float) $purchase->outstanding_balance, 2) }}</td>
                             </tr>
                         @empty
                             <tr>

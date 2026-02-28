@@ -42,6 +42,7 @@ final class BuildReportDataAction
         $maxTotal = mb_trim($request->string('max_total')->toString());
         $dateFromAt = $dateFrom !== '' ? TenantDateTime::startOfDay($dateFrom) : null;
         $dateToAt = $dateTo !== '' ? TenantDateTime::endOfDay($dateTo) : null;
+        $purchaseOutstandingExpression = 'purchases.grand_total - COALESCE((SELECT SUM(vendor_payments.amount) FROM vendor_payments WHERE vendor_payments.purchase_id = purchases.id), 0)';
 
         $salesBase = Sale::query()
             ->with(['customer'])
@@ -63,6 +64,8 @@ final class BuildReportDataAction
 
         $purchasesBase = Purchase::query()
             ->with(['vendor'])
+            ->select('purchases.*')
+            ->selectRaw($purchaseOutstandingExpression.' as outstanding_balance')
             ->where('branch_id', $branchId)
             ->when($dateFrom !== '', fn (Builder $query) => $query->whereDate('purchase_date', '>=', $dateFrom))
             ->when($dateTo !== '', fn (Builder $query) => $query->whereDate('purchase_date', '<=', $dateTo))
@@ -72,7 +75,6 @@ final class BuildReportDataAction
                 $query->where(function (Builder $builder) use ($search): void {
                     $builder
                         ->where('purchase_no', 'like', sprintf('%%%s%%', $search))
-                        ->orWhere('vendor_invoice_no', 'like', sprintf('%%%s%%', $search))
                         ->orWhereHas('vendor', fn (Builder $vendorQuery) => $vendorQuery->where('name', 'like', sprintf('%%%s%%', $search)));
                 });
             })
@@ -201,7 +203,11 @@ final class BuildReportDataAction
             $salePayments = (clone $salePaymentsBase)->latest('paid_at')->paginate(15, ['*'], 'sale_payments_page')->withQueryString();
             $vendorPayments = (clone $vendorPaymentsBase)->latest('paid_at')->paginate(15, ['*'], 'vendor_payments_page')->withQueryString();
             $receivables = (clone $salesBase)->where('balance_due', '>', 0)->latest('invoice_date')->paginate(15, ['*'], 'receivables_page')->withQueryString();
-            $payables = (clone $purchasesBase)->where('balance_due', '>', 0)->latest('purchase_date')->paginate(15, ['*'], 'payables_page')->withQueryString();
+            $payables = (clone $purchasesBase)
+                ->whereRaw('('.$purchaseOutstandingExpression.') > 0')
+                ->latest('purchase_date')
+                ->paginate(15, ['*'], 'payables_page')
+                ->withQueryString();
             $vendorProductSales = (clone $vendorProductSalesBase)
                 ->orderByDesc('total_qty_sold')
                 ->orderByDesc('total_sales_amount')
@@ -218,7 +224,10 @@ final class BuildReportDataAction
             $salePayments = (clone $salePaymentsBase)->latest('paid_at')->get();
             $vendorPayments = (clone $vendorPaymentsBase)->latest('paid_at')->get();
             $receivables = (clone $salesBase)->where('balance_due', '>', 0)->latest('invoice_date')->get();
-            $payables = (clone $purchasesBase)->where('balance_due', '>', 0)->latest('purchase_date')->get();
+            $payables = (clone $purchasesBase)
+                ->whereRaw('('.$purchaseOutstandingExpression.') > 0')
+                ->latest('purchase_date')
+                ->get();
             $vendorProductSales = (clone $vendorProductSalesBase)
                 ->orderByDesc('total_qty_sold')
                 ->orderByDesc('total_sales_amount')
@@ -229,6 +238,10 @@ final class BuildReportDataAction
                 ->get();
         }
 
+        $payablesTotal = (float) ((clone $purchasesBase)
+            ->selectRaw('SUM(CASE WHEN ('.$purchaseOutstandingExpression.') > 0 THEN ('.$purchaseOutstandingExpression.') ELSE 0 END) as payables_total')
+            ->value('payables_total') ?? 0);
+
         $summary = [
             'sales_count' => (clone $salesBase)->count(),
             'sales_total' => (float) (clone $salesBase)->sum('grand_total'),
@@ -237,7 +250,7 @@ final class BuildReportDataAction
             'sale_payments_total' => (float) (clone $salePaymentsBase)->sum('amount'),
             'vendor_payments_total' => (float) (clone $vendorPaymentsBase)->sum('amount'),
             'receivables_total' => (float) (clone $salesBase)->where('balance_due', '>', 0)->sum('balance_due'),
-            'payables_total' => (float) (clone $purchasesBase)->where('balance_due', '>', 0)->sum('balance_due'),
+            'payables_total' => $payablesTotal,
         ];
 
         return [

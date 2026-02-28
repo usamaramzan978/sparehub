@@ -193,8 +193,6 @@ it('scopes reports by branch context and applies that branch timezone', function
         'purchase_date' => now()->toDateString(),
         'status' => 'posted',
         'grand_total' => 100,
-        'paid_total' => 100,
-        'balance_due' => 0,
     ]);
 
     $this->actingAs($fixture['user'], 'user');

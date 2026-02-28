@@ -1,6 +1,7 @@
 @php
     $formMethod = strtoupper($formMethod ?? 'POST');
     $currentPurchaseReturn = $purchaseReturn ?? null;
+    $isEditForm = $formMethod !== 'POST';
 
     $lineItems = old('items');
 
@@ -9,21 +10,15 @@
             $lineItems = $currentPurchaseReturn->items->map(fn ($item): array => [
                 'purchase_item_id' => $item->purchase_item_id,
                 'product_id' => $item->product_id,
-                'tax_id' => $item->tax_id,
                 'qty' => (string) $item->qty,
                 'unit_cost' => (string) $item->unit_cost,
-                'tax_amount' => (string) $item->tax_amount,
-                'remarks' => $item->remarks,
             ])->values()->all();
         } else {
             $lineItems = [[
                 'purchase_item_id' => '',
                 'product_id' => '',
-                'tax_id' => '',
                 'qty' => '1',
                 'unit_cost' => '0',
-                'tax_amount' => '0',
-                'remarks' => '',
             ]];
         }
     }
@@ -50,7 +45,10 @@
             <label class="form-label" for="return_no">{{ __('Return No') }}</label>
             <input type="text" name="return_no" id="return_no"
                 class="form-control @error('return_no') is-invalid @enderror"
-                value="{{ old('return_no', $currentPurchaseReturn?->return_no) }}" required>
+                value="{{ old('return_no', $currentPurchaseReturn?->return_no) }}" @readonly($isEditForm)>
+            <small class="text-muted">
+                {{ $isEditForm ? __('Return no is locked after creation.') : __('Leave empty to let the system generate return no.') }}
+            </small>
             @error('return_no')
                 <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror
@@ -123,11 +121,8 @@
                                 <tr>
                                     <th style="min-width:240px;">{{ __('Purchase Item') }}</th>
                                     <th style="min-width:220px;">{{ __('Product') }}</th>
-                                    <th style="min-width:150px;">{{ __('Tax') }}</th>
                                     <th style="min-width:90px;">{{ __('Qty') }}</th>
                                     <th style="min-width:120px;">{{ __('Unit Cost') }}</th>
-                                    <th style="min-width:120px;">{{ __('Tax Amount') }}</th>
-                                    <th style="min-width:160px;">{{ __('Remarks') }}</th>
                                     <th style="min-width:120px;">{{ __('Line Total') }}</th>
                                     <th style="width:70px;"></th>
                                 </tr>
@@ -163,20 +158,8 @@
                                                 <span class="text-danger small d-block">{{ $message }}</span>
                                             @enderror
                                         </td>
-                                        <td>
-                                            <select name="items[{{ $index }}][tax_id]" class="form-select singl-select-2">
-                                                <option value="">{{ __('None') }}</option>
-                                                @foreach ($taxes as $tax)
-                                                    <option value="{{ $tax->id }}" @selected(($item['tax_id'] ?? '') === $tax->id)>
-                                                        {{ $tax->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </td>
                                         <td><input type="number" step="0.001" min="0.001" name="items[{{ $index }}][qty]" class="form-control purchase-return-item-qty" value="{{ $item['qty'] ?? '1' }}" required></td>
                                         <td><input type="number" step="0.01" min="0" name="items[{{ $index }}][unit_cost]" class="form-control purchase-return-item-cost" value="{{ $item['unit_cost'] ?? '0' }}" required></td>
-                                        <td><input type="number" step="0.01" min="0" name="items[{{ $index }}][tax_amount]" class="form-control purchase-return-item-tax" value="{{ $item['tax_amount'] ?? '0' }}"></td>
-                                        <td><input type="text" name="items[{{ $index }}][remarks]" class="form-control" value="{{ $item['remarks'] ?? '' }}"></td>
                                         <td><input type="text" class="form-control purchase-return-item-total" value="0.00" readonly></td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-danger-light purchase-return-remove-item"><i class="ri-delete-bin-line"></i></button>
@@ -194,40 +177,8 @@
         </div>
 
         <div class="col-md-3 mb-3">
-            <label class="form-label" for="sub_total">{{ __('Sub Total') }}</label>
-            <input type="number" step="0.01" name="sub_total" id="sub_total"
-                class="form-control @error('sub_total') is-invalid @enderror" value="{{ old('sub_total', (string) ($currentPurchaseReturn?->sub_total ?? '0')) }}" readonly>
-            @error('sub_total')
-                <span class="invalid-feedback d-block">{{ $message }}</span>
-            @enderror
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <label class="form-label" for="tax_total">{{ __('Tax') }}</label>
-            <input type="number" step="0.01" name="tax_total" id="tax_total"
-                class="form-control @error('tax_total') is-invalid @enderror" value="{{ old('tax_total', (string) ($currentPurchaseReturn?->tax_total ?? '0')) }}" readonly>
-            @error('tax_total')
-                <span class="invalid-feedback d-block">{{ $message }}</span>
-            @enderror
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <label class="form-label" for="grand_total">{{ __('Grand Total') }}</label>
-            <input type="number" step="0.01" name="grand_total" id="grand_total"
-                class="form-control @error('grand_total') is-invalid @enderror" value="{{ old('grand_total', (string) ($currentPurchaseReturn?->grand_total ?? '0')) }}" readonly>
-            @error('grand_total')
-                <span class="invalid-feedback d-block">{{ $message }}</span>
-            @enderror
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <label class="form-label" for="posted_at">{{ __('Posted At') }}</label>
-            <input type="datetime-local" name="posted_at" id="posted_at"
-                class="form-control @error('posted_at') is-invalid @enderror"
-                value="{{ old('posted_at', \App\Support\TenantDateTime::format($currentPurchaseReturn?->posted_at, 'Y-m-d\\TH:i', '')) }}">
-            @error('posted_at')
-                <span class="invalid-feedback d-block">{{ $message }}</span>
-            @enderror
+            <label class="form-label" for="grand_total_preview">{{ __('Grand Total') }}</label>
+            <input type="text" id="grand_total_preview" class="form-control" value="{{ number_format((float) ($currentPurchaseReturn?->grand_total ?? 0), 2) }}" readonly>
         </div>
 
         <div class="col-md-12 mb-3">
@@ -262,18 +213,8 @@
                 @endforeach
             </select>
         </td>
-        <td>
-            <select name="items[__INDEX__][tax_id]" class="form-select singl-select-2">
-                <option value="">{{ __('None') }}</option>
-                @foreach ($taxes as $tax)
-                    <option value="{{ $tax->id }}">{{ $tax->name }}</option>
-                @endforeach
-            </select>
-        </td>
         <td><input type="number" step="0.001" min="0.001" name="items[__INDEX__][qty]" class="form-control purchase-return-item-qty" value="1" required></td>
         <td><input type="number" step="0.01" min="0" name="items[__INDEX__][unit_cost]" class="form-control purchase-return-item-cost" value="0" required></td>
-        <td><input type="number" step="0.01" min="0" name="items[__INDEX__][tax_amount]" class="form-control purchase-return-item-tax" value="0"></td>
-        <td><input type="text" name="items[__INDEX__][remarks]" class="form-control"></td>
         <td><input type="text" class="form-control purchase-return-item-total" value="0.00" readonly></td>
         <td><button type="button" class="btn btn-sm btn-danger-light purchase-return-remove-item"><i class="ri-delete-bin-line"></i></button></td>
     </tr>
@@ -289,9 +230,7 @@
 
             const rowTemplate = document.getElementById('purchase-return-item-row-template');
             const addButton = document.getElementById('add-purchase-return-item');
-            const subTotalInput = document.getElementById('sub_total');
-            const taxTotalInput = document.getElementById('tax_total');
-            const grandTotalInput = document.getElementById('grand_total');
+            const grandTotalInput = document.getElementById('grand_total_preview');
 
             const parseNumber = (value) => {
                 const parsed = parseFloat(value);
@@ -343,8 +282,7 @@
             const recalculateRow = (row) => {
                 const qty = parseNumber(row.querySelector('.purchase-return-item-qty')?.value);
                 const unitCost = parseNumber(row.querySelector('.purchase-return-item-cost')?.value);
-                const tax = parseNumber(row.querySelector('.purchase-return-item-tax')?.value);
-                const lineTotal = (qty * unitCost) + tax;
+                const lineTotal = qty * unitCost;
 
                 const totalInput = row.querySelector('.purchase-return-item-total');
                 if (totalInput) {
@@ -352,27 +290,19 @@
                 }
 
                 return {
-                    sub: qty * unitCost,
-                    tax,
                     total: lineTotal,
                 };
             };
 
             const recalculateTotals = () => {
                 const rows = body.querySelectorAll('.purchase-return-item-row');
-                let sub = 0;
-                let tax = 0;
                 let total = 0;
 
                 rows.forEach((row) => {
                     const rowTotals = recalculateRow(row);
-                    sub += rowTotals.sub;
-                    tax += rowTotals.tax;
                     total += rowTotals.total;
                 });
 
-                if (subTotalInput) subTotalInput.value = sub.toFixed(2);
-                if (taxTotalInput) taxTotalInput.value = tax.toFixed(2);
                 if (grandTotalInput) grandTotalInput.value = total.toFixed(2);
             };
 
