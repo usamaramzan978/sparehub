@@ -452,7 +452,7 @@ it('stores user commission rules via sync action', function (): void {
     ], 'tenant');
 });
 
-it('shows user commission summary and service payable details', function (): void {
+it('shows user commission summary and service sale details', function (): void {
     $fixture = authenticateUsersModuleUser();
     $mechanic = User::query()->create([
         'branch_id' => $fixture['current']->id,
@@ -494,14 +494,12 @@ it('shows user commission summary and service payable details', function (): voi
     SaleItem::query()->withoutGlobalScopes()->create([
         'sale_id' => $sale->id,
         'branch_id' => $fixture['current']->id,
-        'mechanic_id' => $mechanic->id,
         'line_type' => 'service',
         'description' => 'Brake Service Labour',
         'qty' => 1,
         'unit_price' => 500,
         'discount_amount' => 0,
         'tax_amount' => 0,
-        'mechanic_charge' => 120,
         'line_total' => 500,
     ]);
 
@@ -511,5 +509,6 @@ it('shows user commission summary and service payable details', function (): voi
     expect($response->name())->toBe('tenants.users.show');
     expect($response->getData()['commissionSummary']['rules_count'])->toBe(1);
     expect($response->getData()['commissionSummary']['service_entries_count'])->toBe(1);
-    expect($response->getData()['servicePayables']->count())->toBe(1);
+    expect((float) $response->getData()['commissionSummary']['service_entries_total'])->toBe(500.0);
+    expect($response->getData()['serviceSales']->count())->toBe(1);
 });

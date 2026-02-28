@@ -260,16 +260,14 @@ it('preserves cart and payment inputs after validation redirect in pos store', f
             'items' => [[
                 'type' => 'service',
                 'ref_id' => $fixture['service']->id,
-                'qty' => 1,
+                'qty' => 0,
                 'price' => 250,
                 'name' => $uniqueItemName,
-                'mechanic_enabled' => true,
-                'mechanic_charge' => 0,
             ]],
         ]);
 
     $response->assertRedirect(posTenantRoute('pos.index'));
-    $response->assertSessionHasErrors(['items.0.mechanic_id', 'items.0.mechanic_charge']);
+    $response->assertSessionHasErrors(['items.0.qty']);
 
     $page = $this->get(posTenantRoute('pos.index'));
     $page->assertSuccessful();
@@ -279,16 +277,8 @@ it('preserves cart and payment inputs after validation redirect in pos store', f
     $page->assertSee('name="payments[0][amount]"', false);
 });
 
-it('stores pos service line with mechanic payable', function (): void {
+it('stores pos service line without mechanic fields', function (): void {
     $fixture = authenticatePosUser();
-
-    $mechanic = User::query()->create([
-        'branch_id' => $fixture['current']->id,
-        'name' => 'POS Mechanic',
-        'email' => 'pos.mechanic+'.uniqid('', true).'@example.test',
-        'password' => Hash::make('password'),
-        'status' => 'active',
-    ]);
 
     $response = $this->post(posTenantRoute('pos.store'), [
         'status' => 'posted',
@@ -299,9 +289,6 @@ it('stores pos service line with mechanic payable', function (): void {
             'qty' => 1,
             'price' => 250,
             'name' => 'Oil Change',
-            'mechanic_enabled' => true,
-            'mechanic_id' => $mechanic->id,
-            'mechanic_charge' => 120,
         ]],
     ]);
 
@@ -311,20 +298,11 @@ it('stores pos service line with mechanic payable', function (): void {
     $item = SaleItem::query()->where('sale_id', $sale->id)->firstOrFail();
 
     expect($item->line_type->value)->toBe('service');
-    expect((string) $item->mechanic_id)->toBe($mechanic->id);
-    expect((float) $item->mechanic_charge)->toBe(120.0);
+    expect((float) $item->line_total)->toBe(250.0);
 });
 
-it('stores pos product line with mechanic payable', function (): void {
+it('stores pos product line without mechanic fields', function (): void {
     $fixture = authenticatePosUser();
-
-    $mechanic = User::query()->create([
-        'branch_id' => $fixture['current']->id,
-        'name' => 'POS Product Mechanic',
-        'email' => 'pos.product.mechanic+'.uniqid('', true).'@example.test',
-        'password' => Hash::make('password'),
-        'status' => 'active',
-    ]);
 
     $response = $this->post(posTenantRoute('pos.store'), [
         'status' => 'posted',
@@ -335,9 +313,6 @@ it('stores pos product line with mechanic payable', function (): void {
             'qty' => 1,
             'price' => 130,
             'name' => 'Engine Oil',
-            'mechanic_enabled' => true,
-            'mechanic_id' => $mechanic->id,
-            'mechanic_charge' => 60,
         ]],
     ]);
 
@@ -347,14 +322,13 @@ it('stores pos product line with mechanic payable', function (): void {
     $item = SaleItem::query()->where('sale_id', $sale->id)->firstOrFail();
 
     expect($item->line_type->value)->toBe('product');
-    expect((string) $item->mechanic_id)->toBe($mechanic->id);
-    expect((float) $item->mechanic_charge)->toBe(60.0);
+    expect((float) $item->line_total)->toBe(130.0);
 });
 
-it('validates mechanic details when add mechanic is enabled', function (): void {
+it('accepts legacy mechanic payload keys without validation errors', function (): void {
     $fixture = authenticatePosUser();
 
-    $response = $this->from(posTenantRoute('pos.index'))
+    $response = $this
         ->post(posTenantRoute('pos.store'), [
             'status' => 'posted',
             'payment_mode' => 'cash',
@@ -365,13 +339,10 @@ it('validates mechanic details when add mechanic is enabled', function (): void 
                 'price' => 250,
                 'name' => 'Oil Change',
                 'mechanic_enabled' => true,
+                'mechanic_id' => '00000000-0000-0000-0000-000000000000',
                 'mechanic_charge' => 0,
             ]],
         ]);
 
     $response->assertRedirect(posTenantRoute('pos.index'));
-    $response->assertSessionHasErrors([
-        'items.0.mechanic_id',
-        'items.0.mechanic_charge',
-    ]);
 });

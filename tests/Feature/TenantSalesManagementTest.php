@@ -253,6 +253,24 @@ it('clamps sales pagination limits', function (): void {
     expect($maxResponse->viewData('items')->perPage())->toBe(100);
 });
 
+it('renders simplified invoice item columns on sales create form', function (): void {
+    authenticateSalesUser();
+
+    $response = $this->get(salesTenantRoute('sales.create'));
+
+    $response->assertSuccessful();
+    $response->assertSee('Invoice Items');
+    $response->assertSee('Type');
+    $response->assertSee('Product / Service');
+    $response->assertSee('Qty');
+    $response->assertSee('Retail Price');
+    $response->assertSee('Discount');
+    $response->assertSee('Line Total');
+    $response->assertDontSee('Mechanic Payable');
+    $response->assertDontSee('Mechanic');
+    $response->assertDontSee('Description');
+});
+
 it('stores sale and syncs totals from items', function (): void {
     $fixture = authenticateSalesUser();
 
@@ -278,17 +296,13 @@ it('stores sale and syncs totals from items', function (): void {
                 'qty' => 2,
                 'unit_price' => 100,
                 'discount_amount' => 10,
-                'tax_amount' => 5,
             ],
             [
                 'line_type' => SaleLineType::SERVICE->value,
                 'service_catalog_id' => $fixture['service']->id,
-                'mechanic_id' => $fixture['user']->id,
-                'mechanic_charge' => 100,
                 'qty' => 1,
                 'unit_price' => 200,
                 'discount_amount' => 0,
-                'tax_amount' => 20,
             ],
         ],
     ]);
@@ -299,12 +313,10 @@ it('stores sale and syncs totals from items', function (): void {
 
     expect((float) $sale->sub_total)->toBe(400.0);
     expect((float) $sale->discount_total)->toBe(10.0);
-    expect((float) $sale->tax_total)->toBe(25.0);
-    expect((float) $sale->grand_total)->toBe(415.0);
-    expect((float) $sale->balance_due)->toBe(415.0);
+    expect((float) $sale->tax_total)->toBe(0.0);
+    expect((float) $sale->grand_total)->toBe(390.0);
+    expect((float) $sale->balance_due)->toBe(390.0);
     expect($sale->items()->count())->toBe(2);
-    expect((float) $sale->items()->where('line_type', SaleLineType::SERVICE->value)->value('mechanic_charge'))->toBe(100.0);
-    expect((string) $sale->items()->where('line_type', SaleLineType::SERVICE->value)->value('mechanic_id'))->toBe($fixture['user']->id);
 
     $stock = InventoryStock::query()
         ->where('branch_id', $fixture['current']->id)
@@ -356,7 +368,6 @@ it('returns job card services and parts as sale items payload', function (): voi
     expect($payload['items'][0]['line_type'])->toBe(SaleLineType::SERVICE->value);
     expect($payload['items'][0]['service_catalog_id'])->toBe($fixture['service']->id);
     expect($payload['items'][0]['job_card_service_id'])->toBe($jobCardService->id);
-    expect($payload['items'][0]['mechanic_id'])->toBe($fixture['user']->id);
     expect($payload['items'][1]['line_type'])->toBe(SaleLineType::PRODUCT->value);
     expect($payload['items'][1]['product_id'])->toBe($fixture['product']->id);
 });

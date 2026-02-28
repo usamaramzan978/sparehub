@@ -12,7 +12,6 @@ use App\Models\Expense;
 use App\Models\JobCard;
 use App\Models\Purchase;
 use App\Models\Sale;
-use App\Models\SaleItem;
 use App\Models\SalePayment;
 use App\Models\VendorPayment;
 use Illuminate\Contracts\View\View;
@@ -41,12 +40,10 @@ final class EndOfDayController extends Controller
         $salePaymentsQuery = SalePayment::query()
             ->where('branch_id', $branchId)
             ->whereBetween('paid_at', [$dayStart, $dayEnd]);
-        $mechanicPayableQuery = SaleItem::query()
+        $serviceEntriesQuery = Sale::query()
             ->where('branch_id', $branchId)
-            ->where('line_type', 'service')
-            ->whereNotNull('mechanic_id')
-            ->where('mechanic_charge', '>', 0)
-            ->whereHas('sale', fn ($query) => $query->whereDate('invoice_date', $selectedDate));
+            ->whereDate('invoice_date', $selectedDate)
+            ->where('invoice_type', '!=', 'product');
         $vendorPaymentsQuery = VendorPayment::query()
             ->where('branch_id', $branchId)
             ->whereBetween('paid_at', [$dayStart, $dayEnd]);
@@ -79,8 +76,8 @@ final class EndOfDayController extends Controller
                 'cash_net' => $cashIn - $cashOut,
                 'expenses_count' => (clone $expensesQuery)->count(),
                 'expenses_total' => $expenseTotal,
-                'mechanic_payable_count' => (clone $mechanicPayableQuery)->count(),
-                'mechanic_payable_total' => (float) (clone $mechanicPayableQuery)->sum('mechanic_charge'),
+                'service_entries_count' => (clone $serviceEntriesQuery)->count(),
+                'service_entries_total' => (float) (clone $serviceEntriesQuery)->sum('grand_total'),
                 'open_job_cards' => JobCard::query()
                     ->where('branch_id', $branchId)
                     ->whereNotIn('status', [JobCardStatus::CLOSED->value, JobCardStatus::CANCELLED->value])

@@ -11,13 +11,9 @@
                 'product_id' => $item->product_id,
                 'service_catalog_id' => $item->service_catalog_id,
                 'job_card_service_id' => $item->job_card_service_id,
-                'mechanic_id' => $item->mechanic_id,
-                'description' => $item->description,
                 'qty' => (string) $item->qty,
                 'unit_price' => (string) $item->unit_price,
                 'discount_amount' => (string) $item->discount_amount,
-                'tax_amount' => (string) $item->tax_amount,
-                'mechanic_charge' => (string) $item->mechanic_charge,
             ])->values()->all();
         } else {
             $lineItems = [[
@@ -25,13 +21,9 @@
                 'product_id' => '',
                 'service_catalog_id' => '',
                 'job_card_service_id' => '',
-                'mechanic_id' => '',
-                'description' => '',
                 'qty' => '1',
                 'unit_price' => '0',
                 'discount_amount' => '0',
-                'tax_amount' => '0',
-                'mechanic_charge' => '0',
             ]];
         }
     }
@@ -158,13 +150,9 @@
                                 <tr>
                                     <th style="min-width: 130px;">{{ __('Type') }}</th>
                                     <th style="min-width: 220px;">{{ __('Product / Service') }}</th>
-                                    <th style="min-width: 180px;">{{ __('Description') }}</th>
-                                    <th style="min-width: 200px;">{{ __('Mechanic') }}</th>
                                     <th style="min-width: 100px;">{{ __('Qty') }}</th>
-                                    <th style="min-width: 120px;">{{ __('Unit Price') }}</th>
+                                    <th style="min-width: 140px;">{{ __('Retail Price') }}</th>
                                     <th style="min-width: 120px;">{{ __('Discount') }}</th>
-                                    <th style="min-width: 120px;">{{ __('Tax') }}</th>
-                                    <th style="min-width: 140px;">{{ __('Mechanic Payable') }}</th>
                                     <th style="min-width: 120px;">{{ __('Line Total') }}</th>
                                     <th style="width: 70px;">{{ __('') }}</th>
                                 </tr>
@@ -214,22 +202,6 @@
                                             @enderror
                                         </td>
                                         <td>
-                                            <input type="text" name="items[{{ $index }}][description]" class="form-control"
-                                                value="{{ $item['description'] ?? '' }}" maxlength="200">
-                                        </td>
-                                        <td>
-                                            <select name="items[{{ $index }}][mechanic_id]"
-                                                class="form-select singl-select-2 sale-mechanic-select {{ $lineType === 'service' ? '' : 'd-none' }}"
-                                                @disabled($lineType !== 'service')>
-                                                <option value="">{{ __('Select Mechanic') }}</option>
-                                                @foreach ($mechanics as $mechanic)
-                                                    <option value="{{ $mechanic->id }}" @selected(($item['mechanic_id'] ?? '') === $mechanic->id)>
-                                                        {{ $mechanic->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </td>
-                                        <td>
                                             <input type="number" step="0.001" min="0.001" name="items[{{ $index }}][qty]"
                                                 class="form-control sale-item-qty" value="{{ $item['qty'] ?? '1' }}" required>
                                         </td>
@@ -240,15 +212,6 @@
                                         <td>
                                             <input type="number" step="0.01" min="0" name="items[{{ $index }}][discount_amount]"
                                                 class="form-control sale-item-discount" value="{{ $item['discount_amount'] ?? '0' }}">
-                                        </td>
-                                        <td>
-                                            <input type="number" step="0.01" min="0" name="items[{{ $index }}][tax_amount]"
-                                                class="form-control sale-item-tax" value="{{ $item['tax_amount'] ?? '0' }}">
-                                        </td>
-                                        <td>
-                                            <input type="number" step="0.01" min="0" name="items[{{ $index }}][mechanic_charge]"
-                                                class="form-control sale-item-mechanic-charge {{ $lineType === 'service' ? '' : 'd-none' }}"
-                                                value="{{ $item['mechanic_charge'] ?? '0' }}" @disabled($lineType !== 'service')>
                                         </td>
                                         <td>
                                             <input type="text" class="form-control sale-item-total" value="0.00" readonly>
@@ -376,20 +339,9 @@
                 @endforeach
             </select>
         </td>
-        <td><input type="text" name="items[__INDEX__][description]" class="form-control" maxlength="200"></td>
-        <td>
-            <select name="items[__INDEX__][mechanic_id]" class="form-select singl-select-2 sale-mechanic-select __SERVICE_HIDDEN__" __SERVICE_DISABLED__>
-                <option value="">{{ __('Select Mechanic') }}</option>
-                @foreach ($mechanics as $mechanic)
-                    <option value="{{ $mechanic->id }}">{{ $mechanic->name }}</option>
-                @endforeach
-            </select>
-        </td>
         <td><input type="number" step="0.001" min="0.001" name="items[__INDEX__][qty]" class="form-control sale-item-qty" value="1" required></td>
         <td><input type="number" step="0.01" min="0" name="items[__INDEX__][unit_price]" class="form-control sale-item-price" value="0" required></td>
         <td><input type="number" step="0.01" min="0" name="items[__INDEX__][discount_amount]" class="form-control sale-item-discount" value="0"></td>
-        <td><input type="number" step="0.01" min="0" name="items[__INDEX__][tax_amount]" class="form-control sale-item-tax" value="0"></td>
-        <td><input type="number" step="0.01" min="0" name="items[__INDEX__][mechanic_charge]" class="form-control sale-item-mechanic-charge __SERVICE_HIDDEN__" value="0" __SERVICE_DISABLED__></td>
         <td><input type="text" class="form-control sale-item-total" value="0.00" readonly></td>
         <td>
             <button type="button" class="btn btn-sm btn-danger-light sale-remove-item">
@@ -492,8 +444,6 @@
                 const typeSelect = row.querySelector('.sale-line-type');
                 const productSelect = row.querySelector('.sale-product-select');
                 const serviceSelect = row.querySelector('.sale-service-select');
-                const mechanicSelect = row.querySelector('.sale-mechanic-select');
-                const mechanicChargeInput = row.querySelector('.sale-item-mechanic-charge');
                 const jobCardServiceInput = row.querySelector('.sale-job-card-service-id');
                 const lineType = typeSelect ? typeSelect.value : 'product';
 
@@ -504,22 +454,11 @@
                 if (lineType === 'service') {
                     setSelectVisibility(productSelect, false, true);
                     setSelectVisibility(serviceSelect, true);
-                    setSelectVisibility(mechanicSelect, true);
-                    if (mechanicChargeInput) {
-                        mechanicChargeInput.disabled = false;
-                        mechanicChargeInput.classList.remove('d-none');
-                    }
                 } else {
                     setSelectVisibility(serviceSelect, false, true);
                     setSelectVisibility(productSelect, true);
-                    setSelectVisibility(mechanicSelect, false, true);
                     if (jobCardServiceInput instanceof HTMLInputElement) {
                         jobCardServiceInput.value = '';
-                    }
-                    if (mechanicChargeInput) {
-                        mechanicChargeInput.value = '0';
-                        mechanicChargeInput.disabled = true;
-                        mechanicChargeInput.classList.add('d-none');
                     }
                 }
             };
@@ -528,14 +467,12 @@
                 const qtyInput = row.querySelector('.sale-item-qty');
                 const priceInput = row.querySelector('.sale-item-price');
                 const discountInput = row.querySelector('.sale-item-discount');
-                const taxInput = row.querySelector('.sale-item-tax');
                 const totalInput = row.querySelector('.sale-item-total');
 
                 const qty = parseNumber(qtyInput?.value);
                 const unitPrice = parseNumber(priceInput?.value);
                 const discount = parseNumber(discountInput?.value);
-                const tax = parseNumber(taxInput?.value);
-                const lineTotal = (qty * unitPrice) - discount + tax;
+                const lineTotal = (qty * unitPrice) - discount;
 
                 if (totalInput) {
                     totalInput.value = lineTotal.toFixed(2);
@@ -544,7 +481,6 @@
                 return {
                     sub: qty * unitPrice,
                     discount,
-                    tax,
                     total: lineTotal,
                 };
             };
@@ -553,14 +489,12 @@
                 const rows = body.querySelectorAll('.sale-item-row');
                 let sub = 0;
                 let discount = 0;
-                let tax = 0;
                 let total = 0;
 
                 rows.forEach((row) => {
                     const rowTotals = recalculateRow(row);
                     sub += rowTotals.sub;
                     discount += rowTotals.discount;
-                    tax += rowTotals.tax;
                     total += rowTotals.total;
                 });
 
@@ -573,7 +507,7 @@
                 }
 
                 if (taxTotalInput) {
-                    taxTotalInput.value = tax.toFixed(2);
+                    taxTotalInput.value = '0.00';
                 }
 
                 if (grandTotalInput) {
@@ -610,13 +544,9 @@
                 const lineTypeSelect = row.querySelector('.sale-line-type');
                 const productSelect = row.querySelector('.sale-product-select');
                 const serviceSelect = row.querySelector('.sale-service-select');
-                const mechanicSelect = row.querySelector('.sale-mechanic-select');
                 const qtyInput = row.querySelector('.sale-item-qty');
                 const unitPriceInput = row.querySelector('.sale-item-price');
                 const discountInput = row.querySelector('.sale-item-discount');
-                const taxInput = row.querySelector('.sale-item-tax');
-                const mechanicChargeInput = row.querySelector('.sale-item-mechanic-charge');
-                const descriptionInput = row.querySelector('input[name$="[description]"]');
                 const jobCardServiceInput = row.querySelector('.sale-job-card-service-id');
 
                 if (lineTypeSelect instanceof HTMLSelectElement) {
@@ -627,11 +557,6 @@
 
                 setSelectValue(productSelect, item.product_id);
                 setSelectValue(serviceSelect, item.service_catalog_id);
-                setSelectValue(mechanicSelect, item.mechanic_id);
-
-                if (descriptionInput instanceof HTMLInputElement) {
-                    descriptionInput.value = item.description ? String(item.description) : '';
-                }
 
                 if (jobCardServiceInput instanceof HTMLInputElement) {
                     jobCardServiceInput.value = item.job_card_service_id ? String(item.job_card_service_id) : '';
@@ -647,14 +572,6 @@
 
                 if (discountInput instanceof HTMLInputElement) {
                     discountInput.value = parseNumber(item.discount_amount).toString();
-                }
-
-                if (taxInput instanceof HTMLInputElement) {
-                    taxInput.value = parseNumber(item.tax_amount).toString();
-                }
-
-                if (mechanicChargeInput instanceof HTMLInputElement) {
-                    mechanicChargeInput.value = parseNumber(item.mechanic_charge).toString();
                 }
             };
 

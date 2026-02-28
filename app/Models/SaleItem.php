@@ -25,14 +25,12 @@ final class SaleItem extends Model
         'product_id',
         'service_catalog_id',
         'job_card_service_id',
-        'mechanic_id',
         'line_type',
         'description',
         'qty',
         'unit_price',
         'discount_amount',
         'tax_amount',
-        'mechanic_charge',
         'line_total',
     ];
 
@@ -41,7 +39,6 @@ final class SaleItem extends Model
         'unit_price' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
-        'mechanic_charge' => 'decimal:2',
         'line_total' => 'decimal:2',
         'line_type' => SaleLineType::class,
     ];
@@ -69,10 +66,5 @@ final class SaleItem extends Model
     public function jobCardService(): BelongsTo
     {
         return $this->belongsTo(JobCardService::class);
-    }
-
-    public function mechanic(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'mechanic_id');
     }
 }

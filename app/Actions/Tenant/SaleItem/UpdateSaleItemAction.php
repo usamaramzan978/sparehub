@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Actions\Tenant\SaleItem;
 
 use App\Actions\Tenant\Sale\SyncSaleItemStocksAction;
-use App\Enums\SaleLineType;
 use App\Models\SaleItem;
 
 final readonly class UpdateSaleItemAction
@@ -21,13 +20,6 @@ final readonly class UpdateSaleItemAction
     public function handle(SaleItem $saleItem, array $payload, string $branchId): bool
     {
         $payload['branch_id'] = $branchId;
-
-        if (($payload['line_type'] ?? null) !== SaleLineType::SERVICE->value) {
-            $payload['mechanic_id'] = null;
-            $payload['mechanic_charge'] = 0;
-        }
-
-        $payload['mechanic_charge'] = (float) ($payload['mechanic_charge'] ?? 0);
         $payload['line_total'] = ((float) $payload['qty'] * (float) $payload['unit_price']) - (float) ($payload['discount_amount'] ?? 0) + (float) ($payload['tax_amount'] ?? 0);
 
         $originalItem = clone $saleItem;

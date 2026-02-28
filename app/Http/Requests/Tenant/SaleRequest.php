@@ -29,14 +29,12 @@ final class SaleRequest extends FormRequest
         $customerExists = Rule::exists('customers', 'id');
         $jobCardExists = Rule::exists('job_cards', 'id');
         $serviceCatalogExists = Rule::exists('service_catalog', 'id');
-        $mechanicExists = Rule::exists('users', 'id');
 
         if (is_string($branchId) && $branchId !== '') {
             $invoiceUnique = $invoiceUnique->where(fn ($query) => $query->where('branch_id', $branchId));
             $customerExists = $customerExists->where(fn ($query) => $query->where('branch_id', $branchId));
             $jobCardExists = $jobCardExists->where(fn ($query) => $query->where('branch_id', $branchId));
             $serviceCatalogExists = $serviceCatalogExists->where(fn ($query) => $query->where('branch_id', $branchId));
-            $mechanicExists = $mechanicExists->where(fn ($query) => $query->where('branch_id', $branchId));
         }
 
         return [
@@ -71,17 +69,9 @@ final class SaleRequest extends FormRequest
                 'uuid',
                 Rule::exists('job_card_services', 'id'),
             ],
-            'items.*.mechanic_id' => [
-                'nullable',
-                'uuid',
-                $mechanicExists,
-            ],
-            'items.*.description' => ['nullable', 'string', 'max:200'],
             'items.*.qty' => ['required', 'numeric', 'gt:0'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.discount_amount' => ['nullable', 'numeric', 'min:0'],
-            'items.*.tax_amount' => ['nullable', 'numeric', 'min:0'],
-            'items.*.mechanic_charge' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 

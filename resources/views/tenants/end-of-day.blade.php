@@ -62,11 +62,11 @@
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="text-muted small">{{ __('Mechanic Payable Today') }}</div>
-                    <h4>{{ $currency($summary['mechanic_payable_total']) }}</h4>
-                    <div class="small text-muted">{{ $summary['mechanic_payable_count'] }} {{ __('service entries') }}</div>
-                    <a href="{{ route('tenant.users.index') }}" class="btn btn-outline-primary btn-sm mt-2">
-                        {{ __('Open Users') }}
+                    <div class="text-muted small">{{ __('Service Sales Today') }}</div>
+                    <h4>{{ $currency($summary['service_entries_total']) }}</h4>
+                    <div class="small text-muted">{{ $summary['service_entries_count'] }} {{ __('service invoices') }}</div>
+                    <a href="{{ route('tenant.sales.index') }}" class="btn btn-outline-primary btn-sm mt-2">
+                        {{ __('Open Sales') }}
                     </a>
                 </div>
             </div>

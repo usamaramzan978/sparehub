@@ -14,6 +14,7 @@ use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\UserRequest;
 use App\Models\Branch;
+use App\Models\SaleItem;
 use App\Models\ServiceCatalog;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
@@ -85,10 +86,10 @@ final class UserController extends Controller
         $this->ensureUserInCurrentBranch($user);
         $user->load(['branch', 'commissionRules.serviceCatalog']);
 
-        $servicePayables = $user->mechanicSaleItems()
-            ->with(['sale:id,invoice_no,invoice_date', 'serviceCatalog:id,name'])
+        $serviceSales = SaleItem::query()
+            ->with(['sale:id,invoice_no,invoice_date,created_by', 'serviceCatalog:id,name'])
+            ->whereHas('sale', fn (Builder $query): Builder => $query->where('created_by', $user->id))
             ->where('line_type', 'service')
-            ->where('mechanic_charge', '>', 0)
             ->latest('created_at')
             ->limit(100)
             ->get();
@@ -96,13 +97,13 @@ final class UserController extends Controller
         $commissionSummary = [
             'rules_count' => $user->commissionRules->count(),
             'total_payable' => (float) $user->commissionRules->sum('payable_amount'),
-            'service_entries_count' => $servicePayables->count(),
-            'service_entries_payable_total' => (float) $servicePayables->sum('mechanic_charge'),
+            'service_entries_count' => $serviceSales->count(),
+            'service_entries_total' => (float) $serviceSales->sum('line_total'),
         ];
 
         return view('tenants.users.show', [
             'user' => $user,
-            'servicePayables' => $servicePayables,
+            'serviceSales' => $serviceSales,
             'commissionSummary' => $commissionSummary,
         ]);
     }

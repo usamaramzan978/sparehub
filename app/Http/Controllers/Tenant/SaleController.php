@@ -19,7 +19,6 @@ use App\Models\JobCardService;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\ServiceCatalog;
-use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -95,13 +94,9 @@ final class SaleController extends Controller
                 'product_id' => null,
                 'service_catalog_id' => $service->service_catalog_id,
                 'job_card_service_id' => $service->id,
-                'mechanic_id' => $service->technician_id,
-                'description' => $service->service_name,
                 'qty' => (float) $service->qty,
                 'unit_price' => (float) $service->rate,
                 'discount_amount' => 0.0,
-                'tax_amount' => 0.0,
-                'mechanic_charge' => 0.0,
             ]);
 
         $partItems = $jobCardModel->parts
@@ -110,13 +105,9 @@ final class SaleController extends Controller
                 'product_id' => $part->product_id,
                 'service_catalog_id' => null,
                 'job_card_service_id' => null,
-                'mechanic_id' => null,
-                'description' => $part->product?->name,
                 'qty' => (float) $part->qty,
                 'unit_price' => (float) $part->unit_price,
                 'discount_amount' => 0.0,
-                'tax_amount' => 0.0,
-                'mechanic_charge' => 0.0,
             ]);
 
         return response()->json([
@@ -143,7 +134,6 @@ final class SaleController extends Controller
             'items.product',
             'items.serviceCatalog',
             'items.jobCardService',
-            'items.mechanic',
             'payments.receiver',
         ]);
 
@@ -215,7 +205,6 @@ final class SaleController extends Controller
             'jobCards' => JobCard::query()->where('branch_id', $branchId)->latest('job_date')->get(),
             'products' => Product::query()->orderBy('name')->get(),
             'serviceCatalogs' => ServiceCatalog::query()->where('branch_id', $branchId)->orderBy('name')->get(),
-            'mechanics' => User::query()->where('branch_id', $branchId)->active()->orderBy('name')->get(['id', 'name']),
             'statuses' => SaleStatus::cases(),
             'invoiceTypes' => InvoiceType::cases(),
         ];

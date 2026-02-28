@@ -7,7 +7,6 @@ namespace App\Http\Requests\Tenant;
 use App\Enums\SaleStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Validator;
 
 final class PosStoreRequest extends FormRequest
 {
@@ -23,11 +22,9 @@ final class PosStoreRequest extends FormRequest
     {
         $branchId = session('tenant.current_branch_id');
         $customerExists = Rule::exists('customers', 'id');
-        $mechanicExists = Rule::exists('users', 'id');
 
         if (is_string($branchId) && $branchId !== '') {
             $customerExists = $customerExists->where(fn ($query) => $query->where('branch_id', $branchId));
-            $mechanicExists = $mechanicExists->where(fn ($query) => $query->where('branch_id', $branchId));
         }
 
         return [
@@ -50,42 +47,7 @@ final class PosStoreRequest extends FormRequest
             'items.*.tax_rate' => ['nullable', 'numeric', 'min:0'],
             'items.*.tax_inclusive' => ['nullable', 'boolean'],
             'items.*.name' => ['nullable', 'string', 'max:200'],
-            'items.*.mechanic_enabled' => ['nullable', 'boolean'],
-            'items.*.mechanic_id' => ['nullable', 'uuid', $mechanicExists],
-            'items.*.mechanic_charge' => ['nullable', 'numeric', 'min:0'],
         ];
-    }
-
-    public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $validator): void {
-            $items = $this->input('items', []);
-
-            if (! is_array($items)) {
-                return;
-            }
-
-            foreach ($items as $index => $item) {
-                if (! is_array($item)) {
-                    continue;
-                }
-
-                $mechanicEnabled = filter_var($item['mechanic_enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
-                if (! $mechanicEnabled) {
-                    continue;
-                }
-
-                $mechanicId = $item['mechanic_id'] ?? null;
-                if (! is_string($mechanicId) || $mechanicId === '') {
-                    $validator->errors()->add(sprintf('items.%s.mechanic_id', $index), 'Please select a mechanic when Add Mechanic is enabled.');
-                }
-
-                $mechanicCharge = $item['mechanic_charge'] ?? null;
-                if (! is_numeric($mechanicCharge) || (float) $mechanicCharge <= 0) {
-                    $validator->errors()->add(sprintf('items.%s.mechanic_charge', $index), 'Please enter mechanic payable greater than zero when Add Mechanic is enabled.');
-                }
-            }
-        });
     }
 
     /**
@@ -109,8 +71,6 @@ final class PosStoreRequest extends FormRequest
             'items.*.qty.required' => 'Quantity is required.',
             'items.*.qty.gt' => 'Quantity must be greater than zero.',
             'items.*.price.required' => 'Price is required.',
-            'items.*.mechanic_id.uuid' => 'Selected mechanic is invalid.',
-            'items.*.mechanic_charge.numeric' => 'Mechanic payable must be a valid number.',
         ];
     }
 }

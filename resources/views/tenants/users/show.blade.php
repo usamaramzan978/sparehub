@@ -93,8 +93,8 @@
                     <div class="text-muted small">{{ __('Service Entries') }}</div>
                     <h5 class="mb-3">{{ $commissionSummary['service_entries_count'] }}</h5>
 
-                    <div class="text-muted small">{{ __('Actual Service Payable Total') }}</div>
-                    <h5 class="mb-0">{{ number_format((float) $commissionSummary['service_entries_payable_total'], 2) }}</h5>
+                    <div class="text-muted small">{{ __('Service Entries Total') }}</div>
+                    <h5 class="mb-0">{{ number_format((float) $commissionSummary['service_entries_total'], 2) }}</h5>
                 </div>
             </div>
         </div>
@@ -138,7 +138,7 @@
 
     <div class="card mt-3">
         <div class="card-header">
-            <h6 class="mb-0">{{ __('Service Payable Details') }}</h6>
+            <h6 class="mb-0">{{ __('Service Sale Details') }}</h6>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -148,22 +148,20 @@
                             <th>{{ __('Invoice') }}</th>
                             <th>{{ __('Date') }}</th>
                             <th>{{ __('Service') }}</th>
-                            <th class="text-end">{{ __('Customer Charge') }}</th>
-                            <th class="text-end">{{ __('Mechanic Payable') }}</th>
+                            <th class="text-end">{{ __('Line Total') }}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($servicePayables as $item)
+                        @forelse ($serviceSales as $item)
                             <tr>
                                 <td>{{ $item->sale?->invoice_no ?? '-' }}</td>
                                 <td>@tenantDate($item->sale?->invoice_date, 'Y-m-d')</td>
                                 <td>{{ $item->description ?: ($item->serviceCatalog?->name ?? '-') }}</td>
                                 <td class="text-end">{{ number_format((float) $item->line_total, 2) }}</td>
-                                <td class="text-end">{{ number_format((float) $item->mechanic_charge, 2) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted">{{ __('No service payable entries found.') }}</td>
+                                <td colspan="4" class="text-center text-muted">{{ __('No service sale entries found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

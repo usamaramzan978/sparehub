@@ -14,7 +14,6 @@ use App\Models\EmployeeSalary;
 use App\Models\Expense;
 use App\Models\Purchase;
 use App\Models\Sale;
-use App\Models\SaleItem;
 use App\Models\SalePayment;
 use App\Models\User;
 use App\Models\Vendor;
@@ -107,20 +106,6 @@ function authenticateEndOfDayUser(): array
         'paid_at' => now(),
     ]);
 
-    SaleItem::query()->withoutGlobalScopes()->create([
-        'sale_id' => $sale->id,
-        'branch_id' => $branch->id,
-        'mechanic_id' => $user->id,
-        'line_type' => 'service',
-        'description' => 'Oil Change Labour',
-        'qty' => 1,
-        'unit_price' => 80,
-        'discount_amount' => 0,
-        'tax_amount' => 0,
-        'mechanic_charge' => 80,
-        'line_total' => 80,
-    ]);
-
     VendorPayment::query()->withoutGlobalScopes()->create([
         'branch_id' => $branch->id,
         'vendor_id' => $vendor->id,
@@ -179,7 +164,7 @@ it('shows end of day summary for selected date', function (): void {
     expect($summary['expenses_total'])->toBe(50.0);
     expect($summary['cash_out'])->toBe(150.0);
     expect($summary['cash_net'])->toBe(250.0);
-    expect($summary['mechanic_payable_count'])->toBe(1);
-    expect($summary['mechanic_payable_total'])->toBe(80.0);
+    expect($summary['service_entries_count'])->toBe(0);
+    expect($summary['service_entries_total'])->toBe(0.0);
     expect($summary['payroll_total'])->toBe(1000.0);
 });

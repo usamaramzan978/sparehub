@@ -129,11 +129,6 @@ final class User extends Authenticatable
         return $this->hasMany(EmployeeSalary::class);
     }
 
-    public function mechanicSaleItems(): HasMany
-    {
-        return $this->hasMany(SaleItem::class, 'mechanic_id');
-    }
-
     public function commissionRules(): HasMany
     {
         return $this->hasMany(UserCommissionRule::class)->orderBy('sort_order');
