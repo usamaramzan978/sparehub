@@ -21,20 +21,10 @@
 
 </head>
 
-<body>
+<body class="landing-body">
 
-    <div class="page">
-        <div class="main-content app-content">
-            <div class="container-fluid">
-                @yield('content')
-            </div>
-        </div>
-    </div>
+    @yield('content')
 
-
-
-    @yield('scripts')
-    @stack('scripts')
 </body>
 
 </html>
