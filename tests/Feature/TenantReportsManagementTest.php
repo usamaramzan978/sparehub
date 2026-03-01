@@ -159,6 +159,12 @@ it('shows reports index with summary metrics', function (): void {
     expect($summary['purchases_count'])->toBe(1);
     expect($summary['sale_payments_total'])->toBe(100.0);
     expect($summary['vendor_payments_total'])->toBe(200.0);
+    expect($summary['paid_sales_count'])->toBe(0);
+    expect($summary['partial_sales_count'])->toBe(1);
+    expect($summary['unpaid_sales_count'])->toBe(0);
+    expect($summary['recoverable_invoices_count'])->toBe(1);
+    expect((float) $summary['sale_payment_method_totals'][PaymentMethodType::CASH->value])->toBe(100.0);
+    expect((float) $summary['sale_payment_method_totals'][PaymentMethodType::BANK->value])->toBe(0.0);
 });
 
 it('filters reports by customer and vendor', function (): void {

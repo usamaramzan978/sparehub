@@ -35,7 +35,10 @@
                     <div class="text-muted small">{{ __('Date') }}: @tenantDate($sale->invoice_date, 'Y-m-d')
                     </div>
                 </div>
-                <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $sale->status->value)) }}</span>
+                <div class="d-flex flex-column align-items-end gap-1">
+                    <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $sale->status->value)) }}</span>
+                    <span class="badge {{ $paymentStatus['class'] }}">{{ $paymentStatus['label'] }}</span>
+                </div>
             </div>
 
             <div class="row g-3">

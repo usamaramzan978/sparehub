@@ -55,7 +55,7 @@
                 <div class="card-body">
                     <div class="text-muted small">{{ __('Receivables') }}</div>
                     <h5 class="mb-0">{{ number_format($summary['receivables_total'], 2) }}</h5>
-                    <small>{{ __('Outstanding sales') }}</small>
+                    <small>{{ $summary['recoverable_invoices_count'] }} {{ __('invoices to recover') }}</small>
                 </div>
             </div>
         </div>
@@ -79,8 +79,30 @@
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card custom-card border-0 shadow-sm h-100">
                 <div class="card-body">
+                    <div class="text-muted small">{{ __('Sales Payment Status') }}</div>
+                    <div class="small">{{ __('Paid') }}: {{ $summary['paid_sales_count'] }}</div>
+                    <div class="small">{{ __('Partial') }}: {{ $summary['partial_sales_count'] }}</div>
+                    <div class="small">{{ __('Unpaid') }}: {{ $summary['unpaid_sales_count'] }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
                     <div class="text-muted small">{{ __('Vendor Payments') }}</div>
                     <h5 class="mb-0">{{ number_format($summary['vendor_payments_total'], 2) }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">{{ __('Sale Collections By Method') }}</div>
+                    <div class="small">{{ __('Cash') }}: {{ number_format((float) ($summary['sale_payment_method_totals']['cash'] ?? 0), 2) }}</div>
+                    <div class="small">{{ __('Bank') }}: {{ number_format((float) ($summary['sale_payment_method_totals']['bank'] ?? 0), 2) }}</div>
+                    <div class="small">{{ __('Card') }}: {{ number_format((float) ($summary['sale_payment_method_totals']['card'] ?? 0), 2) }}</div>
+                    <div class="small">{{ __('Wallet') }}: {{ number_format((float) ($summary['sale_payment_method_totals']['wallet'] ?? 0), 2) }}</div>
+                    <div class="small">{{ __('Other') }}: {{ number_format((float) ($summary['sale_payment_method_totals']['other'] ?? 0), 2) }}</div>
                 </div>
             </div>
         </div>

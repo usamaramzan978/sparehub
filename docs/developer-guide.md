@@ -329,13 +329,22 @@ Purpose split:
 
 Operationally: invoice creation records what was sold; sale payments record when/how much cash was collected later.
 
+Payment semantics used in UI/business flow:
+- `debit` is treated as a POS payment mode (credit/partial flow), not a `sale_payments.payment_method` enum value.
+- `sale_payments.payment_method` stores actual collection channel values from `PaymentMethodType` (`cash`, `bank`, `card`, `wallet`, `other`).
+- Recovery/outstanding logic should use invoice receivable fields:
+  - outstanding invoice: `balance_due > 0`
+  - fully paid invoice: `balance_due <= 0`
+  - partial invoice: `paid_total > 0 && balance_due > 0`
+  - unpaid invoice: `paid_total <= 0 && balance_due > 0`
+
 Job Card billing helper (implemented):
 - Route: `GET /firm/{tenant}/sales/job-card-items/{jobCard}` (`tenant.sales.job-card-items`)
 - Controller method: `SaleController@jobCardItems`
 - Returns branch-validated JSON:
   - `customer_id`
   - `items[]` normalized for sales form rows:
-    - service lines map from `job_card_services` with `job_card_service_id` + `service_catalog_id` + `technician_id -> mechanic_id`
+    - service lines map from `job_card_services` with `job_card_service_id` + `service_catalog_id`
     - part lines map from `job_card_parts` with `product_id`
 - Used by sales form JS in `resources/views/tenants/sales/partials/form.blade.php` to replace current rows when `job_card_id` changes.
 - `SaleRequest` accepts `items.*.job_card_service_id` and `SyncSaleItemsAction` persists it into `sale_items.job_card_service_id`.
@@ -466,7 +475,7 @@ Employee payable note:
 - Standalone `mechanic-payables` module is removed.
 - User-wise payable visibility is provided in `Users > User Details` using:
   - configured `user_commission_rules`
-  - service payable entries from `sale_items.mechanic_charge`
+  - service sale entries from `sale_items.line_total`
 
 ## 7. Seeder Strategy
 

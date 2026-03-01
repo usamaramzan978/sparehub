@@ -95,6 +95,18 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card custom-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <span class="text-muted small">{{ __('Sales Payment Status') }}</span>
+                    <div class="small mt-2">{{ __('Paid') }}: <strong>{{ $summary['paid_sales_count'] }}</strong></div>
+                    <div class="small">{{ __('Partial') }}: <strong>{{ $summary['partial_sales_count'] }}</strong></div>
+                    <div class="small">{{ __('Unpaid') }}: <strong>{{ $summary['unpaid_sales_count'] }}</strong></div>
+                    <div class="small text-muted mt-1">{{ $summary['recoverable_invoices_count'] }} {{ __('invoices to recover') }}</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="row g-3 mt-1">

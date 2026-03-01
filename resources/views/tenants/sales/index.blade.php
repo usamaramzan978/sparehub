@@ -28,6 +28,15 @@
                         <span class="spinner-border spinner-border-sm"></span>
                     </span>
                 </div>
+                <div>
+                    <label class="form-label mb-1" for="sales-payment-status">{{ __('Payment') }}</label>
+                    <select name="payment_status" id="sales-payment-status" class="form-select">
+                        <option value="">{{ __('All') }}</option>
+                        <option value="paid" @selected(request('payment_status') === 'paid')>{{ __('Paid') }}</option>
+                        <option value="partial" @selected(request('payment_status') === 'partial')>{{ __('Partial') }}</option>
+                        <option value="unpaid" @selected(request('payment_status') === 'unpaid')>{{ __('Unpaid') }}</option>
+                    </select>
+                </div>
             </form>
         </div>
         <div class="card-body">
@@ -44,6 +53,7 @@
                                 :current-sort-direction="$sortDirection" />
                             <x-sortable-column :label="__('Status')" column="status" :current-sort-by="$sortBy"
                                 :current-sort-direction="$sortDirection" />
+                            <th>{{ __('Payment') }}</th>
                             <x-sortable-column :label="__('Grand Total')" column="grand_total" :current-sort-by="$sortBy"
                                 :current-sort-direction="$sortDirection" />
                             <x-sortable-column :label="__('Balance')" column="balance_due" :current-sort-by="$sortBy"
@@ -69,6 +79,18 @@
                                     'mixed' => 'badge bg-dark-transparent',
                                     default => 'border border-secondary text-secondary',
                                 };
+                                $balanceDue = (float) $sale->balance_due;
+                                $paidTotal = (float) $sale->paid_total;
+                                if ($balanceDue <= 0) {
+                                    $paymentStatusLabel = __('Paid');
+                                    $paymentStatusClass = 'bg-success-transparent text-success';
+                                } elseif ($paidTotal > 0) {
+                                    $paymentStatusLabel = __('Partial');
+                                    $paymentStatusClass = 'bg-warning-transparent text-warning';
+                                } else {
+                                    $paymentStatusLabel = __('Unpaid');
+                                    $paymentStatusClass = 'bg-danger-transparent text-danger';
+                                }
                             @endphp
                             <tr>
                                 <td>{{ $sale->invoice_no }}</td>
@@ -81,6 +103,9 @@
                                 <td>
                                     <span
                                         class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $statusValue)) }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge {{ $paymentStatusClass }}">{{ $paymentStatusLabel }}</span>
                                 </td>
                                 <td>{{ number_format((float) $sale->grand_total, 2) }}</td>
                                 <td>{{ number_format((float) $sale->balance_due, 2) }}</td>
@@ -108,7 +133,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted">{{ __('No invoices found.') }}</td>
+                                <td colspan="9" class="text-center text-muted">{{ __('No invoices found.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

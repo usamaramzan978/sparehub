@@ -238,19 +238,33 @@ final class BuildReportDataAction
                 ->get();
         }
 
-        $payablesTotal = (float) ((clone $purchasesBase)
-            ->selectRaw('SUM(CASE WHEN ('.$purchaseOutstandingExpression.') > 0 THEN ('.$purchaseOutstandingExpression.') ELSE 0 END) as payables_total')
+        $payablesTotal = (float) (DB::query()
+            ->fromSub((clone $purchasesBase)->toBase(), 'filtered_purchases')
+            ->selectRaw('COALESCE(SUM(CASE WHEN outstanding_balance > 0 THEN outstanding_balance ELSE 0 END), 0) as payables_total')
             ->value('payables_total') ?? 0);
+        $salePaymentMethodTotals = (clone $salePaymentsBase)
+            ->selectRaw('payment_method, SUM(amount) as total_amount')
+            ->groupBy('payment_method')
+            ->pluck('total_amount', 'payment_method');
 
         $summary = [
             'sales_count' => (clone $salesBase)->count(),
             'sales_total' => (float) (clone $salesBase)->sum('grand_total'),
+            'paid_sales_count' => (clone $salesBase)->where('balance_due', '<=', 0)->count(),
+            'partial_sales_count' => (clone $salesBase)->where('paid_total', '>', 0)->where('balance_due', '>', 0)->count(),
+            'unpaid_sales_count' => (clone $salesBase)->where('paid_total', '<=', 0)->where('balance_due', '>', 0)->count(),
+            'recoverable_invoices_count' => (clone $salesBase)->where('balance_due', '>', 0)->count(),
             'purchases_count' => (clone $purchasesBase)->count(),
             'purchases_total' => (float) (clone $purchasesBase)->sum('grand_total'),
             'sale_payments_total' => (float) (clone $salePaymentsBase)->sum('amount'),
             'vendor_payments_total' => (float) (clone $vendorPaymentsBase)->sum('amount'),
             'receivables_total' => (float) (clone $salesBase)->where('balance_due', '>', 0)->sum('balance_due'),
             'payables_total' => $payablesTotal,
+            'sale_payment_method_totals' => collect(PaymentMethodType::cases())
+                ->mapWithKeys(fn (PaymentMethodType $method): array => [
+                    $method->value => (float) ($salePaymentMethodTotals[$method->value] ?? 0),
+                ])
+                ->all(),
         ];
 
         return [

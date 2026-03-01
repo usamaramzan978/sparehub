@@ -209,6 +209,60 @@ it('sorts sales invoices by invoice number ascending and descending', function (
     expect(array_search('INV-SORT-A', $descendingInvoices, true))->toBeGreaterThan(array_search('INV-SORT-Z', $descendingInvoices, true));
 });
 
+it('filters sales by payment status', function (): void {
+    $fixture = authenticateSalesUser();
+
+    Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-FILTER-PAID',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+        'grand_total' => 100,
+        'paid_total' => 100,
+        'balance_due' => 0,
+    ]);
+
+    Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-FILTER-PARTIAL',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+        'grand_total' => 100,
+        'paid_total' => 40,
+        'balance_due' => 60,
+    ]);
+
+    Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-FILTER-UNPAID',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+        'grand_total' => 100,
+        'paid_total' => 0,
+        'balance_due' => 100,
+    ]);
+
+    $paidResponse = $this->get(salesTenantRoute('sales.index', ['payment_status' => 'paid']));
+    $partialResponse = $this->get(salesTenantRoute('sales.index', ['payment_status' => 'partial']));
+    $unpaidResponse = $this->get(salesTenantRoute('sales.index', ['payment_status' => 'unpaid']));
+
+    expect($paidResponse->viewData('items')->pluck('invoice_no')->all())->toContain('INV-FILTER-PAID');
+    expect($paidResponse->viewData('items')->pluck('invoice_no')->all())->not->toContain('INV-FILTER-PARTIAL');
+    expect($partialResponse->viewData('items')->pluck('invoice_no')->all())->toContain('INV-FILTER-PARTIAL');
+    expect($partialResponse->viewData('items')->pluck('invoice_no')->all())->not->toContain('INV-FILTER-UNPAID');
+    expect($unpaidResponse->viewData('items')->pluck('invoice_no')->all())->toContain('INV-FILTER-UNPAID');
+    expect($unpaidResponse->viewData('items')->pluck('invoice_no')->all())->not->toContain('INV-FILTER-PAID');
+});
+
 it('renders status badges on sales index', function (): void {
     $fixture = authenticateSalesUser();
 
@@ -241,6 +295,60 @@ it('renders status badges on sales index', function (): void {
     $response->assertSee('Hold');
     $response->assertSee('Product');
     $response->assertSee('Service');
+});
+
+it('renders payment badges on sales index', function (): void {
+    $fixture = authenticateSalesUser();
+
+    Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-PAY-PAID',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+        'grand_total' => 100,
+        'paid_total' => 100,
+        'balance_due' => 0,
+    ]);
+
+    Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-PAY-PARTIAL',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+        'grand_total' => 100,
+        'paid_total' => 40,
+        'balance_due' => 60,
+    ]);
+
+    Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-PAY-UNPAID',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+        'grand_total' => 100,
+        'paid_total' => 0,
+        'balance_due' => 100,
+    ]);
+
+    $response = $this->get(salesTenantRoute('sales.index'));
+
+    $response->assertSuccessful();
+    $response->assertSee('Payment');
+    $response->assertSee('INV-PAY-PAID');
+    $response->assertSee('INV-PAY-PARTIAL');
+    $response->assertSee('INV-PAY-UNPAID');
+    $response->assertSee('Paid');
+    $response->assertSee('Partial');
+    $response->assertSee('Unpaid');
 });
 
 it('clamps sales pagination limits', function (): void {
@@ -501,4 +609,28 @@ it('throws not found when showing sale outside current branch', function (): voi
 
     $this->expectException(NotFoundHttpException::class);
     (new SaleController())->show($foreignSale, new EnsureSaleInBranchAction());
+});
+
+it('renders payment status badge on sale details page', function (): void {
+    $fixture = authenticateSalesUser();
+
+    $sale = Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-SHOW-PARTIAL',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::POSTED->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+        'grand_total' => 500,
+        'paid_total' => 200,
+        'balance_due' => 300,
+    ]);
+
+    session()->put('tenant.current_branch_id', $fixture['current']->id);
+    $response = (new SaleController())->show($sale, new EnsureSaleInBranchAction());
+
+    expect($response->name())->toBe('tenants.sales.show');
+    expect($response->getData()['sale']->invoice_no)->toBe('INV-SHOW-PARTIAL');
+    expect($response->getData()['paymentStatus']['label'])->toBe('Partial');
 });

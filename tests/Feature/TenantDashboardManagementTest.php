@@ -195,8 +195,22 @@ it('shows dashboard summary and chart data', function (): void {
     $chartData = $response->viewData('chartData');
     $tenantHealth = $response->viewData('tenantHealth');
 
-    expect($summary)->toHaveKeys(['sales_total', 'purchases_total', 'cashflow_net']);
+    expect($summary)->toHaveKeys([
+        'sales_total',
+        'purchases_total',
+        'cashflow_net',
+        'paid_sales_count',
+        'partial_sales_count',
+        'unpaid_sales_count',
+        'recoverable_invoices_count',
+    ]);
     expect((float) $summary['cashflow_net'])->toBe((float) $summary['sale_payments_total'] - (float) $summary['vendor_payments_total']);
+    expect((int) $summary['paid_sales_count'])->toBeGreaterThanOrEqual(0);
+    expect((int) $summary['partial_sales_count'])->toBeGreaterThanOrEqual(0);
+    expect((int) $summary['unpaid_sales_count'])->toBeGreaterThanOrEqual(0);
+    expect((int) $summary['recoverable_invoices_count'])->toBeGreaterThanOrEqual(0);
+    expect((int) $summary['paid_sales_count'] + (int) $summary['partial_sales_count'] + (int) $summary['unpaid_sales_count'])
+        ->toBeLessThanOrEqual((int) $summary['sales_count']);
     expect($chartData['trend_labels'])->not->toBeEmpty();
     expect($tenantHealth)->toMatchArray([
         'low_stock_count' => 1,
@@ -211,6 +225,8 @@ it('shows dashboard summary and chart data', function (): void {
     $response->assertSee('Unpaid Vendors');
     $response->assertSee('Open Job Cards');
     $response->assertSee('Failed Logins');
+    $response->assertSee('Sales Payment Status');
+    $response->assertSee('Partial');
     $response->assertSee('High Stock Product');
     $response->assertSee('20');
 });

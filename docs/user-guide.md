@@ -69,6 +69,26 @@ Sales Invoices vs Sale Payments:
 - One invoice can have multiple payment entries until balance becomes `0`.
 - Use invoice screen to define what customer bought; use sale payments screen to track what customer actually paid and when.
 
+Practical payment flow (important):
+- `cash` sale at POS:
+  - invoice is created
+  - payment is recorded immediately
+  - invoice is effectively `Paid` when balance is `0`
+- `online` sale at POS:
+  - invoice is created
+  - payment is recorded immediately (online/bank flow)
+  - proof can be attached for online payment
+- `debit` / partial sale at POS:
+  - invoice is created first
+  - if customer pays some amount now, that payment is recorded
+  - remaining amount stays in invoice balance
+  - later collections are added from `Sales > Sale Payments`
+
+How to track recovery quickly:
+- `Paid/Partial/Unpaid` status is visible in sales screens.
+- invoices needing recovery are those with `Balance > 0`.
+- collection method analysis (cash/bank/card/wallet/other) comes from `Sale Payments`.
+
 Sales Returns purpose:
 - Use this when customer returns sold product items (full or partial qty).
 - System creates a return document and increases product stock again.
@@ -283,7 +303,7 @@ Example:
   - `Engine Oil 1L` x3
 - System calculates totals/tax.
 - Customer pays part cash today and remaining later.
-- Cashier records immediate payment in `Sale Payments`.
+- POS records immediate payment at checkout; later recovery is tracked in `Sale Payments`.
 
 ### 12.5 Purchases
 

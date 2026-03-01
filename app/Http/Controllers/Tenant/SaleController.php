@@ -32,6 +32,7 @@ final class SaleController extends Controller
         $branchId = $this->currentBranchId();
         $perPage = min(max($request->integer('per_page', 15), 5), 100);
         $search = mb_trim($request->string('search')->toString());
+        $paymentStatus = mb_trim($request->string('payment_status')->toString());
         $allowedSortColumns = ['invoice_no', 'invoice_date', 'invoice_type', 'status', 'grand_total', 'balance_due', 'created_at'];
         [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);
 
@@ -44,7 +45,10 @@ final class SaleController extends Controller
                         ->where('invoice_no', 'like', sprintf('%%%s%%', $search))
                         ->orWhereHas('customer', fn (Builder $q) => $q->where('name', 'like', sprintf('%%%s%%', $search)));
                 });
-            });
+            })
+            ->when($paymentStatus === 'paid', fn (Builder $query): Builder => $query->where('balance_due', '<=', 0))
+            ->when($paymentStatus === 'partial', fn (Builder $query): Builder => $query->where('paid_total', '>', 0)->where('balance_due', '>', 0))
+            ->when($paymentStatus === 'unpaid', fn (Builder $query): Builder => $query->where('paid_total', '<=', 0)->where('balance_due', '>', 0));
 
         if ($activeSortBy !== null) {
             $salesQuery->orderBy($activeSortBy, $activeSortDirection);
@@ -137,8 +141,17 @@ final class SaleController extends Controller
             'payments.receiver',
         ]);
 
+        $balanceDue = (float) $sale->balance_due;
+        $paidTotal = (float) $sale->paid_total;
+        $paymentStatus = $balanceDue <= 0
+            ? ['label' => __('Paid'), 'class' => 'bg-success-transparent text-success']
+            : ($paidTotal > 0
+                ? ['label' => __('Partial'), 'class' => 'bg-warning-transparent text-warning']
+                : ['label' => __('Unpaid'), 'class' => 'bg-danger-transparent text-danger']);
+
         return view('tenants.sales.show', [
             'sale' => $sale,
+            'paymentStatus' => $paymentStatus,
         ]);
     }
 

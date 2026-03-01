@@ -44,6 +44,7 @@ final class DashboardController extends Controller
             ->startOfDay()
             ->diffInDays($endDate->copy()->startOfDay()) + 1;
         $purchaseOutstandingExpression = 'purchases.grand_total - COALESCE((SELECT SUM(vendor_payments.amount) FROM vendor_payments WHERE vendor_payments.purchase_id = purchases.id), 0)';
+        $salePaidExpression = '(SELECT COALESCE(SUM(sale_payments.amount), 0) FROM sale_payments WHERE sale_payments.sale_id = sales.id)';
 
         $salesBase = Sale::query()
             ->where('branch_id', $branchId)
@@ -88,6 +89,18 @@ final class DashboardController extends Controller
         $summary = [
             'sales_total' => $salesTotal,
             'sales_count' => (clone $salesBase)->count(),
+            'paid_sales_count' => (clone $salesBase)
+                ->whereRaw('sales.grand_total <= '.$salePaidExpression)
+                ->count(),
+            'partial_sales_count' => (clone $salesBase)
+                ->whereRaw('sales.grand_total > '.$salePaidExpression)
+                ->whereRaw($salePaidExpression.' > 0')
+                ->count(),
+            'unpaid_sales_count' => (clone $salesBase)
+                ->whereRaw('sales.grand_total > '.$salePaidExpression)
+                ->whereRaw($salePaidExpression.' <= 0')
+                ->count(),
+            'recoverable_invoices_count' => (clone $salesBase)->whereRaw('sales.grand_total > '.$salePaidExpression)->count(),
             'purchases_total' => $purchasesTotal,
             'purchases_count' => (clone $purchasesBase)->count(),
             'receivables_total' => (float) (clone $salesBase)->where('balance_due', '>', 0)->sum('balance_due'),
