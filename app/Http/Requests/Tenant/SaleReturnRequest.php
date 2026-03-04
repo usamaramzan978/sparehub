@@ -44,7 +44,7 @@ final class SaleReturnRequest extends FormRequest
         return [
             'customer_id' => ['nullable', 'uuid', $customerExists],
             'sale_id' => ['nullable', 'uuid', $saleExists],
-            'return_no' => ['required', 'string', 'max:40', $returnUnique],
+            'return_no' => ['nullable', 'string', 'max:40', $returnUnique],
             'return_date' => ['required', 'date'],
             'status' => ['required', Rule::enum(SaleReturnStatus::class)],
             'sub_total' => ['nullable', 'numeric', 'min:0'],

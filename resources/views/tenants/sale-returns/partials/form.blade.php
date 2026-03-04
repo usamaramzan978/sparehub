@@ -72,7 +72,8 @@
             <label class="form-label" for="return_no">{{ __('Return No') }}</label>
             <input type="text" name="return_no" id="return_no"
                 class="form-control @error('return_no') is-invalid @enderror"
-                value="{{ old('return_no', $currentSaleReturn?->return_no) }}" required>
+                value="{{ old('return_no', $currentSaleReturn?->return_no) }}" readonly>
+            <div class="form-text text-muted">{{ __('Leave blank to generate automatically') }}</div>
             @error('return_no')
                 <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror
@@ -108,7 +109,7 @@
         <div class="col-md-3 mb-3">
             <label class="form-label" for="sale_id">{{ __('Sales Invoice') }}</label>
             <select name="sale_id" id="sale_id"
-                class="form-select sales-invoice-select2 @error('sale_id') is-invalid @enderror">
+                class="form-select singl-select-2 @error('sale_id') is-invalid @enderror">
                 <option value="">{{ __('None') }}</option>
                 @foreach ($sales as $sale)
                     <option value="{{ $sale->id }}" @selected(old('sale_id', $currentSaleReturn?->sale_id) === $sale->id)>
@@ -148,16 +149,10 @@
                         <table class="table table-striped align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th style="min-width:240px;">{{ __('Invoice Line') }}</th>
-                                    <th style="min-width:220px;">{{ __('Product') }}</th>
-                                    <th style="min-width:110px;">{{ __('Sold Qty') }}</th>
-                                    <th style="min-width:130px;">{{ __('Returned Qty') }}</th>
-                                    <th style="min-width:130px;">{{ __('Available Qty') }}</th>
-                                    <th style="min-width:90px;">{{ __('Return Qty') }}</th>
-                                    <th style="min-width:120px;">{{ __('Unit Price') }}</th>
-                                    <th style="min-width:120px;">{{ __('Tax Amount') }}</th>
-                                    <th style="min-width:160px;">{{ __('Remarks') }}</th>
-                                    <th style="min-width:120px;">{{ __('Line Total') }}</th>
+                                    <th style="min-width:240px;">{{ __('Product') }}</th>
+                                    <th style="min-width:100px;">{{ __('Qty') }}</th>
+                                    <th style="min-width:120px;">{{ __('Price') }}</th>
+                                    <th style="min-width:120px;">{{ __('Tax') }}</th>
                                     <th style="width:70px;"></th>
                                 </tr>
                             </thead>
@@ -170,49 +165,53 @@
                                                 value="{{ $item['sale_item_id'] ?? '' }}">
                                             <input type="hidden" name="items[{{ $index }}][tax_id]"
                                                 value="{{ $item['tax_id'] ?? '' }}">
-                                            <input type="text" class="form-control sale-return-item-label"
-                                                value="{{ $item['sale_item_label'] ?? '-' }}" readonly>
+                                            <input type="hidden" name="items[{{ $index }}][remarks]"
+                                                value="{{ $item['remarks'] ?? '' }}">
+                                            <input type="hidden" class="sale-return-item-tax-per-unit" 
+                                                value="{{ (float)($item['qty'] > 0 ? (float)($item['tax_amount'] ?? 0) / (float)$item['qty'] : 0) }}">
+                                            <input type="hidden" class="sale-return-item-sold-qty" value="{{ $item['sold_qty'] ?? '0' }}">
+                                            <input type="hidden" class="sale-return-item-returned-qty" value="{{ $item['returned_qty'] ?? '0' }}">
+                                            <input type="hidden" class="sale-return-item-available-qty" value="{{ $item['available_qty'] ?? '0' }}">
+
+                                            <div class="sale-return-item-product-container">
+                                                <span class="sale-return-item-product-name @if(!($item['product_id'] ?? '')) d-none @endif">{{ $item['sale_item_label'] ?? $item['product_name'] ?? '-' }}</span>
+                                                <div class="sale-return-item-product-select-wrapper @if($item['product_id'] ?? '') d-none @endif">
+                                                    <select name="items[{{ $index }}][product_id]"
+                                                        class="form-select singl-select-2 sale-return-item-product" 
+                                                        @if(!($item['product_id'] ?? '')) required @else disabled @endif>
+                                                        <option value="">{{ __('Select product') }}</option>
+                                                        @foreach ($products as $product)
+                                                            <option value="{{ $product->id }}" @selected(($item['product_id'] ?? '') === $product->id)>
+                                                                {{ $product->name }}
+                                                                {{ $product->sku ? '(' . $product->sku . ')' : '' }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <input type="hidden" name="items[{{ $index }}][product_id]"
+                                                    class="sale-return-item-product-id"
+                                                    value="{{ $item['product_id'] ?? '' }}"
+                                                    @if(!($item['product_id'] ?? '')) disabled @endif>
+                                            </div>
                                         </td>
                                         <td>
-                                            <select name="items[{{ $index }}][product_id]"
-                                                class="form-select singl-select-2 sale-return-item-product" required>
-                                                <option value="">{{ __('Select product') }}</option>
-                                                @foreach ($products as $product)
-                                                    <option value="{{ $product->id }}" @selected(($item['product_id'] ?? '') === $product->id)>
-                                                        {{ $product->name }}
-                                                        {{ $product->sku ? '(' . $product->sku . ')' : '' }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            @error("items.$index.product_id")
-                                                <span class="text-danger small d-block">{{ $message }}</span>
-                                            @enderror
-                                        </td>
-                                        <td><input type="text" class="form-control sale-return-item-sold-qty"
-                                                value="{{ number_format((float) ($item['sold_qty'] ?? 0), 3, '.', '') }}"
-                                                readonly></td>
-                                        <td><input type="text" class="form-control sale-return-item-returned-qty"
-                                                value="{{ number_format((float) ($item['returned_qty'] ?? 0), 3, '.', '') }}"
-                                                readonly></td>
-                                        <td><input type="text" class="form-control sale-return-item-available-qty"
-                                                value="{{ number_format((float) ($item['available_qty'] ?? 0), 3, '.', '') }}"
-                                                readonly></td>
-                                        <td><input type="number" step="0.001" min="0.001"
+                                            <input type="number" step="1" min="1"
                                                 name="items[{{ $index }}][qty]"
                                                 class="form-control sale-return-item-qty"
-                                                value="{{ $item['qty'] ?? '1' }}" required></td>
-                                        <td><input type="number" step="0.01" min="0"
+                                                value="{{ (int)($item['qty'] ?? 1) }}" required>
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" min="0"
                                                 name="items[{{ $index }}][unit_price]"
                                                 class="form-control sale-return-item-price"
-                                                value="{{ $item['unit_price'] ?? '0' }}" required></td>
-                                        <td><input type="number" step="0.01" min="0"
+                                                value="{{ $item['unit_price'] ?? '0' }}" required>
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" min="0"
                                                 name="items[{{ $index }}][tax_amount]"
                                                 class="form-control sale-return-item-tax"
-                                                value="{{ $item['tax_amount'] ?? '0' }}"></td>
-                                        <td><input type="text" name="items[{{ $index }}][remarks]"
-                                                class="form-control" value="{{ $item['remarks'] ?? '' }}"></td>
-                                        <td><input type="text" class="form-control sale-return-item-total"
-                                                value="0.00" readonly></td>
+                                                value="{{ $item['tax_amount'] ?? '0' }}" required>
+                                        </td>
                                         <td>
                                             <button type="button"
                                                 class="btn btn-sm btn-danger-light sale-return-remove-item"><i
@@ -260,16 +259,6 @@
             @enderror
         </div>
 
-        <div class="col-md-3 mb-3">
-            <label class="form-label" for="posted_at">{{ __('Posted At') }}</label>
-            <input type="datetime-local" name="posted_at" id="posted_at"
-                class="form-control @error('posted_at') is-invalid @enderror"
-                value="{{ old('posted_at', \App\Support\TenantDateTime::format($currentSaleReturn?->posted_at, 'Y-m-d\\TH:i', '')) }}">
-            @error('posted_at')
-                <span class="invalid-feedback d-block">{{ $message }}</span>
-            @enderror
-        </div>
-
         <div class="col-md-12 mb-3">
             <label class="form-label" for="notes">{{ __('Notes') }}</label>
             <textarea name="notes" id="notes" rows="2" class="form-control @error('notes') is-invalid @enderror">{{ old('notes', $currentSaleReturn?->notes) }}</textarea>
@@ -285,34 +274,44 @@
 <template id="sale-return-item-row-template">
     <tr class="sale-return-item-row" data-index="__INDEX__">
         <td>
-            <input type="hidden" name="items[__INDEX__][sale_item_id]" class="sale-return-item-sale-item-id"
-                value="">
+            <input type="hidden" name="items[__INDEX__][sale_item_id]" class="sale-return-item-sale-item-id" value="">
+            <input type="hidden" name="items[__INDEX__][product_id]" class="sale-return-item-product-id" value="" disabled>
             <input type="hidden" name="items[__INDEX__][tax_id]" value="">
-            <input type="text" class="form-control sale-return-item-label" value="-" readonly>
+            <input type="hidden" name="items[__INDEX__][remarks]" value="">
+            <input type="hidden" class="sale-return-item-tax-per-unit" value="0">
+            <input type="hidden" class="sale-return-item-sold-qty" value="0">
+            <input type="hidden" class="sale-return-item-returned-qty" value="0">
+            <input type="hidden" class="sale-return-item-available-qty" value="0">
+
+            <div class="sale-return-item-product-container">
+                <span class="sale-return-item-product-name d-none">-</span>
+                <div class="sale-return-item-product-select-wrapper">
+                    <select name="items[__INDEX__][product_id]" class="form-select singl-select-2 sale-return-item-product" required>
+                        <option value="">{{ __('Select product') }}</option>
+                        @foreach ($products as $product)
+                            <option value="{{ $product->id }}">{{ $product->name }}
+                                {{ $product->sku ? '(' . $product->sku . ')' : '' }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
         </td>
         <td>
-            <select name="items[__INDEX__][product_id]" class="form-select singl-select-2 sale-return-item-product"
-                required>
-                <option value="">{{ __('Select product') }}</option>
-                @foreach ($products as $product)
-                    <option value="{{ $product->id }}">{{ $product->name }}
-                        {{ $product->sku ? '(' . $product->sku . ')' : '' }}</option>
-                @endforeach
-            </select>
+            <input type="number" step="1" min="1" name="items[__INDEX__][qty]"
+                class="form-control sale-return-item-qty" value="1" required>
         </td>
-        <td><input type="text" class="form-control sale-return-item-sold-qty" value="0.000" readonly></td>
-        <td><input type="text" class="form-control sale-return-item-returned-qty" value="0.000" readonly></td>
-        <td><input type="text" class="form-control sale-return-item-available-qty" value="0.000" readonly></td>
-        <td><input type="number" step="0.001" min="0.001" name="items[__INDEX__][qty]"
-                class="form-control sale-return-item-qty" value="1" required></td>
-        <td><input type="number" step="0.01" min="0" name="items[__INDEX__][unit_price]"
-                class="form-control sale-return-item-price" value="0" required></td>
-        <td><input type="number" step="0.01" min="0" name="items[__INDEX__][tax_amount]"
-                class="form-control sale-return-item-tax" value="0"></td>
-        <td><input type="text" name="items[__INDEX__][remarks]" class="form-control"></td>
-        <td><input type="text" class="form-control sale-return-item-total" value="0.00" readonly></td>
-        <td><button type="button" class="btn btn-sm btn-danger-light sale-return-remove-item"><i
-                    class="ri-delete-bin-line"></i></button></td>
+        <td>
+            <input type="number" step="0.01" min="0" name="items[__INDEX__][unit_price]"
+                class="form-control sale-return-item-price" value="0" required>
+        </td>
+        <td>
+            <input type="number" step="0.01" min="0" name="items[__INDEX__][tax_amount]"
+                class="form-control sale-return-item-tax" value="0" required>
+        </td>
+        <td>
+            <button type="button" class="btn btn-sm btn-danger-light sale-return-remove-item"><i
+                    class="ri-delete-bin-line"></i></button>
+        </td>
     </tr>
 </template>
 
@@ -345,16 +344,20 @@
                 if (!itemsSection) {
                     return;
                 }
-
                 itemsSection.classList.toggle('d-none', !visible);
             };
 
+            const getJQuery = () => {
+                return window.jQuery || window.$ || (globalThis ? (globalThis.jQuery || globalThis.$) : null);
+            };
+
             const initSelect2 = (element) => {
-                if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) {
+                const jQuery = getJQuery();
+                if (!jQuery || !jQuery.fn || !jQuery.fn.select2) {
                     return;
                 }
 
-                const $el = window.jQuery(element);
+                const $el = jQuery(element);
                 if ($el.hasClass('select2-hidden-accessible')) {
                     return;
                 }
@@ -370,8 +373,9 @@
                 }
 
                 customerSelect.value = customerId ?? '';
-                if (window.jQuery) {
-                    window.jQuery(customerSelect).trigger('change.select2');
+                const jQuery = getJQuery();
+                if (jQuery) {
+                    jQuery(customerSelect).trigger('change.select2');
                 }
             };
 
@@ -380,18 +384,20 @@
                 const availableQty = parseNumber(row.querySelector('.sale-return-item-available-qty')?.value);
                 if (qtyInput instanceof HTMLInputElement && availableQty > 0 && parseNumber(qtyInput.value) >
                     availableQty) {
-                    qtyInput.value = String(availableQty);
+                    qtyInput.value = String(Math.floor(availableQty));
                 }
 
-                const qty = parseNumber(row.querySelector('.sale-return-item-qty')?.value);
+                const qty = Math.floor(parseNumber(row.querySelector('.sale-return-item-qty')?.value));
                 const unitPrice = parseNumber(row.querySelector('.sale-return-item-price')?.value);
+                const taxPerUnit = parseNumber(row.querySelector('.sale-return-item-tax-per-unit')?.value);
+                
+                const taxAmountInput = row.querySelector('.sale-return-item-tax');
+                if (taxAmountInput instanceof HTMLInputElement && taxPerUnit > 0) {
+                    taxAmountInput.value = (qty * taxPerUnit).toFixed(2);
+                }
+
                 const tax = parseNumber(row.querySelector('.sale-return-item-tax')?.value);
                 const lineTotal = (qty * unitPrice) + tax;
-
-                const totalInput = row.querySelector('.sale-return-item-total');
-                if (totalInput) {
-                    totalInput.value = lineTotal.toFixed(2);
-                }
 
                 return {
                     sub: qty * unitPrice,
@@ -422,16 +428,34 @@
                 body.dataset.nextIndex = '0';
             };
 
+            let isLoadingInvoiceItems = false;
+
             const addRow = (item = null) => {
                 const index = parseInt(body.dataset.nextIndex ?? '0', 10);
-                const html = rowTemplate.innerHTML.replaceAll('__INDEX__', String(index));
-                body.insertAdjacentHTML('beforeend', html);
-                body.dataset.nextIndex = String(index + 1);
+                const template = document.getElementById('sale-return-item-row-template');
+                if (!template) {
+                    return null;
+                }
 
-                const row = body.querySelector('.sale-return-item-row:last-child');
+                const clone = template.content.cloneNode(true);
+                const row = clone.querySelector('.sale-return-item-row');
                 if (!row) {
                     return null;
                 }
+
+                // Initial index setup
+                row.dataset.index = String(index);
+
+                // Setup names and IDs with correct index
+                row.querySelectorAll('[name*="__INDEX__"]').forEach((el) => {
+                    el.name = el.name.replace('__INDEX__', String(index));
+                    if (el.id) {
+                        el.id = el.id.replace('__INDEX__', String(index));
+                    }
+                });
+
+                body.appendChild(row);
+                body.dataset.nextIndex = String(index + 1);
 
                 row.querySelectorAll('.singl-select-2').forEach((element) => initSelect2(element));
 
@@ -441,39 +465,61 @@
                         saleItemIdInput.value = String(item.sale_item_id ?? '');
                     }
 
-                    const labelInput = row.querySelector('.sale-return-item-label');
-                    if (labelInput instanceof HTMLInputElement) {
-                        labelInput.value = item.line_label ?? '-';
-                    }
-
+                    const productIdInput = row.querySelector('.sale-return-item-product-id');
+                    const productNameSpan = row.querySelector('.sale-return-item-product-name');
+                    const productSelectWrapper = row.querySelector('.sale-return-item-product-select-wrapper');
                     const productSelect = row.querySelector('.sale-return-item-product');
-                    if (productSelect instanceof HTMLSelectElement && item.product_id) {
-                        productSelect.value = String(item.product_id);
-                        if (window.jQuery) {
-                            window.jQuery(productSelect).trigger('change.select2');
+
+                    if (item.product_id) {
+                        if (productIdInput instanceof HTMLInputElement) {
+                            productIdInput.value = String(item.product_id);
+                            productIdInput.disabled = false;
+                        }
+                        if (productNameSpan instanceof HTMLElement) {
+                            productNameSpan.textContent = String(item.product_name ?? '-');
+                            productNameSpan.classList.remove('d-none');
+                        }
+                        if (productSelectWrapper instanceof HTMLElement) {
+                            productSelectWrapper.classList.add('d-none');
+                        }
+                        if (productSelect instanceof HTMLSelectElement) {
+                            productSelect.disabled = true;
+                        }
+                    } else {
+                        if (productIdInput instanceof HTMLInputElement) {
+                            productIdInput.disabled = true;
+                        }
+                        if (productNameSpan instanceof HTMLElement) {
+                            productNameSpan.classList.add('d-none');
+                        }
+                        if (productSelectWrapper instanceof HTMLElement) {
+                            productSelectWrapper.classList.remove('d-none');
+                        }
+                        if (productSelect instanceof HTMLSelectElement) {
+                            productSelect.disabled = false;
                         }
                     }
 
                     const soldQtyInput = row.querySelector('.sale-return-item-sold-qty');
                     if (soldQtyInput instanceof HTMLInputElement) {
-                        soldQtyInput.value = Number(parseNumber(item.sold_qty ?? 0)).toFixed(3);
+                        soldQtyInput.value = String(Math.floor(parseNumber(item.sold_qty ?? 0)));
                     }
 
                     const returnedQtyInput = row.querySelector('.sale-return-item-returned-qty');
                     if (returnedQtyInput instanceof HTMLInputElement) {
-                        returnedQtyInput.value = Number(parseNumber(item.returned_qty ?? 0)).toFixed(3);
+                        returnedQtyInput.value = String(Math.floor(parseNumber(item.returned_qty ?? 0)));
                     }
 
                     const availableQtyInput = row.querySelector('.sale-return-item-available-qty');
                     if (availableQtyInput instanceof HTMLInputElement) {
-                        const available = parseNumber(item.available_qty ?? 0);
-                        availableQtyInput.value = Number(available).toFixed(3);
+                        const available = Math.floor(parseNumber(item.available_qty ?? 0));
+                        availableQtyInput.value = String(available);
                     }
 
                     const qtyInput = row.querySelector('.sale-return-item-qty');
                     if (qtyInput instanceof HTMLInputElement) {
-                        const available = parseNumber(item.available_qty ?? 0);
-                        qtyInput.value = available > 0 ? Number(available).toFixed(3) : '1';
+                        const available = Math.floor(parseNumber(item.available_qty ?? 0));
+                        qtyInput.value = available > 0 ? String(available) : '1';
                         if (available > 0) {
                             qtyInput.max = String(available);
                         }
@@ -484,9 +530,16 @@
                         unitPriceInput.value = Number(parseNumber(item.unit_price ?? 0)).toFixed(2);
                     }
 
+                    const taxPerUnit = parseNumber(item.tax_amount ?? 0); // item.tax_amount from controller is per unit
+                    const taxPerUnitInput = row.querySelector('.sale-return-item-tax-per-unit');
+                    if (taxPerUnitInput instanceof HTMLInputElement) {
+                        taxPerUnitInput.value = String(taxPerUnit);
+                    }
+
                     const taxAmountInput = row.querySelector('.sale-return-item-tax');
                     if (taxAmountInput instanceof HTMLInputElement) {
-                        taxAmountInput.value = Number(parseNumber(item.tax_amount ?? 0)).toFixed(2);
+                        const qty = parseNumber(qtyInput.value);
+                        taxAmountInput.value = Number(qty * taxPerUnit).toFixed(2);
                     }
                 }
 
@@ -494,69 +547,69 @@
             };
 
             const loadInvoiceItems = async (saleId) => {
-                if (invoiceItemsUrlTemplate === '') {
+                if (invoiceItemsUrlTemplate === '' || isLoadingInvoiceItems) {
                     return;
                 }
 
+                isLoadingInvoiceItems = true;
                 const url = invoiceItemsUrlTemplate.replace('__SALE_ID__', encodeURIComponent(String(
                     saleId)));
-                if (window.jQuery) {
-                    window.jQuery.ajax({
+
+                const processPayload = (payload) => {
+                    clearRows();
+
+                    if (Array.isArray(payload.items) && payload.items.length > 0) {
+                        payload.items.forEach((item) => addRow(item));
+                    } else {
+                        addRow();
+                    }
+
+                    setCustomer(payload.customer_id ?? '');
+                    toggleItemsSection(true);
+                    recalculateTotals();
+                    isLoadingInvoiceItems = false;
+                };
+
+                const jQuery = getJQuery();
+                if (jQuery) {
+                    jQuery.ajax({
                         url,
                         method: 'GET',
                         dataType: 'json',
-                        success: (payload) => {
-                            clearRows();
-
-                            if (Array.isArray(payload.items) && payload.items.length > 0) {
-                                payload.items.forEach((item) => addRow(item));
-                            } else {
-                                addRow();
-                            }
-
-                            setCustomer(payload.customer_id ?? '');
-                            toggleItemsSection(true);
-                            recalculateTotals();
-                        },
+                        success: processPayload,
                         error: () => {
                             clearRows();
                             addRow();
                             toggleItemsSection(true);
                             recalculateTotals();
+                            isLoadingInvoiceItems = false;
                         },
                     });
 
                     return;
                 }
 
-                const response = await fetch(url, {
-                    headers: {
-                        Accept: 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                });
+                try {
+                    const response = await fetch(url, {
+                        headers: {
+                            Accept: 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
 
-                if (!response.ok) {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
+                    const payload = await response.json();
+                    processPayload(payload);
+                } catch (e) {
                     clearRows();
                     addRow();
                     toggleItemsSection(true);
                     recalculateTotals();
-
-                    return;
+                    isLoadingInvoiceItems = false;
                 }
-
-                const payload = await response.json();
-                clearRows();
-
-                if (Array.isArray(payload.items) && payload.items.length > 0) {
-                    payload.items.forEach((item) => addRow(item));
-                } else {
-                    addRow();
-                }
-
-                setCustomer(payload.customer_id ?? '');
-                toggleItemsSection(true);
-                recalculateTotals();
             };
 
             addButton?.addEventListener('click', () => {
@@ -608,31 +661,36 @@
                 recalculateTotals();
             });
 
-            document.querySelectorAll('.singl-select-2, .sales-invoice-select2').forEach((element) => initSelect2(
-                element));
-            recalculateTotals();
+            // Initial setup with a small delay to ensure Select2 is loaded
+            const setup = () => {
+                document.querySelectorAll('.singl-select-2').forEach((element) => initSelect2(element));
+                recalculateTotals();
 
-            if (saleSelect instanceof HTMLSelectElement) {
-                if (window.jQuery) {
-                    window.jQuery(saleSelect).off('.saleReturnInvoice').on(
-                        'change.saleReturnInvoice change.select2.saleReturnInvoice select2:select.saleReturnInvoice select2:clear.saleReturnInvoice select2:unselect.saleReturnInvoice',
-                        () => {
+                if (saleSelect instanceof HTMLSelectElement) {
+                    const jQuery = getJQuery();
+                    if (jQuery) {
+                        jQuery(saleSelect).off('.saleReturnInvoice').on(
+                            'change.saleReturnInvoice change.select2.saleReturnInvoice select2:select.saleReturnInvoice select2:clear.saleReturnInvoice select2:unselect.saleReturnInvoice',
+                            () => {
+                                void handleSaleChange();
+                            });
+                    } else {
+                        saleSelect.addEventListener('change', () => {
                             void handleSaleChange();
                         });
-                } else {
-                    saleSelect.addEventListener('change', () => {
-                        void handleSaleChange();
-                    });
+                    }
+
+                    if (autoLoadInvoiceItems && saleSelect.value !== '') {
+                        void loadInvoiceItems(saleSelect.value);
+                    }
                 }
 
-                if (autoLoadInvoiceItems && saleSelect.value !== '') {
-                    void loadInvoiceItems(saleSelect.value);
+                if (saleSelect instanceof HTMLSelectElement && saleSelect.value === '') {
+                    toggleItemsSection(false);
                 }
-            }
+            };
 
-            if (saleSelect instanceof HTMLSelectElement && saleSelect.value === '') {
-                toggleItemsSection(false);
-            }
+            setTimeout(setup, 100);
         });
     </script>
 @endpush

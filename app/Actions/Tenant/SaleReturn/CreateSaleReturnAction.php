@@ -10,7 +10,10 @@ use Illuminate\Support\Facades\Auth;
 
 final readonly class CreateSaleReturnAction
 {
-    public function __construct(private SyncSaleReturnItemsAction $syncSaleReturnItemsAction) {}
+    public function __construct(
+        private SyncSaleReturnItemsAction $syncSaleReturnItemsAction,
+        private GenerateSaleReturnNumberAction $generateSaleReturnNumberAction
+    ) {}
 
     /**
      * @param  array<string, mixed>  $payload
@@ -22,6 +25,10 @@ final readonly class CreateSaleReturnAction
 
         $payload['branch_id'] = $branchId;
         $payload['created_by'] = $createdBy;
+
+        if (empty($payload['return_no'])) {
+            $payload['return_no'] = $this->generateSaleReturnNumberAction->handle($branchId);
+        }
 
         $createdReturn = SaleReturn::query()->getConnection()->transaction(function () use ($payload, $items): SaleReturn {
             $saleReturn = SaleReturn::query()->create($payload);

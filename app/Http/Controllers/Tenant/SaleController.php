@@ -120,6 +120,28 @@ final class SaleController extends Controller
         ]);
     }
 
+    public function productDetails(Product $product): JsonResponse
+    {
+        $branchId = $this->currentBranchId();
+        $price = $product->prices()
+            ->where('branch_id', $branchId)
+            ->latest('effective_from')
+            ->value('retail_price') ?? 0;
+
+        return response()->json([
+            'retail_price' => (float) $price,
+            'default_tax_id' => $product->default_tax_id,
+        ]);
+    }
+
+    public function serviceDetails(ServiceCatalog $service): JsonResponse
+    {
+        return response()->json([
+            'base_price' => (float) $service->base_price,
+            'default_tax_id' => $service->default_tax_id,
+        ]);
+    }
+
     public function store(SaleRequest $request, CreateSaleAction $action): RedirectResponse
     {
         $action->handle($request->validated(), $this->currentBranchId(), auth('user')->id());

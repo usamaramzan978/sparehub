@@ -83,44 +83,28 @@ final class SaleReturnController extends Controller
             ]);
         }
 
-        $saleItems = SaleItem::query()
-            ->with('product')
+        $saleItems = $saleModel->items()
             ->withoutGlobalScopes()
-            ->where('sale_id', $saleModel->id)
+            ->with('product')
             ->where('line_type', SaleLineType::PRODUCT->value)
             ->get();
 
         $returnedQtyBySaleItem = SaleReturnItem::query()
             ->selectRaw('sale_item_id, SUM(qty) as returned_qty')
-            ->whereIn('sale_item_id', $saleItems->pluck('id')->all())
+            ->whereIn('sale_item_id', $saleItems->pluck('id'))
             ->groupBy('sale_item_id')
             ->pluck('returned_qty', 'sale_item_id');
 
-        $items = $saleItems
-            ->map(function (SaleItem $saleItem) use ($returnedQtyBySaleItem): array {
-                $soldQty = (float) $saleItem->qty;
-                $returnedQty = (float) ($returnedQtyBySaleItem[$saleItem->id] ?? 0);
-                $availableQty = max($soldQty - $returnedQty, 0);
-                $taxPerUnit = $soldQty > 0 ? (float) $saleItem->tax_amount / $soldQty : 0;
-
-                return [
-                    'sale_item_id' => $saleItem->id,
-                    'product_id' => $saleItem->product_id,
-                    'product_name' => $saleItem->product?->name ?? '',
-                    'line_label' => sprintf(
-                        '%s - %s',
-                        (string) ($saleItem->sale?->invoice_no ?? '-'),
-                        (string) ($saleItem->product?->name ?? '-')
-                    ),
-                    'sold_qty' => $soldQty,
-                    'returned_qty' => $returnedQty,
-                    'available_qty' => $availableQty,
-                    'unit_price' => (float) $saleItem->unit_price,
-                    'tax_amount' => $taxPerUnit * $availableQty,
-                ];
-            })
-            ->filter(fn (array $item): bool => (float) $item['available_qty'] > 0)
-            ->values();
+        $items = $saleItems->map(fn (SaleItem $saleItem): array => [
+            'sale_item_id' => $saleItem->id,
+            'product_id' => $saleItem->product_id,
+            'product_name' => ($saleItem->product?->name ?? '-') . ($saleItem->product?->sku ? ' (' . $saleItem->product->sku . ')' : ''),
+            'sold_qty' => (float) $saleItem->qty,
+            'returned_qty' => (float) ($returnedQtyBySaleItem[$saleItem->id] ?? 0),
+            'available_qty' => (float) max($saleItem->qty - ($returnedQtyBySaleItem[$saleItem->id] ?? 0), 0),
+            'unit_price' => (float) $saleItem->unit_price,
+            'tax_amount' => (float) ($saleItem->qty > 0 ? ($saleItem->tax_amount / $saleItem->qty) : 0),
+        ])->values();
 
         return response()->json([
             'customer_id' => $saleModel->customer_id,
