@@ -14,6 +14,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\ServiceCatalog;
 use App\Models\Tax;
+use App\Models\TenantSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
@@ -168,6 +169,30 @@ it('shows pos index', function (): void {
 
     $response->assertSuccessful();
     $response->assertSee('POS');
+    $response->assertDontSee('Customer Screen');
+});
+
+it('shows a customer-facing pos display', function (): void {
+    $fixture = authenticatePosUser();
+
+    TenantSetting::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_display_enabled' => true,
+    ]);
+
+    $response = $this->get(posTenantRoute('pos.customer-display'));
+
+    $response->assertSuccessful();
+    $response->assertSee('Customer Display');
+    $response->assertSee($fixture['current']->name);
+});
+
+it('blocks the customer-facing pos display when disabled', function (): void {
+    authenticatePosUser();
+
+    $response = $this->get(posTenantRoute('pos.customer-display'));
+
+    $response->assertNotFound();
 });
 
 it('returns scan single mode when exactly one item matches', function (): void {

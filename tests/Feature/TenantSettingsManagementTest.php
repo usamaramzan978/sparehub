@@ -88,6 +88,7 @@ it('creates tenant settings on first update', function (): void {
         'support_phone' => '12345',
         'timezone' => 'Asia/Karachi',
         'email_notifications_enabled' => '1',
+        'customer_display_enabled' => '1',
         'two_factor_enabled' => '1',
         'two_factor_method' => TwoFactorMethod::EMAIL->value,
     ]);
@@ -98,6 +99,7 @@ it('creates tenant settings on first update', function (): void {
     expect($settings->company_name)->toBe('SpareHub');
     expect($settings->support_email)->toBe('support@example.test');
     expect($settings->timezone)->toBe('Asia/Karachi');
+    expect($settings->customer_display_enabled)->toBeTrue();
     expect($settings->two_factor_enabled)->toBeTrue();
     expect($settings->two_factor_method)->toBe(TwoFactorMethod::EMAIL);
 });

@@ -129,6 +129,16 @@
                         <p class="text-muted small mb-3">{{ __('Security related system controls.') }}</p>
                         <div class="row">
                             <div class="col-md-4 mb-3 d-flex align-items-end">
+                                <input type="hidden" name="customer_display_enabled" value="0">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        id="customer_display_enabled" name="customer_display_enabled" value="1"
+                                        @checked(old('customer_display_enabled', $setting?->customer_display_enabled ?? false))>
+                                    <label class="form-check-label"
+                                        for="customer_display_enabled">{{ __('Enable Customer Display') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3 d-flex align-items-end">
                                 <input type="hidden" name="two_factor_enabled" value="0">
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" role="switch"
@@ -154,6 +164,9 @@
                                     <span class="invalid-feedback d-block">{{ $message }}</span>
                                 @enderror
                             </div>
+                        </div>
+                        <div class="alert alert-secondary mt-2 mb-0">
+                            {{ __('When enabled, the POS screen can open a customer-facing display on a second screen or window.') }}
                         </div>
                         <div class="alert alert-info mt-2 mb-0">
                             {{ __('Authenticator enrollment and recovery codes are managed in Profile Security.') }}

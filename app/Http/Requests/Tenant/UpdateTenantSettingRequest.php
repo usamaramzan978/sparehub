@@ -27,6 +27,7 @@ final class UpdateTenantSettingRequest extends FormRequest
             'support_phone' => ['nullable', 'string', 'max:50'],
             'timezone' => ['nullable', 'timezone:all'],
             'email_notifications_enabled' => ['nullable', 'boolean'],
+            'customer_display_enabled' => ['nullable', 'boolean'],
             'two_factor_enabled' => ['nullable', 'boolean'],
             'two_factor_method' => [
                 'nullable',

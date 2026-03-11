@@ -237,7 +237,21 @@ Switch branch from branch switch option in UI (session-based).
 - Profile: update your personal account details.
 - Settings: update company-level tenant settings (subject to permissions).
 
-### 10.1 Two-Factor Authentication (2FA)
+### 10.1 Customer Display
+
+From `Settings > System Settings`, tenant admin can enable `Customer Display`.
+
+How it works:
+- Default state is disabled.
+- When enabled, `Sales > POS` shows a `Customer Screen` button.
+- Open that screen on a second monitor, second window, or second tab for customer-facing totals.
+- The customer screen is read-only and mirrors the live POS cart/totals from the cashier screen.
+
+Important notes:
+- This first version works best when both cashier screen and customer screen are opened from the same browser on the same machine.
+- If the setting is disabled, the `Customer Screen` button is hidden and the customer display URL is blocked.
+
+### 10.2 Two-Factor Authentication (2FA)
 
 From `Settings`, tenant admin can enable 2FA and choose method:
 - `Email`: users receive a 6-digit code on login.
@@ -248,7 +262,7 @@ Notes:
 - Authenticator setup/reset + backup codes are managed in `Profile > Security`.
 - Login `/two-step` is verification-only; for authenticator it also allows backup code usage.
 
-### 10.2 Tenant Timezone
+### 10.3 Tenant Timezone
 
 From `Settings > Timezone`, tenant can choose its business timezone.
 
@@ -304,6 +318,12 @@ Example:
 - System calculates totals/tax.
 - Customer pays part cash today and remaining later.
 - POS records immediate payment at checkout; later recovery is tracked in `Sale Payments`.
+
+Customer display flow:
+- Owner/admin enables `Customer Display` from `Settings`.
+- Cashier opens `Sales > POS`.
+- Cashier clicks `Customer Screen`.
+- That screen is moved to the second display and shows live cart items, totals, paid amount, change due, and balance due.
 
 ### 12.5 Purchases
 
@@ -374,6 +394,7 @@ Example:
 Example:
 - User updates personal phone and password in `Profile`.
 - Owner updates business logo and company details in `Settings`.
+- Owner can enable or disable the customer-facing POS display from `Settings > System Settings`.
 - New invoice printouts and UI reflect updated business identity.
 
 ### 12.13 Branch Switching

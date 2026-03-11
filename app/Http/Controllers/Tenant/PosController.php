@@ -12,6 +12,7 @@ use App\Enums\SaleStatus;
 use App\Enums\ServiceCatalogType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\PosStoreRequest;
+use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\InventoryStock;
@@ -56,6 +57,24 @@ final class PosController extends Controller
             'paymentMethods' => $paymentMethods,
             'statuses' => $statuses,
             'tenantSettings' => $tenantSettings,
+        ]);
+    }
+
+    public function customerDisplay(): View
+    {
+        $branchId = $this->currentBranchId();
+        $tenantSettings = TenantSetting::query()->first();
+        abort_if(! ($tenantSettings?->customer_display_enabled ?? false), 404);
+        $branch = Branch::query()->findOrFail($branchId);
+
+        return view('tenants.pos.customer-display', [
+            'branch' => $branch,
+            'displayName' => $tenantSettings?->company_name ?: config('app.name', 'SpareHub'),
+            'syncChannel' => sprintf(
+                'sparehub:pos-display:%s:%s',
+                (string) (request()->route('tenant') ?? tenant('id')),
+                $branchId
+            ),
         ]);
     }
 

@@ -100,6 +100,7 @@ Route::middleware([
 
         Route::controller(PosController::class)->prefix('pos')->name('pos.')->group(function (): void {
             Route::get('/', 'index')->name('index');
+            Route::get('/customer-display', 'customerDisplay')->name('customer-display');
             Route::get('/scan', 'scan')->name('scan');
             Route::get('/catalog', 'catalog')->name('catalog');
             Route::post('/', 'store')->name('store');

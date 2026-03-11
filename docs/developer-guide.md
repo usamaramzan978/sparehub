@@ -251,6 +251,17 @@ Current scope note:
 - Timeline currently focuses on security + context-critical events.
 - Sales/Purchases/Inventory operational events can be added later using the same tenant timeline pattern.
 
+Settings-side POS customer display behavior:
+- `tenant_settings.customer_display_enabled` controls whether the customer-facing POS screen is available.
+- Default is `false`.
+- When disabled:
+  - POS index does not show the `Customer Screen` action.
+  - `PosController@customerDisplay` returns `404`.
+- When enabled:
+  - POS cashier screen can open the customer-facing display route.
+  - Cashier and customer screens sync live cart state client-side using browser-local messaging.
+- Current implementation is intended for same-browser/same-machine dual-screen usage, not cross-device realtime sync.
+
 ## 6. Data Model: Core Dependencies
 
 Below is dependency-oriented mapping (parent -> child).

@@ -7,11 +7,16 @@
 
     <x-breadcrumb title="POS Screen" :items="$breadcrumbs">
         <x-slot:actions>
+            @if ($tenantSettings?->customer_display_enabled)
+                <a href="{{ route('tenant.pos.customer-display') }}" class="btn btn-outline-primary" target="_blank"
+                    rel="noopener noreferrer">Customer Screen</a>
+            @endif
             <a href="{{ route('tenant.sales.index') }}" class="btn btn-outline-secondary">Sales List</a>
         </x-slot:actions>
     </x-breadcrumb>
 
-    <form method="POST" action="{{ route('tenant.pos.store') }}" id="pos-form" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('tenant.pos.store') }}" id="pos-form" enctype="multipart/form-data"
+        data-pos-sync-channel="{{ sprintf('sparehub:pos-display:%s:%s', (string) (request()->route('tenant') ?? tenant('id')), (string) session('tenant.current_branch_id')) }}">
         @csrf
 
         <div class="row g-4">
@@ -363,6 +368,10 @@
             const submitBtn = document.querySelector('[data-pos-submit]');
             const posForm = document.getElementById('pos-form');
             const printFlag = document.querySelector('[data-pos-print-flag]');
+            const syncChannelName = posForm?.dataset.posSyncChannel || '';
+            const syncBroadcaster = 'BroadcastChannel' in window && syncChannelName !== '' ?
+                new BroadcastChannel(syncChannelName) :
+                null;
             const cashInput = document.querySelector('[data-pos-cash-received]');
             const changeEl = document.querySelector('[data-pos-change]');
             const cashHidden = document.querySelector('[data-pos-cash-hidden]');
@@ -406,6 +415,52 @@
 
             const money = (value) => (Number.isFinite(value) ? value.toFixed(2) : '0.00');
             const stockCount = (value) => (Number.isFinite(value) ? Math.round(value).toString() : '0');
+            const paymentAmountInput = () => paymentsList?.querySelector('input[name^="payments"][name$="[amount]"]');
+
+            const syncPosDisplay = () => {
+                if (syncChannelName === '') {
+                    return;
+                }
+
+                const total = parseFloat(totalEl?.textContent || '0');
+                const cashValue = parseFloat(cashInput?.value || '0');
+                const paid = currentPaymentMode === 'debit' ?
+                    Math.min(cashValue, total) :
+                    total;
+                const changeDue = currentPaymentMode === 'cash' ? Math.max(cashValue - total, 0) : 0;
+                const balanceDue = Math.max(total - paid, 0);
+                const snapshot = {
+                    items: cart.map((item) => ({
+                        name: item.name,
+                        sku: item.sku,
+                        type: item.type,
+                        qty: item.qty,
+                        price: item.price,
+                        total: item.qty * item.price,
+                    })),
+                    subtotal: parseFloat(subtotalEl?.textContent || '0'),
+                    discount: parseFloat(discountEl?.textContent || '0'),
+                    tax: parseFloat(taxEl?.textContent || '0'),
+                    total,
+                    paid,
+                    change_due: changeDue,
+                    balance_due: balanceDue,
+                    payment_mode: currentPaymentMode,
+                    status: statusSelect?.value || 'posted',
+                    updated_at: new Intl.DateTimeFormat(undefined, {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit',
+                    }).format(new Date()),
+                };
+
+                try {
+                    window.localStorage.setItem(syncChannelName, JSON.stringify(snapshot));
+                } catch (error) {
+                }
+
+                syncBroadcaster?.postMessage(snapshot);
+            };
 
             const normalizeOldCartItem = (item, index) => {
                 const lineType = item.type === 'service' ? 'service' : 'product';
@@ -671,6 +726,7 @@
 
                 buildHiddenInputs();
                 updatePaymentsTotal();
+                syncPosDisplay();
             };
 
             const renderCart = () => {
@@ -963,7 +1019,7 @@
             cashInput?.addEventListener('input', () => {
                 cashTouched = true;
                 if (currentPaymentMode === 'debit' && paymentsList) {
-                    const firstAmount = paymentsList.querySelector('input[name^="payments"][name$="[amount]"]');
+                    const firstAmount = paymentAmountInput();
                     if (firstAmount instanceof HTMLInputElement) {
                         firstAmount.value = cashInput.value || '0';
                         paymentTouched = true;
@@ -975,7 +1031,7 @@
             cashInput?.addEventListener('change', () => {
                 cashTouched = true;
                 if (currentPaymentMode === 'debit' && paymentsList) {
-                    const firstAmount = paymentsList.querySelector('input[name^="payments"][name$="[amount]"]');
+                    const firstAmount = paymentAmountInput();
                     if (firstAmount instanceof HTMLInputElement) {
                         firstAmount.value = cashInput.value || '0';
                         paymentTouched = true;
@@ -1013,6 +1069,7 @@
                 });
                 paymentTouched = true;
                 buildHiddenInputs();
+                syncPosDisplay();
                 document.getElementById('pos-form')?.submit();
             });
 
@@ -1032,6 +1089,7 @@
                 const hint = document.getElementById('credit-customer-hint');
                 if (!hint) return;
                 hint.classList.toggle('d-none', statusSelect.value !== 'hold');
+                syncPosDisplay();
             });
 
             posForm?.addEventListener('submit', () => {

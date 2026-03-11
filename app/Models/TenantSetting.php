@@ -29,12 +29,14 @@ final class TenantSetting extends Model
         'two_factor_enabled',
         'two_factor_method',
         'email_notifications_enabled',
+        'customer_display_enabled',
     ];
 
     protected $casts = [
         'two_factor_enabled' => 'bool',
         'two_factor_method' => TwoFactorMethod::class,
         'email_notifications_enabled' => 'bool',
+        'customer_display_enabled' => 'bool',
     ];
 
     public function branch(): BelongsTo

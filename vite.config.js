@@ -18,6 +18,8 @@ export default defineConfig({
                 "resources/js/bootstrap.js",
                 "resources/js/app.js",
                 "resources/js/auth.js",
+                "resources/js/dashboard.js",
+                "resources/js/reports.js",
                 "resources/js/theme.js",
                 "resources/assets/js/main.js",
                 "resources/assets/js/custom.js",

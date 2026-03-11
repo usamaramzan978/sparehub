@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('two_factor_method')->nullable();
 
             $table->boolean('email_notifications_enabled')->default(true);
+            $table->boolean('customer_display_enabled')->default(false);
             $table->string('timezone')->default('UTC');
 
             $table->timestamps();
