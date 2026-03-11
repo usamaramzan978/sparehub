@@ -18,6 +18,7 @@ use App\Models\SalePayment;
 use App\Models\Vendor;
 use App\Models\VendorPayment;
 use App\Support\TenantDateTime;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -84,8 +85,8 @@ final class BuildReportDataAction
         $salePaymentsBase = SalePayment::query()
             ->with(['sale.customer', 'receiver'])
             ->where('branch_id', $branchId)
-            ->when($dateFromAt !== null, fn (Builder $query) => $query->where('paid_at', '>=', $dateFromAt))
-            ->when($dateToAt !== null, fn (Builder $query) => $query->where('paid_at', '<=', $dateToAt))
+            ->when($dateFromAt instanceof CarbonImmutable, fn (Builder $query) => $query->where('paid_at', '>=', $dateFromAt))
+            ->when($dateToAt instanceof CarbonImmutable, fn (Builder $query) => $query->where('paid_at', '<=', $dateToAt))
             ->when($paymentMethod !== '', fn (Builder $query) => $query->where('payment_method', $paymentMethod))
             ->when($customerId !== '', fn (Builder $query) => $query->whereHas('sale', fn (Builder $saleQuery) => $saleQuery->where('customer_id', $customerId)))
             ->when(filled($search), function (Builder $query) use ($search): void {
@@ -99,8 +100,8 @@ final class BuildReportDataAction
         $vendorPaymentsBase = VendorPayment::query()
             ->with(['vendor', 'purchase', 'creator'])
             ->where('branch_id', $branchId)
-            ->when($dateFromAt !== null, fn (Builder $query) => $query->where('paid_at', '>=', $dateFromAt))
-            ->when($dateToAt !== null, fn (Builder $query) => $query->where('paid_at', '<=', $dateToAt))
+            ->when($dateFromAt instanceof CarbonImmutable, fn (Builder $query) => $query->where('paid_at', '>=', $dateFromAt))
+            ->when($dateToAt instanceof CarbonImmutable, fn (Builder $query) => $query->where('paid_at', '<=', $dateToAt))
             ->when($paymentMethod !== '', fn (Builder $query) => $query->where('payment_method', $paymentMethod))
             ->when($vendorId !== '', fn (Builder $query) => $query->where('vendor_id', $vendorId))
             ->when(filled($search), function (Builder $query) use ($search): void {

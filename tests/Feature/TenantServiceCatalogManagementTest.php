@@ -135,6 +135,7 @@ it('filters service catalog by search keyword in current branch', function (): v
     $response = $this->get(serviceCatalogTenantRoute('service-catalog.index', ['search' => 'OIL']));
 
     $response->assertSuccessful();
+
     $serviceNames = $response->viewData('items')->getCollection()->pluck('name')->all();
     expect($serviceNames)->toContain('Oil Service');
     expect($serviceNames)->not->toContain('Brake Service');

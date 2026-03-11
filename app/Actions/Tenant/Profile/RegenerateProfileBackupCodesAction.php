@@ -7,7 +7,7 @@ namespace App\Actions\Tenant\Profile;
 use App\Models\User;
 use App\Support\AuditTimelineLogger;
 
-final class RegenerateProfileBackupCodesAction
+final readonly class RegenerateProfileBackupCodesAction
 {
     public function __construct(private ProfileAuthenticatorServiceAction $profileAuthenticatorServiceAction) {}
 

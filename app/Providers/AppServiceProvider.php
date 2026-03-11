@@ -47,9 +47,7 @@ final class AppServiceProvider extends ServiceProvider
 
         Route::model('branch', Branch::class);
 
-        Blade::directive('tenantDate', function (string $expression): string {
-            return sprintf('<?php echo \\%s::format(%s); ?>', TenantDateTime::class, $expression);
-        });
+        Blade::directive('tenantDate', fn (string $expression): string => sprintf('<?php echo \\%s::format(%s); ?>', TenantDateTime::class, $expression));
 
         // Runs on every request after middleware (including tenancy) has fired
         $this->app->make(Dispatcher::class)->listen(
@@ -112,7 +110,7 @@ final class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * @return Collection<int, string>
+     * @return Collection<int, non-empty-string>
      */
     private function resolveRoleNames(mixed $user): Collection
     {

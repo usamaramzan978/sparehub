@@ -80,7 +80,7 @@ final class DeleteUserAction
 
     private function deleteImage(User $user): void
     {
-        if (! filled($user->image_path)) {
+        if (blank($user->image_path)) {
             return;
         }
 

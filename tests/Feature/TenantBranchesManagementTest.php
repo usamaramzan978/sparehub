@@ -212,6 +212,7 @@ it('prevents creating more branches than tenant max limit', function (): void {
 
     $response->assertRedirect(tenantRoute('branches.create'));
     $response->assertSessionHasErrors(['code']);
+
     expect(Branch::query()->count())->toBe(3);
 });
 

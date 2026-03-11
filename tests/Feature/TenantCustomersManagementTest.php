@@ -125,6 +125,7 @@ it('filters customers by search keyword', function (): void {
     $response = $this->get(customersTenantRoute('customers.index', ['search' => 'AXL']));
 
     $response->assertSuccessful();
+
     $customerNames = $response->viewData('items')->getCollection()->pluck('name')->all();
     expect($customerNames)->toContain('Axle Customer');
     expect($customerNames)->not->toContain('Brake Customer');

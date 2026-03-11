@@ -7,7 +7,7 @@ namespace App\Actions\Tenant\Product;
 use App\Models\Product;
 use App\Models\ProductPrice;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 final class SyncProductPriceAction
 {
@@ -45,7 +45,7 @@ final class SyncProductPriceAction
     private function resolveEffectiveFrom(mixed $effectiveFrom): CarbonInterface
     {
         if (is_string($effectiveFrom) && $effectiveFrom !== '') {
-            return Carbon::parse($effectiveFrom);
+            return Date::parse($effectiveFrom);
         }
 
         return now();

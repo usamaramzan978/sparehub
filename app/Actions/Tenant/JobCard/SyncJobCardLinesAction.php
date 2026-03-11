@@ -63,6 +63,7 @@ final class SyncJobCardLinesAction
                 }
             }
 
+            /** @var JobCardService $created */
             $created = $jobCard->services()->create($attributes);
             $keptIds[] = $created->id;
         }
@@ -71,6 +72,7 @@ final class SyncJobCardLinesAction
         if ($keptIds !== []) {
             $deleteQuery->whereNotIn('id', $keptIds);
         }
+
         $deleteQuery->delete();
     }
 
@@ -105,6 +107,7 @@ final class SyncJobCardLinesAction
                 }
             }
 
+            /** @var JobCardPart $created */
             $created = $jobCard->parts()->create($attributes);
             $keptIds[] = $created->id;
         }
@@ -113,6 +116,7 @@ final class SyncJobCardLinesAction
         if ($keptIds !== []) {
             $deleteQuery->whereNotIn('id', $keptIds);
         }
+
         $deleteQuery->delete();
     }
 

@@ -513,7 +513,7 @@ final class PosController extends Controller
             'ref_id' => $service->id,
             'type' => 'service',
             'name' => $service->name,
-            'product_name' => ucfirst($service->type->value),
+            'product_name' => ucfirst((string) $service->type->value),
             'sku' => $service->code,
             'price' => (float) $service->base_price,
             'tax_rate' => $taxRate,

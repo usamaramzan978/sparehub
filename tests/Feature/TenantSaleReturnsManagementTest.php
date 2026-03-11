@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenant\SaleReturn\EnsureSaleReturnInBranchAction;
 use App\Enums\BranchStatus;
 use App\Enums\RecordStatus;
 use App\Enums\SaleLineType;
@@ -279,5 +280,5 @@ it('throws not found when showing sale return outside current branch', function 
     ]);
 
     $this->expectException(NotFoundHttpException::class);
-    (new SaleReturnController())->show($foreignReturn, new App\Actions\Tenant\SaleReturn\EnsureSaleReturnInBranchAction());
+    (new SaleReturnController())->show($foreignReturn, new EnsureSaleReturnInBranchAction());
 });

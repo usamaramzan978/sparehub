@@ -88,9 +88,7 @@ final class ExpenseController extends Controller
             return (string) $expense->id;
         }
 
-        if (! is_string($expense) || $expense === '') {
-            throw new NotFoundHttpException();
-        }
+        throw_if(! is_string($expense) || $expense === '', NotFoundHttpException::class);
 
         return $expense;
     }

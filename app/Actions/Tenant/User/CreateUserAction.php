@@ -37,6 +37,7 @@ final class CreateUserAction
         if ($image instanceof UploadedFile) {
             $data['image_path'] = (string) $image->store('users', 'public');
         }
+
         $commissionRules = Arr::pull($data, 'commission_rules', []);
 
         $user = User::query()->create($data);

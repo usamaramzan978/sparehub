@@ -7,7 +7,7 @@ namespace App\Actions\Tenant\SupportTicket;
 use App\Enums\SupportTicketStatus;
 use App\Models\SupportTicket;
 
-final class StoreSupportTicketMessageAction
+final readonly class StoreSupportTicketMessageAction
 {
     public function __construct(private CreateTenantSupportTicketMessageAction $createTenantSupportTicketMessageAction) {}
 

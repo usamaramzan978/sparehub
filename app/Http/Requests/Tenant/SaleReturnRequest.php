@@ -6,6 +6,7 @@ namespace App\Http\Requests\Tenant;
 
 use App\Enums\SaleLineType;
 use App\Enums\SaleReturnStatus;
+use App\Models\SaleItem;
 use App\Models\SaleReturnItem;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
@@ -81,11 +82,14 @@ final class SaleReturnRequest extends FormRequest
                 }
 
                 $saleItemId = Arr::get($item, 'sale_item_id');
-                if (! is_string($saleItemId) || $saleItemId === '') {
+                if (! is_string($saleItemId)) {
+                    continue;
+                }
+                if ($saleItemId === '') {
                     continue;
                 }
 
-                $soldQty = (float) \App\Models\SaleItem::query()
+                $soldQty = (float) SaleItem::query()
                     ->whereKey($saleItemId)
                     ->value('qty');
 

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Actions\Tenant\User\DeleteUserAction;
+use App\Actions\Tenant\User\SyncUserCommissionRulesAction;
+use App\Actions\Tenant\User\UpdateUserAction;
 use App\Enums\BranchStatus;
 use App\Enums\InvoiceType;
 use App\Enums\RoleName;
@@ -287,7 +289,7 @@ it('replaces user image on update', function (): void {
     $oldPath = UploadedFile::fake()->image('old.jpg')->store('users', 'public');
     $existingUser->update(['image_path' => $oldPath]);
     $newImage = UploadedFile::fake()->image('new.jpg');
-    $updated = app(App\Actions\Tenant\User\UpdateUserAction::class)->handle(
+    $updated = app(UpdateUserAction::class)->handle(
         $existingUser,
         [
             'name' => 'Mechanic Replace Image',
@@ -298,7 +300,7 @@ it('replaces user image on update', function (): void {
             'image' => $newImage,
         ],
         $fixture['current']->id,
-        app(App\Actions\Tenant\User\SyncUserCommissionRulesAction::class),
+        app(SyncUserCommissionRulesAction::class),
     );
 
     $existingUser->refresh();
@@ -335,6 +337,7 @@ it('prevents creating more users than tenant max limit', function (): void {
 
     $response->assertRedirect(usersTenantRoute('users.create'));
     $response->assertSessionHasErrors(['email']);
+
     expect(User::query()->count())->toBe(2);
 });
 
@@ -422,7 +425,7 @@ it('stores user commission rules via sync action', function (): void {
         'status' => 'active',
     ]);
 
-    app(App\Actions\Tenant\User\SyncUserCommissionRulesAction::class)->handle($createdUser, [
+    app(SyncUserCommissionRulesAction::class)->handle($createdUser, [
         [
             'service_catalog_id' => $oilLabourService->id,
             'total_amount' => 1000,

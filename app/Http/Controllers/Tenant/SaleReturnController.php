@@ -98,7 +98,7 @@ final class SaleReturnController extends Controller
         $items = $saleItems->map(fn (SaleItem $saleItem): array => [
             'sale_item_id' => $saleItem->id,
             'product_id' => $saleItem->product_id,
-            'product_name' => ($saleItem->product?->name ?? '-') . ($saleItem->product?->sku ? ' (' . $saleItem->product->sku . ')' : ''),
+            ...$this->buildInvoiceItemProductPayload($saleItem),
             'sold_qty' => (float) $saleItem->qty,
             'returned_qty' => (float) ($returnedQtyBySaleItem[$saleItem->id] ?? 0),
             'available_qty' => (float) max($saleItem->qty - ($returnedQtyBySaleItem[$saleItem->id] ?? 0), 0),
@@ -169,6 +169,25 @@ final class SaleReturnController extends Controller
         $action->handle($saleReturn);
 
         return to_route('tenant.sale-returns.index')->with('status', 'Deleted.');
+    }
+
+    /**
+     * @return array{product_name: string}
+     */
+    private function buildInvoiceItemProductPayload(SaleItem $saleItem): array
+    {
+        $product = $saleItem->product;
+
+        if (! $product instanceof Product) {
+            return ['product_name' => '-'];
+        }
+
+        $productName = $product->name;
+        if ($product->sku !== null && $product->sku !== '') {
+            $productName .= ' ('.$product->sku.')';
+        }
+
+        return ['product_name' => $productName];
     }
 
     /**

@@ -132,6 +132,7 @@ final class JobCardController extends Controller
     ): RedirectResponse {
         $jobCard = $this->resolveJobCard($jobCard);
         $jobCard = $ensureJobCardInBranchAction->handle($jobCard, $this->currentBranchId());
+
         $validated = $request->validated();
         $action->handle($jobCard, Arr::except($validated, ['services', 'parts']), $this->currentBranchId());
         $syncJobCardLinesAction->handle($jobCard, $validated);
@@ -147,6 +148,7 @@ final class JobCardController extends Controller
     ): RedirectResponse {
         $jobCard = $this->resolveJobCard($jobCard);
         $jobCard = $ensureJobCardInBranchAction->handle($jobCard, $this->currentBranchId());
+
         $action->handle($jobCard);
 
         return to_route('tenant.job-cards.index')
@@ -189,26 +191,25 @@ final class JobCardController extends Controller
             ->withoutGlobalScopes()
             ->whereIn('product_id', $productIds)
             ->orderByRaw('CASE WHEN branch_id = ? THEN 0 WHEN branch_id IS NULL THEN 1 ELSE 2 END', [$branchId])
-            ->orderByDesc('effective_from')
-            ->orderByDesc('created_at')
+            ->orderByDesc('effective_from')->latest()
             ->get()
             ->groupBy('product_id')
             ->map(fn ($rows) => $rows->first())
-            ->map(fn ($price) => [
+            ->map(fn ($price): array => [
                 'cost' => (float) $price->cost,
                 'mrp' => (float) $price->mrp,
                 'retail_price' => (float) $price->retail_price,
                 'wholesale_price' => (float) $price->wholesale_price,
             ])
-            ->toArray();
+            ->all();
         $productStockMap = InventoryStock::query()
             ->where('branch_id', $branchId)
             ->whereIn('product_id', $productIds)
             ->selectRaw('product_id, SUM(qty_on_hand) as qty_on_hand')
             ->groupBy('product_id')
             ->pluck('qty_on_hand', 'product_id')
-            ->map(fn ($qty) => (float) $qty)
-            ->toArray();
+            ->map(fn ($qty): float => (float) $qty)
+            ->all();
 
         return [
             'customers' => $customers,

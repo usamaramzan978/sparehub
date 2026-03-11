@@ -8,7 +8,7 @@ use App\Enums\TwoFactorMethod;
 use App\Models\TenantSetting;
 use App\Models\User;
 
-final class BuildProfileSecurityDataAction
+final readonly class BuildProfileSecurityDataAction
 {
     public function __construct(private ProfileAuthenticatorServiceAction $profileAuthenticatorServiceAction) {}
 

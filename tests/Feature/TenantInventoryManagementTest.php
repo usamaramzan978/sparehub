@@ -120,6 +120,7 @@ it('shows selected product sold quantity in product history', function (): void 
     $response = $this->get(inventoryTenantRoute('products.history', ['product_id' => $context['product']->id]));
 
     $response->assertSuccessful();
+
     expect($response->viewData('summary')['sold_qty'])->toBe(4.0);
     expect($response->viewData('summary')['qty_on_hand'])->toBe(30.0);
 });

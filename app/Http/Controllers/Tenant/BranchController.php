@@ -23,6 +23,7 @@ final class BranchController extends Controller
     {
         $perPage = $request->integer('per_page', 15);
         $perPage = min(max($perPage, 5), 100);
+
         $search = mb_trim($request->string('search')->toString());
         $allowedSortColumns = ['code', 'name', 'status', 'created_at'];
         [$activeSortBy, $activeSortDirection] = $this->resolveSort($request, $allowedSortColumns);

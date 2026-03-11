@@ -8,7 +8,7 @@ use App\Enums\SupportTicketPriority;
 use App\Enums\SupportTicketStatus;
 use App\Models\SupportTicket;
 
-final class CreateSupportTicketAction
+final readonly class CreateSupportTicketAction
 {
     public function __construct(
         private GenerateSupportTicketNumberAction $generateSupportTicketNumberAction,
