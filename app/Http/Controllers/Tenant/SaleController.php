@@ -165,11 +165,13 @@ final class SaleController extends Controller
 
         $balanceDue = (float) $sale->balance_due;
         $paidTotal = (float) $sale->paid_total;
-        $paymentStatus = $balanceDue <= 0
-            ? ['label' => __('Paid'), 'class' => 'bg-success-transparent text-success']
-            : ($paidTotal > 0
-                ? ['label' => __('Partial'), 'class' => 'bg-warning-transparent text-warning']
-                : ['label' => __('Unpaid'), 'class' => 'bg-danger-transparent text-danger']);
+        $paymentStatus = $sale->status === SaleStatus::HOLD
+            ? ['label' => __('Not Paid'), 'class' => 'bg-danger-transparent text-danger']
+            : ($balanceDue <= 0
+                ? ['label' => __('Paid'), 'class' => 'bg-success-transparent text-success']
+                : ($paidTotal > 0
+                    ? ['label' => __('Partial'), 'class' => 'bg-warning-transparent text-warning']
+                    : ['label' => __('Unpaid'), 'class' => 'bg-danger-transparent text-danger']));
 
         return view('tenants.sales.show', [
             'sale' => $sale,

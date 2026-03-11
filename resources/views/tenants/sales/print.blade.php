@@ -11,6 +11,7 @@
             max-width: 80mm;
             margin: 0 auto;
             font-family: "Courier New", monospace;
+            position: relative;
         }
         .receipt h1,
         .receipt h2,
@@ -51,6 +52,18 @@
         .receipt .total {
             font-weight: 700;
         }
+        .receipt .watermark {
+            position: absolute;
+            inset: 120px 0 auto 0;
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: rgba(185, 28, 28, 0.14);
+            transform: rotate(-18deg);
+            pointer-events: none;
+        }
         @media print {
             body {
                 padding: 0;
@@ -73,6 +86,9 @@
     </div>
 
     <div class="receipt">
+        @if (request()->boolean('not_paid') || ($sale->status?->value ?? $sale->status) === 'hold')
+            <div class="watermark">Not Paid</div>
+        @endif
         <div class="row">
             <span>{{ $sale->branch?->name ?? 'Branch' }}</span>
             <span>@tenantDate($sale->created_at, 'Y-m-d H:i')</span>
@@ -85,6 +101,12 @@
             <span>Customer</span>
             <span>{{ $sale->customer?->name ?? 'Walk-in' }}</span>
         </div>
+        @if (request()->boolean('not_paid') || ($sale->status?->value ?? $sale->status) === 'hold')
+            <div class="row" style="margin-top: 6px;">
+                <span style="font-weight: 700; color: #b91c1c;">Status</span>
+                <span style="font-weight: 700; color: #b91c1c;">Not Paid</span>
+            </div>
+        @endif
 
         <div class="line"></div>
 

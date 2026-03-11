@@ -363,3 +363,44 @@ it('does not decrement inventory stock for non tracked products', function (): v
 
     expect((float) $stock->qty_on_hand)->toBe(10.0);
 });
+
+it('prints not paid pos bill as hold without recording payment', function (): void {
+    $fixture = createPosFixture();
+    $tenantId = 'test-tenant-id';
+
+    $this->actingAs($fixture['user'], 'user');
+    $this->withSession(['tenant.current_branch_id' => $fixture['branch']->id]);
+
+    $response = $this->post(route('tenant.pos.store', ['tenant' => $tenantId]), [
+        'status' => 'hold',
+        'payment_mode' => 'cash',
+        'cash_received' => 500,
+        'print_receipt' => 1,
+        'print_not_paid' => 1,
+        'items' => [[
+            'type' => 'service',
+            'ref_id' => $fixture['service']->id,
+            'qty' => 1,
+            'price' => 250,
+            'tax_rate' => 0,
+            'tax_inclusive' => false,
+            'name' => 'Oil Change',
+        ]],
+    ]);
+
+    $sale = Sale::query()->latest('created_at')->firstOrFail();
+
+    $response->assertRedirect(route('tenant.sales.print', [
+        'tenant' => $tenantId,
+        'sale' => $sale,
+        'auto_print' => 1,
+        'not_paid' => 1,
+    ]));
+
+    expect($sale->status->value)->toBe('hold');
+    expect((float) $sale->paid_total)->toBe(0.0);
+    expect((float) $sale->balance_due)->toBe(250.0);
+
+    $salePaymentsCount = DB::connection('tenant')->table('sale_payments')->where('sale_id', $sale->id)->count();
+    expect($salePaymentsCount)->toBe(0);
+});

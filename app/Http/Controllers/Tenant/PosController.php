@@ -174,6 +174,8 @@ final class PosController extends Controller
     {
         $branchId = $this->currentBranchId();
         $validated = $request->validated();
+        $saleStatus = (string) $validated['status'];
+        $isPostedSale = $saleStatus === SaleStatus::POSTED->value;
 
         $items = collect($validated['items'])->map(fn (array $item): array => [
             'type' => $item['type'],
@@ -247,7 +249,10 @@ final class PosController extends Controller
         $paymentMode = (string) ($validated['payment_mode'] ?? 'cash');
         $cashReceived = (float) ($validated['cash_received'] ?? 0);
 
-        $paidTotal = $paymentMode === 'cash' || $paymentMode === 'online' ? $grandTotal : min($cashReceived, $grandTotal);
+        $paidTotal = 0.0;
+        if ($isPostedSale) {
+            $paidTotal = $paymentMode === 'cash' || $paymentMode === 'online' ? $grandTotal : min($cashReceived, $grandTotal);
+        }
 
         $paidTotal = max($paidTotal, 0);
 
@@ -274,7 +279,9 @@ final class PosController extends Controller
             $paidTotal,
             $balanceDue,
             $linePayload,
-            $paymentMode
+            $paymentMode,
+            $saleStatus,
+            $isPostedSale
         ): Sale {
             $sale = Sale::query()->create([
                 'branch_id' => $branchId,
@@ -282,7 +289,7 @@ final class PosController extends Controller
                 'created_by' => auth('user')->id(),
                 'invoice_no' => $this->nextInvoiceNumber($branchId),
                 'invoice_date' => now()->toDateString(),
-                'status' => $validated['status'],
+                'status' => $saleStatus,
                 'invoice_type' => $invoiceType->value,
                 'sub_total' => $subTotal,
                 'discount_total' => $discountTotal,
@@ -291,7 +298,7 @@ final class PosController extends Controller
                 'paid_total' => $paidTotal,
                 'balance_due' => $balanceDue,
                 'notes' => 'Created from POS',
-                'posted_at' => now(),
+                'posted_at' => $isPostedSale ? now() : null,
             ]);
 
             foreach ($linePayload as $line) {
@@ -313,7 +320,7 @@ final class PosController extends Controller
 
             $this->decrementTrackedStock($branchId, $linePayload);
 
-            if ($paidTotal > 0) {
+            if ($isPostedSale && $paidTotal > 0) {
                 SalePayment::query()->create([
                     'sale_id' => $sale->id,
                     'branch_id' => $branchId,
@@ -364,6 +371,7 @@ final class PosController extends Controller
                 'tenant' => $tenantRouteKey,
                 'sale' => $sale,
                 'auto_print' => 1,
+                'not_paid' => $request->boolean('print_not_paid') ? 1 : 0,
             ]);
         }
 

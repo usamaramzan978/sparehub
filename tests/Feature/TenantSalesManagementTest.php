@@ -339,6 +339,19 @@ it('renders payment badges on sales index', function (): void {
         'balance_due' => 100,
     ]);
 
+    Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-PAY-HOLD',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::HOLD->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+        'grand_total' => 100,
+        'paid_total' => 0,
+        'balance_due' => 100,
+    ]);
+
     $response = $this->get(salesTenantRoute('sales.index'));
 
     $response->assertSuccessful();
@@ -346,9 +359,11 @@ it('renders payment badges on sales index', function (): void {
     $response->assertSee('INV-PAY-PAID');
     $response->assertSee('INV-PAY-PARTIAL');
     $response->assertSee('INV-PAY-UNPAID');
+    $response->assertSee('INV-PAY-HOLD');
     $response->assertSee('Paid');
     $response->assertSee('Partial');
     $response->assertSee('Unpaid');
+    $response->assertSee('Not Paid');
 });
 
 it('clamps sales pagination limits', function (): void {
@@ -633,4 +648,28 @@ it('renders payment status badge on sale details page', function (): void {
     expect($response->name())->toBe('tenants.sales.show');
     expect($response->getData()['sale']->invoice_no)->toBe('INV-SHOW-PARTIAL');
     expect($response->getData()['paymentStatus']['label'])->toBe('Partial');
+});
+
+it('renders not paid badge on hold sale details page', function (): void {
+    $fixture = authenticateSalesUser();
+
+    $sale = Sale::query()->withoutGlobalScopes()->create([
+        'branch_id' => $fixture['current']->id,
+        'customer_id' => $fixture['customer']->id,
+        'created_by' => $fixture['user']->id,
+        'invoice_no' => 'INV-SHOW-HOLD',
+        'invoice_date' => now()->toDateString(),
+        'status' => SaleStatus::HOLD->value,
+        'invoice_type' => InvoiceType::PRODUCT->value,
+        'grand_total' => 500,
+        'paid_total' => 0,
+        'balance_due' => 500,
+    ]);
+
+    session()->put('tenant.current_branch_id', $fixture['current']->id);
+    $response = (new SaleController())->show($sale, new EnsureSaleInBranchAction());
+
+    expect($response->name())->toBe('tenants.sales.show');
+    expect($response->getData()['sale']->invoice_no)->toBe('INV-SHOW-HOLD');
+    expect($response->getData()['paymentStatus']['label'])->toBe('Not Paid');
 });

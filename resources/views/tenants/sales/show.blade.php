@@ -11,7 +11,7 @@
         $statusClass = match ($sale->status->value) {
             'posted' => 'bg-success-transparent',
             'draft' => 'bg-secondary-transparent',
-            'hold' => 'bg-warning-transparent',
+            'hold' => 'bg-danger-transparent text-danger',
             default => 'bg-secondary-transparent',
         };
         $onlinePaymentProofUrl = $sale->getFirstMediaUrl('online_payment_proof');

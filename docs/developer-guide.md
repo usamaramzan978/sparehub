@@ -262,6 +262,17 @@ Settings-side POS customer display behavior:
   - Cashier and customer screens sync live cart state client-side using browser-local messaging.
 - Current implementation is intended for same-browser/same-machine dual-screen usage, not cross-device realtime sync.
 
+POS not-paid print behavior:
+- POS includes a `Print Not Paid` action for cashier workflow.
+- This action forces the sale into `hold` status before save.
+- Hold/not-paid POS bills do not create a `sale_payments` row.
+- For non-posted POS bills:
+  - `paid_total` remains `0`
+  - `balance_due` remains the full invoice total
+  - `posted_at` remains `null`
+- Printed receipt shows `Not Paid` watermark/state.
+- Sales index/detail screens also label hold invoices as `Not Paid` for payment-status consistency.
+
 ## 6. Data Model: Core Dependencies
 
 Below is dependency-oriented mapping (parent -> child).

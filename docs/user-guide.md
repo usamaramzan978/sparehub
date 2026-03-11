@@ -83,9 +83,15 @@ Practical payment flow (important):
   - if customer pays some amount now, that payment is recorded
   - remaining amount stays in invoice balance
   - later collections are added from `Sales > Sale Payments`
+- `Print Not Paid` at POS:
+  - invoice is saved as `hold`
+  - no payment is recorded
+  - bill opens for printing immediately
+  - printed bill shows `Not Paid` watermark
+  - sales screens show that invoice as `Not Paid`
 
 How to track recovery quickly:
-- `Paid/Partial/Unpaid` status is visible in sales screens.
+- `Paid/Partial/Unpaid/Not Paid` status is visible in sales screens.
 - invoices needing recovery are those with `Balance > 0`.
 - collection method analysis (cash/bank/card/wallet/other) comes from `Sale Payments`.
 
@@ -318,6 +324,13 @@ Example:
 - System calculates totals/tax.
 - Customer pays part cash today and remaining later.
 - POS records immediate payment at checkout; later recovery is tracked in `Sale Payments`.
+
+Not paid print flow:
+- If customer wants the bill printed without taking payment yet, cashier clicks `Print Not Paid`.
+- System saves the bill as `hold`.
+- No payment entry is created at that time.
+- Receipt prints with `Not Paid` watermark.
+- Invoice appears as `Not Paid` in sales screens until payment is collected later.
 
 Customer display flow:
 - Owner/admin enables `Customer Display` from `Settings`.

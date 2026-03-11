@@ -137,6 +137,9 @@
                             <button type="button" class="btn btn-outline-secondary" data-pos-hold>
                                 Hold Sale
                             </button>
+                            <button type="button" class="btn btn-outline-warning" data-pos-not-paid>
+                                Print Not Paid
+                            </button>
                             <button type="submit" class="btn btn-primary ms-auto" data-pos-submit>
                                 Complete Sale
                             </button>
@@ -339,6 +342,7 @@
 
         <input type="hidden" name="auto_invoice" value="1">
         <input type="hidden" name="print_receipt" value="0" data-pos-print-flag>
+        <input type="hidden" name="print_not_paid" value="0" data-pos-not-paid-flag>
         <input type="hidden" name="cash_received" value="{{ old('cash_received', 0) }}" data-pos-cash-hidden>
         <input type="hidden" name="change_due" value="{{ old('change_due', 0) }}" data-pos-change-hidden>
         <div data-pos-hidden-items></div>
@@ -364,10 +368,12 @@
             const clearBtn = document.querySelector('[data-pos-clear]');
             const statusSelect = document.querySelector('[data-pos-status]');
             const holdBtn = document.querySelector('[data-pos-hold]');
+            const notPaidBtn = document.querySelector('[data-pos-not-paid]');
             const printBtn = document.querySelector('[data-pos-print]');
             const submitBtn = document.querySelector('[data-pos-submit]');
             const posForm = document.getElementById('pos-form');
             const printFlag = document.querySelector('[data-pos-print-flag]');
+            const notPaidFlag = document.querySelector('[data-pos-not-paid-flag]');
             const syncChannelName = posForm?.dataset.posSyncChannel || '';
             const syncBroadcaster = 'BroadcastChannel' in window && syncChannelName !== '' ?
                 new BroadcastChannel(syncChannelName) :
@@ -416,6 +422,27 @@
             const money = (value) => (Number.isFinite(value) ? value.toFixed(2) : '0.00');
             const stockCount = (value) => (Number.isFinite(value) ? Math.round(value).toString() : '0');
             const paymentAmountInput = () => paymentsList?.querySelector('input[name^="payments"][name$="[amount]"]');
+
+            const prepareHoldSale = ({
+                printReceipt = false,
+                printNotPaid = false
+            } = {}) => {
+                if (statusSelect) {
+                    statusSelect.value = 'hold';
+                }
+                if (printFlag) {
+                    printFlag.value = printReceipt ? '1' : '0';
+                }
+                if (notPaidFlag) {
+                    notPaidFlag.value = printNotPaid ? '1' : '0';
+                }
+                paymentsList?.querySelectorAll('input, select').forEach((el) => {
+                    el.disabled = true;
+                });
+                paymentTouched = true;
+                buildHiddenInputs();
+                syncPosDisplay();
+            };
 
             const syncPosDisplay = () => {
                 if (syncChannelName === '') {
@@ -1061,15 +1088,15 @@
             });
 
             holdBtn?.addEventListener('click', () => {
-                if (statusSelect) {
-                    statusSelect.value = 'draft';
-                }
-                paymentsList?.querySelectorAll('input, select').forEach((el) => {
-                    el.disabled = true;
+                prepareHoldSale();
+                document.getElementById('pos-form')?.submit();
+            });
+
+            notPaidBtn?.addEventListener('click', () => {
+                prepareHoldSale({
+                    printReceipt: true,
+                    printNotPaid: true
                 });
-                paymentTouched = true;
-                buildHiddenInputs();
-                syncPosDisplay();
                 document.getElementById('pos-form')?.submit();
             });
 
@@ -1077,11 +1104,17 @@
                 if (printFlag) {
                     printFlag.value = '0';
                 }
+                if (notPaidFlag) {
+                    notPaidFlag.value = '0';
+                }
             });
 
             printBtn?.addEventListener('click', () => {
                 if (printFlag) {
                     printFlag.value = '1';
+                }
+                if (notPaidFlag) {
+                    notPaidFlag.value = '0';
                 }
             });
 

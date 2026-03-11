@@ -81,7 +81,10 @@
                                 };
                                 $balanceDue = (float) $sale->balance_due;
                                 $paidTotal = (float) $sale->paid_total;
-                                if ($balanceDue <= 0) {
+                                if ($statusValue === 'hold') {
+                                    $paymentStatusLabel = __('Not Paid');
+                                    $paymentStatusClass = 'bg-danger-transparent text-danger';
+                                } elseif ($balanceDue <= 0) {
                                     $paymentStatusLabel = __('Paid');
                                     $paymentStatusClass = 'bg-success-transparent text-success';
                                 } elseif ($paidTotal > 0) {
