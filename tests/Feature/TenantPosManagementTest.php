@@ -170,6 +170,8 @@ it('shows pos index', function (): void {
     $response->assertSuccessful();
     $response->assertSee('POS');
     $response->assertDontSee('Customer Screen');
+    $response->assertSee('No matching products or services found');
+    $response->assertSee('Search results will temporarily hide category browsing');
 });
 
 it('shows a customer-facing pos display', function (): void {
@@ -214,6 +216,48 @@ it('returns scan list mode for ambiguous query', function (): void {
     $response->assertJsonPath('mode', 'list');
 
     expect($response->json('items'))->toBeArray();
+});
+
+it('ranks exact and prefix search matches ahead of broad contains matches', function (): void {
+    $fixture = authenticatePosUser();
+
+    Product::query()->create([
+        'category_id' => $fixture['category']->id,
+        'default_tax_id' => Tax::query()->firstOrFail()->id,
+        'sku' => 'UN',
+        'barcode' => 'UN-EXACT',
+        'name' => 'Exact Match Product',
+        'track_stock' => true,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    Product::query()->create([
+        'category_id' => $fixture['category']->id,
+        'default_tax_id' => Tax::query()->firstOrFail()->id,
+        'sku' => 'UN-START',
+        'barcode' => 'UN-PREFIX',
+        'name' => 'Prefix Match Product',
+        'track_stock' => true,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    Product::query()->create([
+        'category_id' => $fixture['category']->id,
+        'default_tax_id' => Tax::query()->firstOrFail()->id,
+        'sku' => 'CD70-UN-END',
+        'barcode' => 'UN-CONTAINS',
+        'name' => 'Contains Match Product',
+        'track_stock' => true,
+        'status' => RecordStatus::ACTIVE->value,
+    ]);
+
+    $response = $this->getJson(posTenantRoute('pos.scan', ['query' => 'UN']));
+
+    $response->assertSuccessful();
+    $response->assertJsonPath('mode', 'list');
+
+    expect($response->json('items.0.sku'))->toBe('UN');
+    expect($response->json('items.1.sku'))->toBe('UN-START');
 });
 
 it('returns product catalog by category only', function (): void {

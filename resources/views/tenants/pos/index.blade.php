@@ -83,10 +83,12 @@
                                     Add
                                 </button>
                             </div>
+                            <div class="form-text">Search results will temporarily hide category browsing to keep the
+                                screen focused. Press Enter to add the highlighted result.</div>
                             <div class="list-group mt-2 d-none" data-pos-suggestions></div>
                         </div>
                         @if ($categories->isNotEmpty())
-                            <div class="mt-3">
+                            <div class="mt-3" data-pos-browse-panel>
                                 <div class="d-flex flex-wrap gap-2" data-pos-categories
                                     data-pos-category-url="{{ route('tenant.pos.catalog') }}">
                                     @foreach ($categories as $category)
@@ -392,6 +394,7 @@
             const shortRow = document.querySelector('[data-pos-short-row]');
             const shortEl = document.querySelector('[data-pos-short]');
             const categoryWrap = document.querySelector('[data-pos-categories]');
+            const browsePanel = document.querySelector('[data-pos-browse-panel]');
             const categoryUrlTemplate = categoryWrap?.dataset.posCategoryUrl;
             const catalogGrid = document.querySelector('[data-pos-catalog-grid]');
             const catalogEmpty = catalogGrid?.querySelector('[data-pos-catalog-empty]');
@@ -406,6 +409,8 @@
             let cashTouched = false;
             let currentPaymentMode = paymentModeInput?.value || 'cash';
             let catalogItems = [];
+            let suggestionItems = [];
+            let activeSuggestionIndex = -1;
             const initialState = {
                 hasOldInput: @json(session()->hasOldInput()),
                 items: @json(old('items', [])),
@@ -893,13 +898,126 @@
             };
 
             const clearSuggestions = () => {
+                suggestionItems = [];
+                activeSuggestionIndex = -1;
                 suggestionBox.classList.add('d-none');
                 suggestionBox.innerHTML = '';
+            };
+
+            const escapeHtml = (value) => String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+
+            const setBrowseVisibility = (isVisible) => {
+                if (!browsePanel) {
+                    return;
+                }
+
+                browsePanel.classList.toggle('d-none', !isVisible);
+            };
+
+            const showEmptySuggestions = (query) => {
+                suggestionItems = [];
+                activeSuggestionIndex = -1;
+                suggestionBox.classList.remove('d-none');
+                suggestionBox.innerHTML = `
+                    <div class="list-group-item text-muted small">
+                        No matching products or services found for "${escapeHtml(query)}".
+                    </div>
+                `;
+            };
+
+            const renderSuggestions = (items, emphasisMode = 'button') => {
+                suggestionItems = items;
+                activeSuggestionIndex = items.length > 0 ? 0 : -1;
+                suggestionBox.classList.remove('d-none');
+                suggestionBox.innerHTML = '';
+
+                items.forEach((item, index) => {
+                    const nameLabel = escapeHtml(item.name);
+                    const skuLabel = item.sku ? escapeHtml(item.sku) : '';
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = [
+                        'list-group-item',
+                        'list-group-item-action',
+                        'text-start',
+                        index === activeSuggestionIndex ? 'active' : ''
+                    ].join(' ');
+
+                    if (emphasisMode === 'button') {
+                        btn.innerHTML = `
+                            <div class="d-flex align-items-start justify-content-between gap-3">
+                                <div class="min-w-0">
+                                    <div class="fw-semibold">${nameLabel}</div>
+                                    <div class="small ${index === activeSuggestionIndex ? 'text-white-50' : 'text-muted'}">
+                                        ${skuLabel || 'No SKU'}
+                                    </div>
+                                </div>
+                                <span class="badge ${index === activeSuggestionIndex ? 'bg-light text-dark' : 'bg-primary'} flex-shrink-0">Add</span>
+                            </div>
+                        `;
+                    } else {
+                        btn.innerHTML = `
+                            <div class="fw-semibold">${nameLabel}</div>
+                            <div class="small ${index === activeSuggestionIndex ? 'text-white-50' : 'text-muted'}">
+                                ${skuLabel || 'No SKU'}
+                            </div>
+                        `;
+                    }
+
+                    btn.addEventListener('click', () => {
+                        addItem(item);
+                        scanInput.value = '';
+                        clearSuggestions();
+                        setBrowseVisibility(true);
+                    });
+                    suggestionBox.appendChild(btn);
+                });
+            };
+
+            const moveSuggestionSelection = (direction) => {
+                if (suggestionItems.length === 0) {
+                    return;
+                }
+
+                activeSuggestionIndex = (activeSuggestionIndex + direction + suggestionItems.length) %
+                    suggestionItems.length;
+
+                Array.from(suggestionBox.children).forEach((child, index) => {
+                    child.classList.toggle('active', index === activeSuggestionIndex);
+
+                    const badge = child.querySelector('.badge');
+                    if (!badge) {
+                        return;
+                    }
+
+                    badge.classList.toggle('bg-light', index === activeSuggestionIndex);
+                    badge.classList.toggle('text-dark', index === activeSuggestionIndex);
+                    badge.classList.toggle('bg-primary', index !== activeSuggestionIndex);
+                });
+            };
+
+            const applyActiveSuggestion = () => {
+                if (activeSuggestionIndex < 0 || !suggestionItems[activeSuggestionIndex]) {
+                    return false;
+                }
+
+                addItem(suggestionItems[activeSuggestionIndex]);
+                scanInput.value = '';
+                clearSuggestions();
+                setBrowseVisibility(true);
+
+                return true;
             };
 
             const handleScan = async () => {
                 const query = scanInput.value.trim();
                 if (!query || !scanUrl) return;
+                setBrowseVisibility(false);
 
                 const response = await fetch(`${scanUrl}?query=${encodeURIComponent(query)}`, {
                     headers: {
@@ -908,7 +1026,8 @@
                 });
 
                 if (!response.ok) {
-                    clearSuggestions();
+                    showEmptySuggestions(query);
+                    setBrowseVisibility(false);
                     return;
                 }
 
@@ -917,24 +1036,17 @@
                     addItem(data.item);
                     scanInput.value = '';
                     clearSuggestions();
+                    setBrowseVisibility(true);
                     return;
                 }
 
                 if (data.mode === 'list') {
-                    suggestionBox.classList.remove('d-none');
-                    suggestionBox.innerHTML = '';
-                    data.items.forEach((item) => {
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'list-group-item list-group-item-action';
-                        btn.textContent = `${item.name} (${item.sku ?? ''})`;
-                        btn.addEventListener('click', () => {
-                            addItem(item);
-                            scanInput.value = '';
-                            clearSuggestions();
-                        });
-                        suggestionBox.appendChild(btn);
-                    });
+                    if (!Array.isArray(data.items) || data.items.length === 0) {
+                        showEmptySuggestions(query);
+                        return;
+                    }
+
+                    renderSuggestions(data.items, 'list');
                 }
             };
 
@@ -946,8 +1058,10 @@
                 }
                 if (query.length < 2) {
                     clearSuggestions();
+                    setBrowseVisibility(true);
                     return;
                 }
+                setBrowseVisibility(false);
                 searchTimer = setTimeout(async () => {
                     const response = await fetch(`${scanUrl}?query=${encodeURIComponent(query)}`, {
                         headers: {
@@ -957,45 +1071,24 @@
 
                     if (!response.ok) {
                         clearSuggestions();
+                        showEmptySuggestions(query);
                         return;
                     }
 
                     const data = await response.json();
-                    suggestionBox.classList.remove('d-none');
-                    suggestionBox.innerHTML = '';
 
                     if (data.mode === 'single') {
-                        const item = data.item;
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className =
-                            'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
-                        btn.innerHTML = `
-                            <span>${item.name} (${item.sku ?? ''})</span>
-                            <span class="badge bg-primary">Add</span>
-                        `;
-                        btn.addEventListener('click', () => {
-                            addItem(item);
-                            scanInput.value = '';
-                            clearSuggestions();
-                        });
-                        suggestionBox.appendChild(btn);
+                        renderSuggestions([data.item]);
                         return;
                     }
 
                     if (data.mode === 'list') {
-                        data.items.forEach((item) => {
-                            const btn = document.createElement('button');
-                            btn.type = 'button';
-                            btn.className = 'list-group-item list-group-item-action';
-                            btn.textContent = `${item.name} (${item.sku ?? ''})`;
-                            btn.addEventListener('click', () => {
-                                addItem(item);
-                                scanInput.value = '';
-                                clearSuggestions();
-                            });
-                            suggestionBox.appendChild(btn);
-                        });
+                        if (!Array.isArray(data.items) || data.items.length === 0) {
+                            showEmptySuggestions(query);
+                            return;
+                        }
+
+                        renderSuggestions(data.items, 'list');
                         return;
                     }
 
@@ -1005,8 +1098,23 @@
 
             addBtn?.addEventListener('click', handleScan);
             scanInput?.addEventListener('keydown', (event) => {
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    moveSuggestionSelection(1);
+                    return;
+                }
+
+                if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    moveSuggestionSelection(-1);
+                    return;
+                }
+
                 if (event.key === 'Enter') {
                     event.preventDefault();
+                    if (applyActiveSuggestion()) {
+                        return;
+                    }
                     handleScan();
                 }
             });

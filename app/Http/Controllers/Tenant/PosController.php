@@ -431,6 +431,7 @@ final class PosController extends Controller
     private function searchItems(string $query, int $limit): Collection
     {
         $branchId = $this->currentBranchId();
+        $normalizedQuery = mb_strtolower($query);
 
         $products = Product::query()
             ->with('defaultTax')
@@ -485,7 +486,47 @@ final class PosController extends Controller
             ->get()
             ->map(fn (ServiceCatalog $service): array => $this->mapServiceItem($service));
 
-        return $productItems->concat($serviceItems)->take($limit)->values();
+        return $productItems
+            ->concat($serviceItems)
+            ->sortBy(fn (array $item): array => $this->rankSearchItem($item, $normalizedQuery))
+            ->take($limit)
+            ->values();
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @return array{0:int,1:string,2:string}
+     */
+    private function rankSearchItem(array $item, string $normalizedQuery): array
+    {
+        $name = mb_strtolower((string) ($item['name'] ?? ''));
+        $sku = mb_strtolower((string) ($item['sku'] ?? ''));
+
+        if ($sku === $normalizedQuery) {
+            return [0, $name, $sku];
+        }
+
+        if ($name === $normalizedQuery) {
+            return [1, $name, $sku];
+        }
+
+        if ($sku !== '' && str_starts_with($sku, $normalizedQuery)) {
+            return [2, $name, $sku];
+        }
+
+        if (str_starts_with($name, $normalizedQuery)) {
+            return [3, $name, $sku];
+        }
+
+        if ($sku !== '' && str_contains($sku, $normalizedQuery)) {
+            return [4, $name, $sku];
+        }
+
+        if (str_contains($name, $normalizedQuery)) {
+            return [5, $name, $sku];
+        }
+
+        return [6, $name, $sku];
     }
 
     /**
